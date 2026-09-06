@@ -5,7 +5,13 @@ struct ServicesView: View {
     @State private var category = "医疗服务"
     var body: some View {
         Page {
-            Text("从日常关怀，到长久陪伴").font(.title2.bold())
+            VStack(alignment: .leading, spacing: 8) {
+                Text("家庭医生服务")
+                    .font(.largeTitle.weight(.semibold))
+                    .fontDesign(.serif)
+                Text("从日常记录，到需要时有人回应。")
+                    .foregroundStyle(CX.muted)
+            }
             Card {
                 NavigationLink { FamilyView() } label: { RowLabel(title: "我的家庭医生", subtitle: "当前服务对象：\(store.data.person)", icon: "house.fill") }.buttonStyle(.plain)
                 Divider()
@@ -14,10 +20,10 @@ struct ServicesView: View {
             }
             Picker("服务分类", selection: $category) { ForEach(["医疗服务", "活动通知", "家医课堂"], id: \.self) { Text($0) } }.pickerStyle(.segmented)
             if category == "医疗服务" {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 156), spacing: 12)], spacing: 12) {
                     ForEach(ServiceItem.all) { item in
                         NavigationLink { ServiceDetailView(service: item) } label: {
-                            Card { Image(systemName: item.icon).font(.title2).foregroundStyle(item.color); Text(item.title).font(.headline); Text(item.subtitle).font(.subheadline).foregroundStyle(CX.muted) }
+                            ServiceTile(item: item)
                         }.buttonStyle(.plain).accessibilityIdentifier("service-\(item.title)")
                     }
                 }
@@ -29,6 +35,44 @@ struct ServicesView: View {
             NavigationLink { BookingsView() } label: { Card { RowLabel(title: "我的服务记录", subtitle: "\(store.data.bookings.filter { !$0.cancelled }.count) 条本地预约", icon: "calendar.badge.clock") } }.buttonStyle(.plain)
             DemoLabel()
         }.navigationTitle("服务")
+    }
+}
+
+private struct ServiceTile: View {
+    let item: ServiceItem
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Image(systemName: item.icon)
+                .font(.title2.weight(.semibold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(item.color)
+                .frame(width: 44, height: 44)
+                .background(item.color.opacity(0.11), in: .rect(cornerRadius: 13, style: .continuous))
+
+            Text(item.title)
+                .font(.headline)
+
+            Text(item.subtitle)
+                .font(.subheadline)
+                .foregroundStyle(CX.muted)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 0)
+
+            Image(systemName: "arrow.up.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(CX.faint)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+        }
+        .frame(maxWidth: .infinity, minHeight: 164, alignment: .leading)
+        .padding(16)
+        .background(.regularMaterial, in: .rect(cornerRadius: 20, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .strokeBorder(CX.separator.opacity(0.18), lineWidth: 0.5)
+        }
+        .contentShape(Rectangle())
     }
 }
 

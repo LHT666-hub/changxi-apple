@@ -23,30 +23,88 @@ struct HealthView: View {
     }
     private var overview: some View {
         Group {
-            Card {
-                Text("月影").font(.system(.largeTitle, design: .serif))
-                Text("你的健康变化，正在慢慢连成轨迹").font(.headline)
-                Text("规律记录，温柔地照顾自己。\n每个数字，都是一个时刻的观察。").foregroundStyle(CX.muted)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("健康摘要")
+                    .font(.largeTitle.weight(.semibold))
+                    .fontDesign(.serif)
+                Text("每一次记录，都让变化更容易被看见。")
+                    .font(.body)
+                    .foregroundStyle(CX.muted)
             }
-            LazyVGrid(columns: typeSize.isAccessibilitySize ? [GridItem(.flexible())] : [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+
+            LazyVGrid(
+                columns: typeSize.isAccessibilitySize
+                    ? [GridItem(.flexible())]
+                    : [GridItem(.adaptive(minimum: 150), spacing: 12)],
+                spacing: 12
+            ) {
                 ForEach(MetricKind.allCases) { kind in
                     NavigationLink { MetricDetailView(kind: kind) } label: {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Label(kind.rawValue, systemImage: kind.icon).font(.subheadline)
-                            Text(store.latest(kind)?.display ?? "—").font(.title3.bold()).monospacedDigit().lineLimit(1).minimumScaleFactor(0.75)
-                            Text(kind.unit).font(.caption).foregroundStyle(CX.muted)
-                        }.frame(maxWidth: .infinity, minHeight: 86, alignment: .leading).padding(12)
-                            .background(.white.opacity(0.94), in: RoundedRectangle(cornerRadius: 22))
+                        MetricSummaryTile(
+                            kind: kind,
+                            value: store.latest(kind)?.display ?? "—"
+                        )
                     }.buttonStyle(.plain).accessibilityIdentifier("metric-\(kind.rawValue)")
                 }
             }
+            SectionEyebrow(title: "最近趋势", action: "7 天")
             Card {
-                NavigationLink { MetricDetailView(kind: .pressure) } label: { RowLabel(title: "血压趋势", subtitle: "最近7天 · mmHg", icon: "chart.xyaxis.line") }.buttonStyle(.plain)
+                NavigationLink { MetricDetailView(kind: .pressure) } label: { RowLabel(title: "血压趋势", subtitle: "最近 7 天 · mmHg", icon: "chart.xyaxis.line") }.buttonStyle(.plain)
                 HealthChart(readings: store.readings(.pressure, days: 7), kind: .pressure)
             }
             NavigationLink { PlanView() } label: { Card { RhythmView(completed: store.completed, total: store.data.plans.count) } }.buttonStyle(.plain)
             NavigationLink { ReportDetailView() } label: { Card { RowLabel(title: "体检报告已整理", subtitle: "查看数值、参考范围和关注事项", icon: "doc.text.magnifyingglass") } }.buttonStyle(.plain)
         }
+    }
+}
+
+private struct MetricSummaryTile: View {
+    let kind: MetricKind
+    let value: String
+
+    private var tint: Color {
+        switch kind {
+        case .pressure: CX.coral
+        case .glucose: CX.gold
+        case .weight: CX.blue
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: kind.icon)
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(tint)
+                Text(kind.rawValue)
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(CX.faint)
+            }
+
+            Text(value)
+                .font(.title2.weight(.bold))
+                .fontDesign(.rounded)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+                .contentTransition(.numericText())
+
+            Text(kind.unit)
+                .font(.caption)
+                .foregroundStyle(CX.muted)
+        }
+        .frame(maxWidth: .infinity, minHeight: 112, alignment: .leading)
+        .padding(16)
+        .background(.regularMaterial, in: .rect(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(CX.separator.opacity(0.18), lineWidth: 0.5)
+        }
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
     }
 }
 

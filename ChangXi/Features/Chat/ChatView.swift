@@ -35,7 +35,18 @@ struct ChatView: View {
                                 VStack(alignment: .leading, spacing: 7) {
                                     Text(message.isUser ? "我" : "常曦 · 示例回复").font(.caption).foregroundStyle(CX.muted)
                                     Text(message.text).font(.body).lineSpacing(5).textSelection(.enabled)
-                                }.padding(16).background(message.isUser ? CX.mist : .white, in: RoundedRectangle(cornerRadius: 22))
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 14)
+                                .background(
+                                    message.isUser ? CX.blue.opacity(0.13) : CX.surface,
+                                    in: .rect(cornerRadius: 20, style: .continuous)
+                                )
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                        .strokeBorder(CX.separator.opacity(0.14), lineWidth: 0.5)
+                                }
+                                .accessibilityElement(children: .combine)
                                 if !message.isUser { Spacer(minLength: 32) }
                             }.id(message.id)
                         }
@@ -81,17 +92,43 @@ struct ChatView: View {
         VStack(spacing: 12) {
             if speech.isRecording { Text("正在听 · 停止后可修改文字再发送").font(.caption).foregroundStyle(CX.muted) }
             HStack(alignment: .bottom, spacing: 10) {
-                TextField("输入想说的话…", text: $text, axis: .vertical).lineLimit(1...5).focused($keyboard).padding(12).background(.white, in: RoundedRectangle(cornerRadius: 18)).accessibilityIdentifier("chat-input")
-                Button(action: send) { Image(systemName: "arrow.up.circle.fill").font(.system(size: 36)).frame(width: 48, height: 48) }.disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || state == .thinking || speech.isRecording).accessibilityLabel("发送").accessibilityIdentifier("send-chat")
+                TextField("输入想说的话…", text: $text, axis: .vertical)
+                    .lineLimit(1...5)
+                    .focused($keyboard)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                    .background(CX.raisedSurface, in: .rect(cornerRadius: 16, style: .continuous))
+                    .accessibilityIdentifier("chat-input")
+                Button(action: send) {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.largeTitle)
+                        .symbolRenderingMode(.hierarchical)
+                        .frame(width: 48, height: 48)
+                }
+                .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || state == .thinking || speech.isRecording)
+                .accessibilityLabel("发送")
+                .accessibilityIdentifier("send-chat")
             }
             HStack(spacing: 12) {
                 Button {
                     if speech.isRecording || speech.isStarting { speech.stop() }
                     else { keyboard = false; Task { await speech.start() } }
                 } label: { Label(speech.isStarting ? "正在开启…" : speech.isRecording ? "停止录音" : "点击说话", systemImage: speech.isRecording ? "stop.fill" : "mic.fill") }.buttonStyle(PrimaryButton()).disabled(state == .thinking)
-                Button { speech.stop(); showCamera = true } label: { Image(systemName: "camera").font(.title2).frame(width: 54, height: 52).background(.white, in: RoundedRectangle(cornerRadius: 18)) }.accessibilityLabel("拍照或选择报告")
+                Button { speech.stop(); showCamera = true } label: {
+                    Image(systemName: "camera.fill")
+                        .font(.title3.weight(.semibold))
+                        .symbolRenderingMode(.hierarchical)
+                        .frame(width: 54, height: 52)
+                        .background(CX.raisedSurface, in: .rect(cornerRadius: 16, style: .continuous))
+                }
+                .accessibilityLabel("拍照或选择报告")
             }
-        }.frame(maxWidth: 720).padding(.horizontal, 20).padding(.vertical, 12).frame(maxWidth: .infinity).background(.regularMaterial)
+        }
+        .frame(maxWidth: 720)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity)
+        .background(.regularMaterial)
     }
     private func send() {
         let value = text.trimmingCharacters(in: .whitespacesAndNewlines)

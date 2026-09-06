@@ -9,11 +9,10 @@ struct ProfileView: View {
                 Card { RowLabel(title: store.data.name, subtitle: "家庭医生：蒋医生\n每一天，都值得被好好照顾", icon: "person.crop.circle.fill") }
             }.buttonStyle(.plain)
             NavigationLink { MemoryView() } label: {
-                VStack(alignment: .leading, spacing: 12) {
-                    Label("常曦记忆", systemImage: "moon.stars.fill").font(.title2.bold())
-                    Text("记住了 \(store.data.memories.filter(\.confirmed).count) 条重要信息")
-                    Text("\(store.pendingMemories) 条等待你确认").font(.subheadline)
-                }.frame(maxWidth: .infinity, alignment: .leading).padding(24).foregroundStyle(.white).background(LinearGradient(colors: [CX.blue, CX.ink], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 26))
+                MemorySummaryCard(
+                    confirmed: store.data.memories.filter(\.confirmed).count,
+                    pending: store.pendingMemories
+                )
             }.buttonStyle(.plain)
             Card {
                 NavigationLink { HealthArchiveView() } label: { RowLabel(title: "我的健康档案", subtitle: "健康数据 · 用药记录 · 检查报告", icon: "heart.fill", tint: CX.coral) }
@@ -33,6 +32,57 @@ struct ProfileView: View {
             }.buttonStyle(.plain)
             DemoLabel()
         }.navigationTitle("我的")
+    }
+}
+
+private struct MemorySummaryCard: View {
+    let confirmed: Int
+    let pending: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Label("常曦记忆", systemImage: "moon.stars.fill")
+                    .font(.title2.weight(.semibold))
+                Spacer()
+                Image(systemName: "arrow.up.right")
+                    .font(.subheadline.weight(.semibold))
+                    .opacity(0.74)
+            }
+
+            Text("记住了 \(confirmed) 条重要信息")
+                .font(.headline)
+                .monospacedDigit()
+
+            Text(pending == 0 ? "没有待确认的记忆" : "还有 \(pending) 条等待你确认")
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.78))
+                .monospacedDigit()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(22)
+        .foregroundStyle(.white)
+        .background(
+            LinearGradient(
+                colors: [CX.blue, Color(.displayP3, red: 0.10, green: 0.20, blue: 0.42)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ),
+            in: .rect(cornerRadius: 22, style: .continuous)
+        )
+        .overlay(alignment: .bottomTrailing) {
+            Image(systemName: "moonphase.waxing.crescent")
+                .font(.system(.largeTitle, design: .rounded, weight: .light))
+                .foregroundStyle(.white.opacity(0.10))
+                .scaleEffect(2.4)
+                .offset(x: -20, y: -16)
+                .accessibilityHidden(true)
+        }
+        .compositingGroup()
+        .clipShape(.rect(cornerRadius: 22, style: .continuous))
+        .shadow(color: CX.blue.opacity(0.20), radius: 18, y: 10)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
     }
 }
 
