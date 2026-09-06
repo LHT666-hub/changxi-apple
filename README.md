@@ -1,26 +1,52 @@
-# 常曦 · ChangXi Apple Native
+# 常曦 · ChangXi
 
-常曦的 Apple 原生客户端。目标是 iPhone + iPad Universal App，使用 SwiftUI 原生实现，而不是 WebView 包装网页。
+原生 SwiftUI 健康陪伴应用，支持 iPhone / iPad，目标 iOS 18+。
 
-## 定位
+**月相表达过程，数据表达健康。** 月池是实时交互组件，人物、环境与数据各自承担清晰的职责。
 
-- **产品与业务来源**：现有业务后端的 API、身份、服务流程、资料与数据库能力。
-- **AI 能力来源**：玄同（Xuantong）的 Agent / RAG / Safety 能力逐步接入。
-- **客户端品牌**：统一使用 **常曦 / ChangXi**。
+## 运行
 
-## 第一阶段
+在 Mac 安装 Xcode，然后：
 
-- SwiftUI 原生首页
-- 常曦对话页
-- 原生语音入口（待接 `/api/v1/speech/transcribe`）
-- 原生拍照入口（待接 `/api/v1/documents/analyze`）
-- iPhone / iPad Universal
-- 原生材质、SF Symbols、触感与动画体系逐步加入
+```sh
+brew install xcodegen
+xcodegen generate
+open ChangXi.xcodeproj
+```
 
-## Xcode
+选择 `ChangXi` Scheme 和 iPhone / iPad Simulator 运行。真机需选择自己的签名团队。`project.yml` 是工程配置的唯一来源，包含应用与测试目标。
 
-项目目标：iOS / iPadOS 18+
+## 当前体验
 
-Bundle Identifier 暂定：`com.lht.changxi`
+- 四个主 Tab：首页、健康、服务、我的；全屏文字/语音对话。
+- 八种月池状态、实时音量水纹、相机与照片选择、本地报告保存。
+- 健康曲线、测量记录、报告详情、每日计划、用药与服药历史。
+- 医生示例消息、咨询草稿、预约意向、活动与课堂。
+- 记忆确认/编辑/删除、家人服务对象、个人资料、登录注册演示。
+- 本地通知、Dynamic Type、大字模式、Reduce Motion、触觉反馈。
+- 原子保存与文件保护、导出、清除数据、错误和空状态。
 
-开发期 API 地址在 `Core/API/APIClient.swift` 中配置。真机调试时不要使用 `127.0.0.1` 指向 Mac 服务，应改为 Mac 的局域网 IP 或正式 HTTPS API 地址。
+体验版使用明确标注的模拟数据与示例回复。医生咨询和预约只保存本地意向；真实 AI、报告识别、账户服务、医院服务、设备同步尚未接通。
+
+**Rive 分层骨骼与 `.riv` 资产仍未完成。** 当前透明角色使用 SwiftUI 轻呼吸/倾斜，月池由 Canvas 实时绘制，不将这部分误称为 Rive 动画。
+
+## 验证
+
+GitHub Actions 使用 macOS、XcodeGen 与 iOS Simulator 构建及测试。涵盖数据保存/重载、跨日重置、损坏文件保护、测量记录、记忆管理、预约取消、iPhone / iPad 截图和大字/横屏布局。实际通过情况以 [Actions](https://github.com/LHT666-hub/changxi-apple/actions) 的对应提交结果为准。
+
+```sh
+xcodebuild test -project ChangXi.xcodeproj -scheme ChangXi \
+  -destination 'platform=iOS Simulator,name=iPhone 16 Pro' CODE_SIGNING_ALLOWED=NO
+```
+
+## 结构
+
+- `App`：入口、导航、首次引导。
+- `Core/Design`：统一视觉组件、MoonPool、触感。
+- `Core/Models`：状态模型、本地文件、数据迁移。
+- `Core/Speech` / `Core/Camera`：系统输入能力。
+- `Core/API`：演示服务与可替换的远程对话接口。
+- `Features`：首页、对话、健康、服务、个人与隐私。
+- `Tests`：单元测试与 UI 流程测试。
+
+详细范围和剩余项见 [交付记录](docs/DELIVERY.md)，素材生成提示见 [素材说明](docs/ASSET_PROMPTS.md)。

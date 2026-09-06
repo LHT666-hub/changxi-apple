@@ -111,7 +111,7 @@ struct BookingsView: View {
             }
         }.navigationTitle("服务记录")
         .confirmationDialog("取消这条预约意向？", isPresented: Binding(get: { cancelID != nil }, set: { if !$0 { cancelID = nil } }), titleVisibility: .visible) {
-            Button("取消意向", role: .destructive) { if let i = store.data.bookings.firstIndex(where: { $0.id == cancelID }) { store.data.bookings[i].cancelled = true }; cancelID = nil }
+            Button("确认取消", role: .destructive) { if let i = store.data.bookings.firstIndex(where: { $0.id == cancelID }) { store.data.bookings[i].cancelled = true }; cancelID = nil }
         }
     }
 }

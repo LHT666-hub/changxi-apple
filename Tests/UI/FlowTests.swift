@@ -58,8 +58,8 @@ final class FlowTests: XCTestCase {
         capture("11-booking-saved")
         app.buttons["查看服务记录"].tap()
         app.buttons["取消意向"].firstMatch.tap()
-        let cancelButtons = app.buttons.matching(NSPredicate(format: "label == %@", "取消意向"))
-        cancelButtons.element(boundBy: cancelButtons.count - 1).tap()
+        XCTAssertTrue(app.buttons["确认取消"].waitForExistence(timeout: 5))
+        app.buttons["确认取消"].tap()
         XCTAssertTrue(app.staticTexts["已取消本地意向"].waitForExistence(timeout: 5))
     }
     func testLargeTextAndLandscape() {
