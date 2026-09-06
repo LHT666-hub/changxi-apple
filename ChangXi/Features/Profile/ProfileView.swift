@@ -102,7 +102,12 @@ struct AccountView: View {
     var body: some View {
         Form {
             Section("个人资料") { TextField("称呼", text: $name); Button(saved ? "已保存" : "保存资料") { store.data.name = name; store.data.person = "\(name)（本人）"; saved = true }.disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) }
-            Section("账户") { Label("访客体验", systemImage: "person.crop.circle"); Text("此版本无需注册。真实登录、短信验证与云端同步将在账户服务接通后开放。").foregroundStyle(.secondary) }
+            Section("账户") {
+                Label(store.data.demoSignedIn ? "演示账户已登录" : "访客体验", systemImage: "person.crop.circle")
+                if store.data.demoSignedIn { Button("退出演示账户") { store.data.demoSignedIn = false } }
+                else { NavigationLink("登录 / 注册体验") { DemoAuthView() } }
+                Text("真实短信验证与云端同步尚未接通，可继续以访客方式使用。").foregroundStyle(.secondary)
+            }
         }.navigationTitle("个人资料").onAppear { name = store.data.name }.onChange(of: name) { _, _ in saved = false }
     }
 }
@@ -115,6 +120,13 @@ struct FamilyView: View {
             Section("服务对象") { Picker("为谁安排服务", selection: $store.data.person) { Text("\(store.data.name)（本人）").tag("\(store.data.name)（本人）"); Text("家人（示例照护对象）").tag("家人（示例照护对象）") }.pickerStyle(.inline) }
             Section { Text("切换对象只影响新建服务意向的归属。健康记录和常曦记忆仍属于本人。家人档案需要本人授权后才能同步。") }
             Section("照护计划") { NavigationLink("查看服务安排") { BookingsView() }; NavigationLink("查看本人的今日计划") { PlanView() } }
+            Section("紧急联系人 · 仅存本机") {
+                TextField("联系人姓名", text: $store.data.emergencyName)
+                TextField("联系电话", text: $store.data.emergencyPhone).keyboardType(.phonePad)
+                if !store.data.emergencyPhone.isEmpty {
+                    ShareLink("分享联系人", item: "\(store.data.emergencyName) \(store.data.emergencyPhone)")
+                }
+            }
         }.navigationTitle("家人与照护")
     }
 }
@@ -133,7 +145,7 @@ struct HealthArchiveView: View {
     }
 }
 
-struct MedicationView: View {
+struct MedicationOverviewView: View {
     @Environment(AppStore.self) private var store
     var body: some View {
         Page {

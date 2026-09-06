@@ -25,6 +25,8 @@
 		31D617AEA34E25E5FF523220 /* ReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA8FAC0446BC6723F9D557B; };
 		56805AE3C3EBDBE5B91902E7 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 480F463C49951FF7C41917C0; };
 		E12154981E3853096BEBEFE5 /* ServicesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D59B309979EA3ED449231EC4; };
+		9CB422012C104743652BF92A /* MedicationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86A1EC28E67C3A11F0813056; };
+		608E818E8A70475B4BC9927C /* DemoAuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5129B874F50DAE77BB077D78; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -48,6 +50,8 @@
 		DBA8FAC0446BC6723F9D557B /* ReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChangXi/Features/Health/ReportView.swift"; sourceTree = SOURCE_ROOT; };
 		480F463C49951FF7C41917C0 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChangXi/Features/Profile/ProfileView.swift"; sourceTree = SOURCE_ROOT; };
 		D59B309979EA3ED449231EC4 /* ServicesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChangXi/Features/Services/ServicesView.swift"; sourceTree = SOURCE_ROOT; };
+		86A1EC28E67C3A11F0813056 /* MedicationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChangXi/Features/Health/MedicationView.swift"; sourceTree = SOURCE_ROOT; };
+		5129B874F50DAE77BB077D78 /* DemoAuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChangXi/Features/Profile/DemoAuthView.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -64,6 +68,8 @@
 			isa = PBXGroup;
 			children = (
 				A40000000000000000000002 /* ChangXi */,
+				86A1EC28E67C3A11F0813056,
+				5129B874F50DAE77BB077D78,
 				AB9B41CD78C1AB892CA65F52,
 				A20052FA7E8D0E04CB8B5A5A,
 				A823CDFBAB78B7B4431C91BD,
@@ -182,6 +188,8 @@
 				A10000000000000000000005,
 				A10000000000000000000006,
 				A10000000000000000000007,
+				9CB422012C104743652BF92A,
+				608E818E8A70475B4BC9927C,
 				B5CBB836AF8FC4C2D03B8FF0,
 				2C887E3A44B5EA9F1C84DAE1,
 				7BBCB0CF453C42C5D1A7AF08,

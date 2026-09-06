@@ -57,6 +57,31 @@ struct ServiceBooking: Codable, Identifiable {
     var cancelled = false
 }
 
+struct Medication: Codable, Identifiable {
+    var id = UUID()
+    var name: String
+    var dosage: String
+    var instructions: String
+    var hour = 20
+    var minute = 0
+}
+
+struct DoseRecord: Codable, Identifiable {
+    var id = UUID()
+    var medicationID: UUID
+    var medicationName: String
+    var date: Date = .now
+    var taken: Bool
+}
+
+struct ImportedReport: Codable, Identifiable {
+    var id = UUID()
+    var title: String
+    var filename: String
+    var date: Date = .now
+    var note: String
+}
+
 struct LocalState: Codable {
     var name = "张阿姨"
     var person = "张阿姨（本人）"
@@ -84,6 +109,12 @@ struct LocalState: Codable {
     var journal = ""
     var feedback = ""
     var doctorMessageRead = false
+    var medications: [Medication] = []
+    var doseHistory: [DoseRecord] = []
+    var demoSignedIn = false
+    var emergencyName = ""
+    var emergencyPhone = ""
+    var importedReports: [ImportedReport] = []
     static var sampleReadings: [HealthReading] {
         (0..<30).flatMap { day -> [HealthReading] in
             let date = Calendar.current.date(byAdding: .day, value: day - 29, to: .now)!
@@ -101,7 +132,10 @@ final class AppStore {
         self.fileURL = fileURL ?? URL.documentsDirectory.appending(path: "changxi-local-demo.json")
         do {
             let bytes = try Data(contentsOf: self.fileURL)
-            data = try JSONDecoder().decode(LocalState.self, from: bytes)
+            let defaults = try JSONSerialization.jsonObject(with: JSONEncoder().encode(LocalState())) as! [String: Any]
+            guard let saved = try JSONSerialization.jsonObject(with: bytes) as? [String: Any] else { throw CocoaError(.fileReadCorruptFile) }
+            let merged = defaults.merging(saved) { _, saved in saved }
+            data = try JSONDecoder().decode(LocalState.self, from: JSONSerialization.data(withJSONObject: merged))
         } catch {
             data = LocalState()
             if FileManager.default.fileExists(atPath: self.fileURL.path) { storageError = "本地记录未能读取，原文件仍保留。请先导出备份，避免覆盖。" }
@@ -110,6 +144,7 @@ final class AppStore {
         if ProcessInfo.processInfo.arguments.contains("--ui-testing") {
             data = LocalState()
             data.onboarded = true
+            if ProcessInfo.processInfo.arguments.contains("--large-text") { data.largeText = true }
         }
         #endif
         refreshDay()
@@ -141,8 +176,21 @@ final class AppStore {
         data.plans[index].completedAt = data.plans[index].completed ? .now : nil
     }
     func resetDemo() {
+        for report in data.importedReports { try? FileManager.default.removeItem(at: reportURL(report)) }
         storageError = nil
         data = LocalState()
+    }
+    func reportURL(_ report: ImportedReport) -> URL { fileURL.deletingLastPathComponent().appending(path: (report.filename as NSString).lastPathComponent) }
+    func saveReport(imageData: Data, title: String, note: String) throws {
+        guard storageError == nil else { throw CocoaError(.fileWriteUnknown) }
+        let report = ImportedReport(title: title, filename: "report-\(UUID()).jpg", note: note)
+        try imageData.write(to: reportURL(report), options: [.atomic, .completeFileProtection])
+        data.importedReports.append(report)
+    }
+    func deleteReport(_ report: ImportedReport) throws {
+        let url = reportURL(report)
+        if FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }
+        data.importedReports.removeAll { $0.id == report.id }
     }
     var exportJSON: String { (try? String(data: JSONEncoder().encode(data), encoding: .utf8)) ?? "{}" }
 }

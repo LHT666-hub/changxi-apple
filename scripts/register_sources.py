@@ -24,5 +24,6 @@ text = text.replace('/* End PBXBuildFile section */', '\n'.join(build) + '\n/* E
 text = text.replace('/* End PBXFileReference section */', '\n'.join(refs) + '\n/* End PBXFileReference section */')
 text = text.replace('A40000000000000000000002 /* ChangXi */,', 'A40000000000000000000002 /* ChangXi */,\n' + '\n'.join(file_ids))
 text = text.replace('A10000000000000000000007,', 'A10000000000000000000007,\n' + '\n'.join(source_ids))
-text = text.replace('INFOPLIST_KEY_NSMicrophoneUsageDescription =', 'INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "常曦将主动输入的语音转成文字。";\n\t\t\t\tINFOPLIST_KEY_NSMicrophoneUsageDescription =')
+if 'INFOPLIST_KEY_NSSpeechRecognitionUsageDescription' not in text:
+    text = text.replace('INFOPLIST_KEY_NSMicrophoneUsageDescription =', 'INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "常曦将主动输入的语音转成文字。";\n\t\t\t\tINFOPLIST_KEY_NSMicrophoneUsageDescription =')
 project.write_text(text, encoding='utf-8')

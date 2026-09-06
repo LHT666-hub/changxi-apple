@@ -36,7 +36,7 @@ struct HealthView: View {
                             Text(kind.unit).font(.subheadline).foregroundStyle(CX.muted)
                             Text("最近记录").font(.caption).foregroundStyle(CX.muted)
                         }
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(.plain).accessibilityIdentifier("metric-\(kind.rawValue)")
                 }
             }
             Card {
@@ -142,8 +142,8 @@ struct RecordReadingView: View {
     var body: some View {
         Form {
             Section("\(kind.rawValue) · \(kind.unit)") {
-                TextField(kind == .pressure ? "收缩压" : "测量值", text: $value).keyboardType(.decimalPad)
-                if kind == .pressure { TextField("舒张压", text: $secondary).keyboardType(.decimalPad) }
+                TextField(kind == .pressure ? "收缩压" : "测量值", text: $value).keyboardType(.decimalPad).accessibilityIdentifier("reading-primary")
+                if kind == .pressure { TextField("舒张压", text: $secondary).keyboardType(.decimalPad).accessibilityIdentifier("reading-secondary") }
                 DatePicker("测量时间", selection: $date, in: ...Date.now)
                 TextField("备注，如晨起、餐前或餐后", text: $note, axis: .vertical)
             }

@@ -22,6 +22,8 @@ final class FlowTests: XCTestCase {
         capture("04-trends")
         app.segmentedControls.buttons["报告"].tap()
         capture("05-reports")
+        app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "9月5日体检报告")).firstMatch.tap()
+        capture("05b-report-detail")
         app.tabBars.buttons["服务"].tap()
         capture("06-services")
         app.tabBars.buttons["我的"].tap()
@@ -34,6 +36,43 @@ final class FlowTests: XCTestCase {
         app.segmentedControls.buttons["已记住"].tap()
         XCTAssertTrue(app.staticTexts["症状自述"].exists)
         capture("09-memory-confirmed")
+    }
+    func testRecordAndServiceJourney() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing"]
+        app.launch()
+        app.tabBars.buttons["健康"].tap()
+        app.buttons["metric-血压"].tap()
+        app.buttons["添加血压记录"].tap()
+        let primary = app.textFields["reading-primary"]
+        XCTAssertTrue(primary.waitForExistence(timeout: 5))
+        primary.tap(); primary.typeText("123")
+        app.textFields["reading-secondary"].tap(); app.textFields["reading-secondary"].typeText("77")
+        app.buttons["save-reading"].tap()
+        XCTAssertTrue(app.staticTexts["123/77"].waitForExistence(timeout: 5))
+        capture("10-record-saved")
+        app.tabBars.buttons["服务"].tap()
+        app.buttons["service-帮预约"].tap()
+        app.buttons["保存预约意向"].tap()
+        XCTAssertTrue(app.staticTexts["尚未提交至医疗机构"].exists)
+        capture("11-booking-saved")
+        app.buttons["查看服务记录"].tap()
+        app.buttons["取消意向"].firstMatch.tap()
+        app.buttons["取消意向"].lastMatch.tap()
+        XCTAssertTrue(app.staticTexts["已取消本地意向"].waitForExistence(timeout: 5))
+    }
+    func testLargeTextAndLandscape() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--large-text"]
+        app.launch()
+        XCTAssertTrue(app.tabBars.buttons["首页"].waitForExistence(timeout: 10))
+        capture("12-large-text-home")
+        app.tabBars.buttons["健康"].tap()
+        capture("13-large-text-health")
+        XCUIDevice.shared.orientation = .landscapeLeft
+        XCTAssertTrue(app.tabBars.buttons["健康"].exists)
+        capture("14-landscape")
+        XCUIDevice.shared.orientation = .portrait
     }
     private func capture(_ name: String) {
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())

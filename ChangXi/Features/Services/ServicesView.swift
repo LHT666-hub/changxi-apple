@@ -18,7 +18,7 @@ struct ServicesView: View {
                     ForEach(ServiceItem.all) { item in
                         NavigationLink { ServiceDetailView(service: item) } label: {
                             Card { Image(systemName: item.icon).font(.title2).foregroundStyle(item.color); Text(item.title).font(.headline); Text(item.subtitle).font(.subheadline).foregroundStyle(CX.muted) }
-                        }.buttonStyle(.plain)
+                        }.buttonStyle(.plain).accessibilityIdentifier("service-\(item.title)")
                     }
                 }
             } else {

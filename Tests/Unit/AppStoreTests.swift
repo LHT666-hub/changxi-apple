@@ -43,4 +43,28 @@ import XCTest
         store.data.memories.removeAll { $0.id == id }
         XCTAssertFalse(AppStore(fileURL: file).data.memories.contains { $0.id == id })
     }
+    func testMedicationAndBookingHistoryPersistIndependently() {
+        let store = AppStore(fileURL: file)
+        let medication = Medication(name: "测试药品", dosage: "依本人处方", instructions: "测试记录")
+        store.data.medications.append(medication)
+        store.data.doseHistory.append(DoseRecord(medicationID: medication.id, medicationName: medication.name, taken: false))
+        store.data.medications.removeAll()
+        store.data.bookings.append(ServiceBooking(service: "检查预约", person: "本人", date: .now, note: "测试"))
+        store.data.bookings[0].cancelled = true
+        let reload = AppStore(fileURL: file)
+        XCTAssertEqual(reload.data.doseHistory.count, 1)
+        XCTAssertFalse(reload.data.doseHistory[0].taken)
+        XCTAssertTrue(reload.data.medications.isEmpty)
+        XCTAssertTrue(reload.data.bookings[0].cancelled)
+    }
+    func testReportFileAndMetadataLifecycle() throws {
+        let store = AppStore(fileURL: file)
+        try store.saveReport(imageData: Data([1, 2, 3]), title: "测试报告", note: "本机")
+        let report = try XCTUnwrap(store.data.importedReports.first)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: store.reportURL(report).path))
+        XCTAssertEqual(AppStore(fileURL: file).data.importedReports.count, 1)
+        try store.deleteReport(report)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: store.reportURL(report).path))
+        XCTAssertTrue(AppStore(fileURL: file).data.importedReports.isEmpty)
+    }
 }

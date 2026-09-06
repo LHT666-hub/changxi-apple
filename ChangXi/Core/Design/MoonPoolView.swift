@@ -41,6 +41,10 @@ struct MoonPoolView: View {
                         .animation(reduceMotion ? nil : .easeInOut(duration: 0.7), value: state)
                         .accessibilityHidden(true)
                 }
+                if state == .thinking {
+                    Image(systemName: ["moonphase.waxing.crescent", "moonphase.first.quarter", "moonphase.waxing.gibbous"][Int(t / 1.2) % 3])
+                        .font(.title2).foregroundStyle(CX.blue).offset(y: compact ? -60 : -88).accessibilityHidden(true)
+                }
                 Text(state.label).font(compact ? .subheadline : .headline).tracking(3).padding(.bottom, compact ? 15 : 30)
                     .foregroundStyle(CX.ink)
             }
@@ -54,7 +58,8 @@ struct MoonPoolView: View {
         let width = size.width * 0.96
         let height = size.height * 0.78
         let base = CGRect(x: center.x - width / 2, y: center.y - height / 2, width: width, height: height)
-        context.fill(Path(ellipseIn: base), with: .radialGradient(Gradient(colors: [.white.opacity(state == .responding ? 0.96 : 0.8), Color(red: 0.48, green: 0.73, blue: 0.94).opacity(0.45), .white.opacity(0.05)]), center: center, startRadius: 0, endRadius: width / 2))
+        let responseGlow = state == .responding ? 0.8 + min(t / 1.4, 1) * 0.2 : 0.8
+        context.fill(Path(ellipseIn: base), with: .radialGradient(Gradient(colors: [.white.opacity(responseGlow), Color(red: 0.48, green: 0.73, blue: 0.94).opacity(0.45), .white.opacity(0.05)]), center: center, startRadius: 0, endRadius: width / 2))
         let speed = state == .listening ? 0.40 : state == .thinking ? 0.22 : 0.12
         for i in 0..<7 {
             var phase = (Double(i) / 7 + t * speed).truncatingRemainder(dividingBy: 1)

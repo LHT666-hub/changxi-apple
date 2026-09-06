@@ -1,11 +1,40 @@
 import SwiftUI
 
 struct ReportListContent: View {
+    @Environment(AppStore.self) private var store
     @State private var upload = false
     var body: some View {
+        ForEach(store.data.importedReports.reversed()) { report in
+            NavigationLink { ImportedReportView(report: report) } label: { Card { RowLabel(title: report.title, subtitle: "本机报告 · 待整理", icon: "doc.richtext") } }.buttonStyle(.plain)
+        }
         NavigationLink { ReportDetailView() } label: { Card { RowLabel(title: "9月5日体检报告", subtitle: "示例报告 · 3组指标已整理", icon: "doc.text.fill") } }.buttonStyle(.plain)
         Button { upload = true } label: { Label("添加报告照片", systemImage: "plus") }.buttonStyle(PrimaryButton())
             .sheet(isPresented: $upload) { NavigationStack { ReportImportView() } }
+    }
+}
+
+struct ImportedReportView: View {
+    var report: ImportedReport
+    @Environment(AppStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
+    @State private var deleting = false
+    @State private var error: String?
+    var body: some View {
+        Page {
+            Card {
+                Text(report.title).font(.title2.bold())
+                Text(report.date.formatted(date: .abbreviated, time: .shortened)).foregroundStyle(CX.muted)
+                if let image = UIImage(contentsOfFile: store.reportURL(report).path) { Image(uiImage: image).resizable().scaledToFit().accessibilityLabel("原始报告照片") }
+                else { ContentUnavailableView("照片暂时无法读取", systemImage: "photo", description: Text("可在设备解锁后重试。")) }
+                if !report.note.isEmpty { Text(report.note) }
+                Label("已保存在本机 · 尚未识别", systemImage: "lock.shield").foregroundStyle(CX.muted)
+                Text("本版本没有分析这张报告。请依据原始报告核对指标，或整理问题向医生咨询。").font(.footnote)
+                NavigationLink("整理咨询问题") { ConsultationView() }
+                Button("删除本机报告", role: .destructive) { deleting = true }.frame(minHeight: 44)
+                if let error { Text(error).foregroundStyle(CX.coral) }
+            }
+        }.navigationTitle("报告原件")
+        .confirmationDialog("删除这份报告及本机照片？", isPresented: $deleting, titleVisibility: .visible) { Button("删除报告", role: .destructive) { do { try store.deleteReport(report); dismiss() } catch { self.error = "报告未能删除，请稍后重试。" } } }
     }
 }
 
