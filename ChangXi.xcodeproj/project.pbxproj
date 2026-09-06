@@ -14,6 +14,17 @@
 		A10000000000000000000006 /* SpeechPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* SpeechPlaceholderView.swift */; };
 		A10000000000000000000007 /* CameraPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* CameraPlaceholderView.swift */; };
 		A10000000000000000000008 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000008 /* Assets.xcassets */; };
+		B5CBB836AF8FC4C2D03B8FF0 /* HealthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB9B41CD78C1AB892CA65F52; };
+		2C887E3A44B5EA9F1C84DAE1 /* ReportImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20052FA7E8D0E04CB8B5A5A; };
+		7BBCB0CF453C42C5D1A7AF08 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A823CDFBAB78B7B4431C91BD; };
+		D2F22F4DF05762F64E2FA2F2 /* MoonPoolView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D96BCF6BF2DE63E6CC4BAB0; };
+		52E8696E488ABD4806CDBA45 /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2CA750D5228D9481E25A0D5; };
+		B81A654CA04C721C7FEC455A /* SpeechController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C9628D1588303C7224853E; };
+		FC248D4664DA0F34C37E5790 /* HealthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCD146C4B54D4D0DFA6DF34A; };
+		07D9823C669FF3F19C7507FA /* PlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4962F1C301050C7D6D1A5A6; };
+		31D617AEA34E25E5FF523220 /* ReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBA8FAC0446BC6723F9D557B; };
+		56805AE3C3EBDBE5B91902E7 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 480F463C49951FF7C41917C0; };
+		E12154981E3853096BEBEFE5 /* ServicesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D59B309979EA3ED449231EC4; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,6 +37,17 @@
 		A20000000000000000000007 /* CameraPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPlaceholderView.swift; sourceTree = "<group>"; };
 		A20000000000000000000008 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A20000000000000000000009 /* ChangXi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ChangXi.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AB9B41CD78C1AB892CA65F52 /* HealthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChangXi/Core/API/HealthService.swift"; sourceTree = SOURCE_ROOT; };
+		A20052FA7E8D0E04CB8B5A5A /* ReportImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChangXi/Core/Camera/ReportImportView.swift"; sourceTree = SOURCE_ROOT; };
+		A823CDFBAB78B7B4431C91BD /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChangXi/Core/Design/DesignSystem.swift"; sourceTree = SOURCE_ROOT; };
+		5D96BCF6BF2DE63E6CC4BAB0 /* MoonPoolView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChangXi/Core/Design/MoonPoolView.swift"; sourceTree = SOURCE_ROOT; };
+		F2CA750D5228D9481E25A0D5 /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChangXi/Core/Models/AppStore.swift"; sourceTree = SOURCE_ROOT; };
+		07C9628D1588303C7224853E /* SpeechController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChangXi/Core/Speech/SpeechController.swift"; sourceTree = SOURCE_ROOT; };
+		BCD146C4B54D4D0DFA6DF34A /* HealthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChangXi/Features/Health/HealthView.swift"; sourceTree = SOURCE_ROOT; };
+		E4962F1C301050C7D6D1A5A6 /* PlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChangXi/Features/Health/PlanView.swift"; sourceTree = SOURCE_ROOT; };
+		DBA8FAC0446BC6723F9D557B /* ReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChangXi/Features/Health/ReportView.swift"; sourceTree = SOURCE_ROOT; };
+		480F463C49951FF7C41917C0 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChangXi/Features/Profile/ProfileView.swift"; sourceTree = SOURCE_ROOT; };
+		D59B309979EA3ED449231EC4 /* ServicesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChangXi/Features/Services/ServicesView.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -42,6 +64,17 @@
 			isa = PBXGroup;
 			children = (
 				A40000000000000000000002 /* ChangXi */,
+				AB9B41CD78C1AB892CA65F52,
+				A20052FA7E8D0E04CB8B5A5A,
+				A823CDFBAB78B7B4431C91BD,
+				5D96BCF6BF2DE63E6CC4BAB0,
+				F2CA750D5228D9481E25A0D5,
+				07C9628D1588303C7224853E,
+				BCD146C4B54D4D0DFA6DF34A,
+				E4962F1C301050C7D6D1A5A6,
+				DBA8FAC0446BC6723F9D557B,
+				480F463C49951FF7C41917C0,
+				D59B309979EA3ED449231EC4,
 				A40000000000000000000009 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -149,6 +182,17 @@
 				A10000000000000000000005,
 				A10000000000000000000006,
 				A10000000000000000000007,
+				B5CBB836AF8FC4C2D03B8FF0,
+				2C887E3A44B5EA9F1C84DAE1,
+				7BBCB0CF453C42C5D1A7AF08,
+				D2F22F4DF05762F64E2FA2F2,
+				52E8696E488ABD4806CDBA45,
+				B81A654CA04C721C7FEC455A,
+				FC248D4664DA0F34C37E5790,
+				07D9823C669FF3F19C7507FA,
+				31D617AEA34E25E5FF523220,
+				56805AE3C3EBDBE5B91902E7,
+				E12154981E3853096BEBEFE5,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -201,6 +245,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "常曦";
 				INFOPLIST_KEY_NSCameraUsageDescription = "常曦需要相机权限，用于拍摄并分析你主动提交的报告或药盒照片。";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "常曦将主动输入的语音转成文字。";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "常曦需要麦克风权限，用于你主动发起的语音输入。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -230,6 +275,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "常曦";
 				INFOPLIST_KEY_NSCameraUsageDescription = "常曦需要相机权限，用于拍摄并分析你主动提交的报告或药盒照片。";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "常曦将主动输入的语音转成文字。";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "常曦需要麦克风权限，用于你主动发起的语音输入。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
