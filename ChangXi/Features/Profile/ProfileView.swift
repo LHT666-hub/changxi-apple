@@ -28,6 +28,8 @@ struct ProfileView: View {
                 Divider()
                 NavigationLink { AccessibilitySettingsView() } label: { RowLabel(title: "显示与触感", subtitle: "大字模式 · 动态效果", icon: "textformat.size") }
                 Divider()
+                NavigationLink { SpeechSettingsView() } label: { RowLabel(title: "语音输入", subtitle: "本机识别 · 云端方言识别", icon: "waveform") }
+                Divider()
                 NavigationLink { HelpView() } label: { RowLabel(title: "帮助与反馈", subtitle: "使用指南 · 常见问题", icon: "questionmark.circle.fill", tint: .purple) }
             }.buttonStyle(.plain)
             DemoLabel()
@@ -88,6 +90,7 @@ private struct MemorySummaryCard: View {
 
 struct MemoryView: View {
     @Environment(AppStore.self) private var store
+    @Environment(AuthSession.self) private var auth
     @State private var filter = "待确认"
     @State private var editing: MemoryItem?
     @State private var deleting: MemoryItem?
@@ -123,10 +126,29 @@ struct MemoryView: View {
     }
     @ViewBuilder private func actions(_ item: MemoryItem) -> some View {
         if !item.confirmed {
-            Button { if let i = store.data.memories.firstIndex(where: { $0.id == item.id }) { store.data.memories[i].confirmed = true }; MoonHaptics.shared.play(success: true, enabled: store.data.haptics) } label: { Label("确认", systemImage: "checkmark") }.buttonStyle(.borderedProminent).disabled(!store.data.rememberAllowed).frame(minHeight: 44)
+            Button { if let i = store.data.memories.firstIndex(where: { $0.id == item.id }) { store.data.memories[i].confirmed = true }; MoonHaptics.shared.play(success: true, enabled: store.data.haptics); archiveMemory(item) } label: { Label("确认", systemImage: "checkmark") }.buttonStyle(.borderedProminent).disabled(!store.data.rememberAllowed).frame(minHeight: 44)
         }
         Button { editing = item } label: { Label("修改", systemImage: "pencil") }.frame(minHeight: 44)
         Button(role: .destructive) { deleting = item } label: { Label(item.confirmed ? "删除" : "不记住", systemImage: "xmark") }.frame(minHeight: 44)
+    }
+
+    /// Task #25：确认记忆后，尽力把它归档到云端 health-records（record_type = memory）。
+    /// 离线不发请求；归档失败静默，绝不影响本地确认。
+    private func archiveMemory(_ item: MemoryItem) {
+        guard AppConfiguration.useRemoteAPI else { return }
+        let pid = PatientContext.effectiveID(auth)
+        Task { @MainActor in
+            await HealthSyncService.shared.archive(
+                recordType: "memory",
+                title: item.title,
+                content: [
+                    "text": .string(item.text),
+                    "category": .string(item.category),
+                    "memory_id": .string(item.id.uuidString)
+                ],
+                patientID: pid
+            )
+        }
     }
 }
 
@@ -192,25 +214,6 @@ struct HealthArchiveView: View {
             ReportListContent()
             Card { Text("睡前记录").font(.headline); Text(store.data.journal.isEmpty ? "还没有记录，今晚留一句话给自己吧。" : store.data.journal) }
         }.navigationTitle("健康档案")
-    }
-}
-
-struct MedicationOverviewView: View {
-    @Environment(AppStore.self) private var store
-    var body: some View {
-        Page {
-            Card {
-                RowLabel(title: "晚间用药计划", subtitle: "20:00 · 每日提醒", icon: "pills.fill", chevron: false)
-                Text("核对本人处方后再记录服药。示例中不预填药名和剂量，避免把演示内容当成用药建议。").foregroundStyle(CX.muted)
-                if let plan = store.data.plans.first(where: { $0.title == "晚间用药" }) { NavigationLink(plan.completed ? "查看今日服药记录" : "记录今日服药") { PlanDetailView(planID: plan.id) }.buttonStyle(PrimaryButton()) }
-            }
-            Card {
-                Text("如果漏服了").font(.title2.bold())
-                Text("先核对药品说明书中对应药物的漏服处理说明，或联系医生、药师确认。本应用不会自动补记服药，也不会根据一次漏服调整剂量。")
-                NavigationLink("整理给医生的问题") { ConsultationView() }
-            }
-            NavigationLink { NotificationSettingsView() } label: { Card { RowLabel(title: "用药提醒设置", icon: "bell") } }.buttonStyle(.plain)
-        }.navigationTitle("用药管理")
     }
 }
 

@@ -5,11 +5,14 @@ struct ReportListContent: View {
     @State private var upload = false
     var body: some View {
         ForEach(store.data.importedReports.reversed()) { report in
-            NavigationLink { ImportedReportView(report: report) } label: { Card { RowLabel(title: report.title, subtitle: "本机报告 · 待整理", icon: "doc.richtext") } }.buttonStyle(.plain)
+            NavigationLink { ImportedReportView(report: report) } label: { Card { RowLabel(title: report.title, subtitle: (report.analysisText != nil || report.bpReading != nil) ? "已识别 · 本机报告" : "本机报告 · 待整理", icon: "doc.richtext") } }.buttonStyle(.plain)
         }
         NavigationLink { ReportDetailView() } label: { Card { RowLabel(title: "9月5日体检报告", subtitle: "示例报告 · 3组指标已整理", icon: "doc.text.fill") } }.buttonStyle(.plain)
         Button { upload = true } label: { Label("添加报告照片", systemImage: "plus") }.buttonStyle(PrimaryButton())
             .sheet(isPresented: $upload) { NavigationStack { ReportImportView() } }
+        if AppConfiguration.useRemoteAPI {
+            NavigationLink { CloudDocumentsView() } label: { Card { RowLabel(title: "云端文档", subtitle: "已归档的报告与图片", icon: "externaldrive.fill") } }.buttonStyle(.plain)
+        }
     }
 }
 
@@ -27,8 +30,36 @@ struct ImportedReportView: View {
                 if let image = UIImage(contentsOfFile: store.reportURL(report).path) { Image(uiImage: image).resizable().scaledToFit().accessibilityLabel("原始报告照片") }
                 else { ContentUnavailableView("照片暂时无法读取", systemImage: "photo", description: Text("可在设备解锁后重试。")) }
                 if !report.note.isEmpty { Text(report.note) }
-                Label("已保存在本机 · 尚未识别", systemImage: "lock.shield").foregroundStyle(CX.muted)
-                Text("本版本没有分析这张报告。请依据原始报告核对指标，或整理问题向医生咨询。").font(.footnote)
+                if let bp = report.bpReading {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("识别到的血压", systemImage: "heart.fill").font(.headline).foregroundStyle(CX.coral)
+                        Text(bp.display).font(.title.bold()).monospacedDigit()
+                        if bp.isLowConfidence {
+                            Text("识别置信度较低，请对照原图核对。").font(.footnote).foregroundStyle(CX.muted)
+                        }
+                    }
+                }
+                if let analysis = report.analysisText, !analysis.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("常曦识别结果", systemImage: "sparkles").font(.headline)
+                        Text(analysis).lineSpacing(5)
+                    }
+                }
+                if let findings = report.findings, !findings.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("关注要点").font(.headline)
+                        ForEach(findings, id: \.self) { finding in
+                            Label(finding, systemImage: "dot.radiowaves.left.and.right").font(.subheadline)
+                        }
+                    }
+                }
+                if report.documentID != nil {
+                    Label("已归档到云端文档", systemImage: "checkmark.icloud").font(.footnote).foregroundStyle(CX.teal)
+                }
+                if report.analysisText == nil && report.bpReading == nil {
+                    Label("已保存在本机 · 尚未识别", systemImage: "lock.shield").foregroundStyle(CX.muted)
+                    Text("本版本没有分析这张报告。请依据原始报告核对指标，或整理问题向医生咨询。").font(.footnote)
+                }
                 NavigationLink("整理咨询问题") { ConsultationView() }
                 Button("删除本机报告", role: .destructive) { deleting = true }.frame(minHeight: 44)
                 if let error { Text(error).foregroundStyle(CX.coral) }

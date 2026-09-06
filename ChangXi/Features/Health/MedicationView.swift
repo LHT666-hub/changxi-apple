@@ -59,6 +59,7 @@ struct MedicationView: View {
 struct MedicationEditor: View {
     var medication: Medication?
     @Environment(AppStore.self) private var store
+    @Environment(AuthSession.self) private var auth
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var dosage = ""
@@ -77,11 +78,32 @@ struct MedicationEditor: View {
                 let components = Calendar.current.dateComponents([.hour, .minute], from: time)
                 let updated = Medication(id: medication?.id ?? UUID(), name: name, dosage: dosage, instructions: instructions, hour: components.hour ?? 20, minute: components.minute ?? 0)
                 if let i = store.data.medications.firstIndex(where: { $0.id == updated.id }) { store.data.medications[i] = updated } else { store.data.medications.append(updated) }
+                archiveMedication(updated)
                 dismiss()
             }.disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || dosage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) }
         }.navigationTitle(medication == nil ? "添加药品" : "修改用药计划")
         .toolbar { ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } } }
         .onAppear { if let medication { name = medication.name; dosage = medication.dosage; instructions = medication.instructions; time = Calendar.current.date(from: DateComponents(hour: medication.hour, minute: medication.minute)) ?? .now } }
+    }
+
+    /// Task #25：保存用药计划后，尽力归档到云端 health-records（record_type = medication）。
+    /// 离线不发请求；归档失败静默，绝不影响本地保存。
+    private func archiveMedication(_ medication: Medication) {
+        guard AppConfiguration.useRemoteAPI else { return }
+        let pid = PatientContext.effectiveID(auth)
+        Task { @MainActor in
+            await HealthSyncService.shared.archive(
+                recordType: "medication",
+                title: medication.name,
+                content: [
+                    "dosage": .string(medication.dosage),
+                    "instructions": .string(medication.instructions),
+                    "hour": .int(medication.hour),
+                    "minute": .int(medication.minute)
+                ],
+                patientID: pid
+            )
+        }
     }
 }
 

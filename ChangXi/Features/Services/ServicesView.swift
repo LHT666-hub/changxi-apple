@@ -33,6 +33,9 @@ struct ServicesView: View {
                 }.buttonStyle(.plain)
             }
             NavigationLink { BookingsView() } label: { Card { RowLabel(title: "我的服务记录", subtitle: "\(store.data.bookings.filter { !$0.cancelled }.count) 条本地预约", icon: "calendar.badge.clock") } }.buttonStyle(.plain)
+            if AppConfiguration.useRemoteAPI {
+                NavigationLink { CareTaskView() } label: { Card { RowLabel(title: "我的照护任务", subtitle: "玄同会诊生成的照护建议", icon: "checklist") } }.buttonStyle(.plain)
+            }
             DemoLabel()
         }.navigationTitle("服务")
     }

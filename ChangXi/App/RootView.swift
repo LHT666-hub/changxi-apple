@@ -2,6 +2,10 @@ import SwiftUI
 
 struct RootView: View {
     @State private var store = AppStore()
+    /// 认证会话：与 `store` 同为 `@MainActor @Observable`，在此创建并注入环境，
+    /// 供 `DemoAuthView` / `ChatView` / `ProfileView` 等下游视图通过
+    /// `@Environment(AuthSession.self)` 读取。
+    @State private var auth = AuthSession()
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -27,6 +31,7 @@ struct RootView: View {
             }
         }
         .environment(store)
+        .environment(auth)
         .tint(CX.blue)
         .transformEnvironment(\.dynamicTypeSize) { size in
             if store.data.largeText && size < .xxxLarge {
@@ -36,6 +41,10 @@ struct RootView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { store.refreshDay() }
         }
+        // 真实认证状态与既有 `demoSignedIn` 布尔量保持同步，令依赖它的旧界面无需改动。
+        .onChange(of: auth.isAuthenticated) { _, isAuthenticated in store.data.demoSignedIn = isAuthenticated }
+        // 启动时尝试用 Keychain 中的 JWT 恢复会话（离线 / UI 测试下内部直接跳过网络）。
+        .task { await auth.restoreSession() }
         .safeAreaInset(edge: .top) {
             if let error = store.storageError {
                 Label(error, systemImage: "exclamationmark.triangle.fill")

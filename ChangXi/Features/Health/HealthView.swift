@@ -3,6 +3,7 @@ import Charts
 
 struct HealthView: View {
     @Environment(AppStore.self) private var store
+    @Environment(AuthSession.self) private var auth
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var section = "概览"
     var body: some View {
@@ -20,6 +21,15 @@ struct HealthView: View {
             DemoLabel()
         }.navigationTitle("健康")
         .toolbar { ToolbarItem(placement: .topBarTrailing) { NavigationLink { MessagesView() } label: { Image(systemName: "envelope").frame(width: 44, height: 44) }.accessibilityLabel("消息中心") } }
+        .task { await syncOnAppear() }
+    }
+    /// Task #25：进入健康页时，一次性 best-effort 绑定患者档案并拉取云端测量历史（本地优先合并去重）。
+    /// 离线（`useRemoteAPI == false`）时不发任何请求。
+    @MainActor private func syncOnAppear() async {
+        guard AppConfiguration.useRemoteAPI else { return }
+        let pid = PatientContext.effectiveID(auth)
+        await PatientContext.bindProfileIfNeeded(auth: auth, name: store.data.name, person: store.data.person)
+        await HealthSyncService.shared.pullRemote(store: store, patientID: pid)
     }
     private var overview: some View {
         Group {
@@ -151,6 +161,7 @@ struct HealthChart: View {
 struct MetricDetailView: View {
     var kind: MetricKind
     @Environment(AppStore.self) private var store
+    @Environment(AuthSession.self) private var auth
     @State private var days = 7
     @State private var showRecord = false
     @State private var deleteID: UUID?
@@ -172,6 +183,17 @@ struct MetricDetailView: View {
                             Text("\(reading.display) \(kind.unit)").font(.headline)
                             Text(reading.date.formatted(date: .abbreviated, time: .shortened)).font(.caption).foregroundStyle(CX.muted)
                             if !reading.note.isEmpty { Text(reading.note).font(.subheadline) }
+                            if let sync = reading.syncState {
+                                HStack(spacing: 6) {
+                                    Image(systemName: sync.systemImage).font(.caption2)
+                                    Text(sync.label).font(.caption2)
+                                    if sync == .failed || sync == .pending {
+                                        Button("重试") { HealthSyncService.shared.enqueueUpload(reading, store: store, patientID: PatientContext.effectiveID(auth)) }
+                                            .font(.caption2).buttonStyle(.bordered).controlSize(.mini)
+                                    }
+                                }
+                                .foregroundStyle(sync == .failed ? CX.coral : sync == .synced ? CX.teal : CX.muted)
+                            }
                         }
                         Spacer()
                         Button(role: .destructive) { deleteID = reading.id } label: { Image(systemName: "trash").frame(width: 44, height: 44) }.accessibilityLabel("删除\(reading.display)的记录")
@@ -192,12 +214,15 @@ struct RecordReadingView: View {
     var kind: MetricKind
     var onSave: (() -> Void)? = nil
     @Environment(AppStore.self) private var store
+    @Environment(AuthSession.self) private var auth
     @Environment(\.dismiss) private var dismiss
     @State private var value = ""
     @State private var secondary = ""
     @State private var note = ""
     @State private var date = Date.now
     @State private var error: String?
+    @State private var submitting = false
+    @State private var pendingWorkflow: EventWorkflowResult?
     var body: some View {
         Form {
             Section("\(kind.rawValue) · \(kind.unit)") {
@@ -207,10 +232,23 @@ struct RecordReadingView: View {
                 TextField("备注，如晨起、餐前或餐后", text: $note, axis: .vertical)
             }
             if let error { Section { Text(error).foregroundStyle(CX.coral) } }
-            Section { Button("保存记录", action: save).accessibilityIdentifier("save-reading") }
+            if submitting {
+                Section {
+                    HStack(spacing: 10) {
+                        ProgressView()
+                        Text("正在发起玄同会诊…").foregroundStyle(CX.muted)
+                    }
+                }
+            }
+            Section { Button("保存记录", action: save).accessibilityIdentifier("save-reading").disabled(submitting) }
             Section { Text("输入校验只用于避免录入错误，不代表医学正常范围。").font(.footnote) }
         }.navigationTitle("记录\(kind.rawValue)")
         .toolbar { ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } } }
+        .fullScreenCover(item: $pendingWorkflow) { result in
+            NavigationStack {
+                WorkflowProgressView(result: result, onClose: { pendingWorkflow = nil; dismiss() })
+            }
+        }
     }
     private func save() {
         guard let number = Double(value.replacingOccurrences(of: ",", with: ".")), number.isFinite, kind.inputRange.contains(number) else { error = "请检查测量值，输入\(kind.inputRange.lowerBound.formatted())至\(kind.inputRange.upperBound.formatted())之间的数字。"; return }
@@ -218,9 +256,29 @@ struct RecordReadingView: View {
         if kind == .pressure {
             guard let second, second >= 20, second <= 200, second < number else { error = "请核对舒张压，应低于收缩压。"; return }
         }
-        store.data.readings.append(HealthReading(kind: kind, value: number, secondary: kind == .pressure ? second : nil, date: date, note: note))
+        let reading = HealthReading(kind: kind, value: number, secondary: kind == .pressure ? second : nil, date: date, note: note)
+        store.data.readings.append(reading)
         onSave?()
         MoonHaptics.shared.play(success: true, enabled: store.data.haptics)
-        dismiss()
+        // Task #25：本地记录已成功写入（离线也到此为止，保证纯本地可用）。以下为 best-effort 云端上行。
+        guard AppConfiguration.useRemoteAPI else { dismiss(); return }
+        let pid = PatientContext.effectiveID(auth)
+        if HealthSyncService.triggersWorkflow(reading) {
+            // 异常读数：上行并触发玄同会诊工作流，成功后弹出实时进度页。
+            submitting = true
+            Task { @MainActor in
+                let result = await HealthSyncService.shared.uploadReading(reading, store: store, patientID: pid)
+                submitting = false
+                if let result, result.eventID != nil {
+                    pendingWorkflow = result
+                } else {
+                    dismiss()
+                }
+            }
+        } else {
+            // 常规读数：后台静默上行（不弹窗、不阻断），失败仅标记「待同步」。
+            HealthSyncService.shared.enqueueUpload(reading, store: store, patientID: pid)
+            dismiss()
+        }
     }
 }

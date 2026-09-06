@@ -23,6 +23,7 @@ struct PlanView: View {
 struct PlanDetailView: View {
     let planID: UUID
     @Environment(AppStore.self) private var store
+    @Environment(AuthSession.self) private var auth
     @State private var note = ""
     @State private var showRecord = false
     @State private var showUndo = false
@@ -49,5 +50,27 @@ struct PlanDetailView: View {
         .sheet(isPresented: $showRecord) { NavigationStack { RecordReadingView(kind: .pressure, onSave: { if plan?.completed == false { complete() } }) } }
         .confirmationDialog("撤销这项计划的完成记录？", isPresented: $showUndo, titleVisibility: .visible) { Button("撤销完成", role: .destructive) { store.togglePlan(planID) } }
     }
-    private func complete() { store.togglePlan(planID); MoonHaptics.shared.play(success: true, enabled: store.data.haptics) }
+    private func complete() {
+        store.togglePlan(planID)
+        MoonHaptics.shared.play(success: true, enabled: store.data.haptics)
+        archiveIfCompleted()
+    }
+
+    /// Task #25：计划完成后，尽力把它归档到云端 health-records（record_type = daily_plan）。
+    /// 离线不发请求；归档失败静默，绝不影响本地计划状态。
+    private func archiveIfCompleted() {
+        guard AppConfiguration.useRemoteAPI, let plan, plan.completed else { return }
+        let pid = PatientContext.effectiveID(auth)
+        let title = plan.title
+        let time = plan.time
+        let detail = plan.detail
+        Task { @MainActor in
+            await HealthSyncService.shared.archive(
+                recordType: "daily_plan",
+                title: title,
+                content: ["time": .string(time), "detail": .string(detail), "completed": .bool(true)],
+                patientID: pid
+            )
+        }
+    }
 }

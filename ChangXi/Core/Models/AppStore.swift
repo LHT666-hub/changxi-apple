@@ -8,6 +8,12 @@ struct HealthReading: Codable, Identifiable {
     var secondary: Double?
     var date: Date = .now
     var note = ""
+    /// 云端健康记录 ID（`POST /api/health-records` 返回）。未同步 / 离线时为 nil。Task #25 新增。
+    var remoteRecordID: String?
+    /// 触发的工作流事件 ID（`POST /api/events` 返回）。未触发 / 离线时为 nil。Task #25 新增。
+    var remoteEventID: String?
+    /// 云端同步状态；nil 表示仅本机记录（从未尝试同步）。Task #25 新增，Optional 以兼容旧本地 JSON。
+    var syncState: SyncState?
     var display: String {
         if let secondary { return "\(Int(value))/\(Int(secondary))" }
         return value.formatted(.number.precision(.fractionLength(kind == .pressure ? 0 : 1)))
@@ -20,6 +26,41 @@ enum MetricKind: String, Codable, CaseIterable, Identifiable {
     var unit: String { switch self { case .pressure: "mmHg"; case .glucose: "mmol/L"; case .weight: "kg" } }
     var icon: String { switch self { case .pressure: "heart.fill"; case .glucose: "drop.fill"; case .weight: "scalemass.fill" } }
     var inputRange: ClosedRange<Double> { switch self { case .pressure: 40...300; case .glucose: 0.5...50; case .weight: 10...400 } }
+}
+
+/// 云端同步状态（Task #25）。随 ``HealthReading`` 持久化到本地 JSON（`String` 原始值）。
+///
+/// 旧版 `changxi-local-demo.json` 无此键 → ``HealthReading/syncState`` 解码为 nil（仅本机记录），
+/// 因此新增该字段**完全向后兼容**。本枚举不依赖 SwiftUI（图标名以字符串提供，由视图层用 `Image(systemName:)` 渲染）。
+enum SyncState: String, Codable {
+    /// 已入队，等待后台上行。
+    case pending
+    /// 正在上行（建记录 / 追加测量 / 触发工作流）。
+    case syncing
+    /// 已成功同步到云端。
+    case synced
+    /// 上行失败，可在明细页重试。
+    case failed
+
+    /// 中文标签。
+    var label: String {
+        switch self {
+        case .pending: return "待同步"
+        case .syncing: return "同步中"
+        case .synced: return "已同步"
+        case .failed: return "同步失败"
+        }
+    }
+
+    /// SF Symbol 图标名（视图层用 `Image(systemName:)` 渲染）。
+    var systemImage: String {
+        switch self {
+        case .pending: return "clock.arrow.circlepath"
+        case .syncing: return "arrow.triangle.2.circlepath"
+        case .synced: return "checkmark.icloud"
+        case .failed: return "exclamationmark.icloud"
+        }
+    }
 }
 
 struct DailyPlan: Codable, Identifiable {
@@ -74,12 +115,29 @@ struct DoseRecord: Codable, Identifiable {
     var taken: Bool
 }
 
+/// 本机导入的报告记录。
+///
+/// 以下云端相关的可选字段（`documentID` / `analysisText` / `findings` / `bpReading`）
+/// 由「拍照识别报告」流程（`ReportImportView`）调用玄同后端 `documents/analyze` 与
+/// `POST /api/v1/documents` 后填充：
+/// - 全部为 Optional，旧版 `changxi-local-demo.json`（缺这些键）仍能正常解码（`decodeIfPresent`）；
+/// - **展示层尚未接线**：`Features/Health/ReportView.swift` 的 `ReportDetailView` /
+///   `ReportGroupView` / `ImportedReportView` 目前仍显示硬编码示例，尚未消费这些字段，
+///   其界面呈现由 Task #25 完成。
 struct ImportedReport: Codable, Identifiable {
     var id = UUID()
     var title: String
     var filename: String
     var date: Date = .now
     var note: String
+    /// 后端归档返回的 `document_id`（`POST /api/v1/documents`）；未归档 / 离线时为 nil。
+    var documentID: String?
+    /// analyze 返回的 `analysis` 全文；未识别时为 nil。
+    var analysisText: String?
+    /// analyze 返回的 `findings` 逐条要点；未识别时为 nil。
+    var findings: [String]?
+    /// bp 模式识别出的血压读数；非血压识别时为 nil。
+    var bpReading: BPReading?
 }
 
 struct LocalState: Codable {
