@@ -3,6 +3,7 @@ import Charts
 
 struct HealthView: View {
     @Environment(AppStore.self) private var store
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var section = "概览"
     var body: some View {
         Page {
@@ -27,15 +28,15 @@ struct HealthView: View {
                 Text("你的健康变化，正在慢慢连成轨迹").font(.headline)
                 Text("规律记录，温柔地照顾自己。\n每个数字，都是一个时刻的观察。").foregroundStyle(CX.muted)
             }
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 145), spacing: 12)], spacing: 12) {
+            LazyVGrid(columns: typeSize.isAccessibilitySize ? [GridItem(.flexible())] : [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                 ForEach(MetricKind.allCases) { kind in
                     NavigationLink { MetricDetailView(kind: kind) } label: {
-                        Card {
-                            Label(kind.rawValue, systemImage: kind.icon).font(.headline)
-                            Text(store.latest(kind)?.display ?? "—").font(.title.bold()).monospacedDigit()
-                            Text(kind.unit).font(.subheadline).foregroundStyle(CX.muted)
-                            Text("最近记录").font(.caption).foregroundStyle(CX.muted)
-                        }
+                        VStack(alignment: .leading, spacing: 10) {
+                            Label(kind.rawValue, systemImage: kind.icon).font(.subheadline)
+                            Text(store.latest(kind)?.display ?? "—").font(.title3.bold()).monospacedDigit().lineLimit(1).minimumScaleFactor(0.75)
+                            Text(kind.unit).font(.caption).foregroundStyle(CX.muted)
+                        }.frame(maxWidth: .infinity, minHeight: 86, alignment: .leading).padding(12)
+                            .background(.white.opacity(0.94), in: RoundedRectangle(cornerRadius: 22))
                     }.buttonStyle(.plain).accessibilityIdentifier("metric-\(kind.rawValue)")
                 }
             }

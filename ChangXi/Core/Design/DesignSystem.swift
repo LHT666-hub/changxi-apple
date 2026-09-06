@@ -17,7 +17,7 @@ struct MoonBackground: View {
             LinearGradient(colors: [CX.mist, Color(red: 0.97, green: 0.98, blue: 1)], startPoint: .topLeading, endPoint: .bottomTrailing)
             if illustrated {
                 Image("MoonGarden").resizable().scaledToFill().frame(height: 620).clipped()
-                    .mask(LinearGradient(stops: [.init(color: .white, location: 0), .init(color: .white.opacity(0.85), location: 0.48), .init(color: .clear, location: 1)], startPoint: .top, endPoint: .bottom))
+                    .mask(LinearGradient(stops: [.init(color: .white, location: 0), .init(color: .white.opacity(0.85), location: 0.48), .init(color: .clear, location: 1)], startPoint: .top, endPoint: .bottom)).offset(y: 54)
                 LinearGradient(colors: [.white.opacity(0.62), .white.opacity(0.15), .clear], startPoint: .topLeading, endPoint: .bottomTrailing).frame(height: 350)
             }
         }.ignoresSafeArea().accessibilityHidden(true)
