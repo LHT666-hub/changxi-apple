@@ -51,6 +51,7 @@ struct ChatView: View {
         }
         .background { MoonBackground(illustrated: true) }.foregroundStyle(CX.ink)
         .navigationTitle("告诉常曦").navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(CX.mist.opacity(0.95), for: .navigationBar).toolbarBackground(.visible, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) { Button("关闭") { speech.stop(); activeRequest = nil; dismiss() } }
             ToolbarItem(placement: .topBarTrailing) { Button { showHistory = true } label: { Image(systemName: "clock.arrow.circlepath").frame(width: 44, height: 44) }.accessibilityLabel("对话历史") }

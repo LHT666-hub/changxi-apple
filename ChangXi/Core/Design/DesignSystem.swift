@@ -18,6 +18,7 @@ struct MoonBackground: View {
             if illustrated {
                 Image("MoonGarden").resizable().scaledToFill().frame(height: 620).clipped()
                     .mask(LinearGradient(stops: [.init(color: .white, location: 0), .init(color: .white.opacity(0.85), location: 0.48), .init(color: .clear, location: 1)], startPoint: .top, endPoint: .bottom))
+                LinearGradient(colors: [.white.opacity(0.62), .white.opacity(0.15), .clear], startPoint: .topLeading, endPoint: .bottomTrailing).frame(height: 350)
             }
         }.ignoresSafeArea().accessibilityHidden(true)
     }
@@ -31,6 +32,8 @@ struct Page<Content: View>: View {
             .background { MoonBackground(illustrated: illustrated) }
             .foregroundStyle(CX.ink)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(CX.mist.opacity(0.95), for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
     }
 }
 

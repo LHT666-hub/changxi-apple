@@ -68,7 +68,9 @@ struct MoonPoolView: View {
             let scale = (0.1 + phase * 0.9) * pulse
             let rect = CGRect(x: center.x - width * scale / 2, y: center.y - height * scale / 2, width: width * scale, height: height * scale)
             let opacity = still ? 0.28 : (1 - phase) * (state == .listening ? 0.9 : 0.65)
-            context.stroke(Path(ellipseIn: rect), with: .color(.white.opacity(opacity)), lineWidth: state == .listening ? 1.5 + amplitude * 1.8 : 1.4)
+            var glow = context
+            glow.addFilter(.shadow(color: .white.opacity(opacity), radius: 4))
+            glow.stroke(Path(ellipseIn: rect), with: .linearGradient(Gradient(colors: [.white.opacity(opacity), Color(red: 0.64, green: 0.85, blue: 1).opacity(opacity * 0.8), .white.opacity(opacity)]), startPoint: CGPoint(x: rect.minX, y: rect.minY), endPoint: CGPoint(x: rect.maxX, y: rect.maxY)), lineWidth: state == .listening ? 1.5 + amplitude * 1.8 : 1.4)
         }
         if state == .success {
             let p = min(t / 2.4, 1)

@@ -58,7 +58,8 @@ final class FlowTests: XCTestCase {
         capture("11-booking-saved")
         app.buttons["查看服务记录"].tap()
         app.buttons["取消意向"].firstMatch.tap()
-        app.buttons["取消意向"].lastMatch.tap()
+        let cancelButtons = app.buttons.matching(NSPredicate(format: "label == %@", "取消意向"))
+        cancelButtons.element(boundBy: cancelButtons.count - 1).tap()
         XCTAssertTrue(app.staticTexts["已取消本地意向"].waitForExistence(timeout: 5))
     }
     func testLargeTextAndLandscape() {
@@ -75,6 +76,8 @@ final class FlowTests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
     }
     private func capture(_ name: String) {
+        // Accessibility updates precede the end of native tab/navigation transitions.
+        Thread.sleep(forTimeInterval: 0.8)
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         attachment.name = name
         attachment.lifetime = .keepAlways
