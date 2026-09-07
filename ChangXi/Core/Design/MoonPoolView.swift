@@ -169,9 +169,9 @@ struct MoonPoolView: View {
             drawPool(context: &context, size: size, time: time)
         }
         .frame(maxWidth: 520)
-        .frame(height: compact ? 92 : 142)
+        .frame(height: compact ? 68 : 98)
         .padding(.horizontal, compact ? 6 : 12)
-        .offset(y: compact ? -4 : -8)
+        .offset(y: compact ? 14 : 24)
         .allowsHitTesting(false)
     }
 
@@ -237,7 +237,7 @@ struct MoonPoolView: View {
     private func drawPool(context: inout GraphicsContext, size: CGSize, time: TimeInterval) {
         let center = CGPoint(x: size.width / 2, y: size.height * 0.52)
         let poolWidth = size.width * 0.94
-        let poolHeight = size.height * 0.70
+        let poolHeight = size.height * 0.58
         let base = CGRect(
             x: center.x - poolWidth / 2,
             y: center.y - poolHeight / 2,

@@ -106,8 +106,10 @@ final class FlowTests: XCTestCase {
         let summon = app.buttons["global-assistant"]
         XCTAssertTrue(summon.waitForExistence(timeout: 5))
         summon.tap()
-        let input = app.textFields["chat-input"]
-        XCTAssertTrue(input.waitForExistence(timeout: 5))
+        let chatField = app.textFields["chat-input"]
+        let chatTextView = app.textViews["chat-input"]
+        XCTAssertTrue(chatField.waitForExistence(timeout: 5) || chatTextView.waitForExistence(timeout: 5))
+        let input = chatField.exists ? chatField : chatTextView
         input.tap()
         input.typeText("晨起血压 123/77 mmHg")
         app.buttons["send-chat"].tap()

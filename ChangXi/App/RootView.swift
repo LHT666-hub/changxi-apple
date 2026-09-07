@@ -3,6 +3,7 @@ import SwiftUI
 struct RootView: View {
     @State private var store = AppStore()
     @State private var assistant = AssistantCoordinator()
+    @State private var selectedTab = RootTab.home
     /// 认证会话：与 `store` 同为 `@MainActor @Observable`，在此创建并注入环境，
     /// 供 `DemoAuthView` / `ChatView` / `ProfileView` 等下游视图通过
     /// `@Environment(AuthSession.self)` 读取。
@@ -14,21 +15,24 @@ struct RootView: View {
         Group {
             if store.data.onboarded {
                 ZStack(alignment: .bottomTrailing) {
-                    TabView {
-                        Tab("首页", systemImage: "house") {
+                    TabView(selection: $selectedTab) {
+                        Tab("首页", systemImage: "house", value: RootTab.home) {
                             NavigationStack { HomeView() }
                         }
-                        Tab("健康", systemImage: "heart.text.square") {
+                        Tab("健康", systemImage: "heart.text.square", value: RootTab.health) {
                             NavigationStack { HealthView() }
                         }
-                        Tab("服务", systemImage: "cross.case") {
+                        Tab("服务", systemImage: "cross.case", value: RootTab.services) {
                             NavigationStack { ServicesView() }
                         }
-                        Tab("我的", systemImage: "person.crop.circle") {
+                        Tab("我的", systemImage: "person.crop.circle", value: RootTab.profile) {
                             NavigationStack { ProfileView() }
                         }
                     }
-                    .cxAdaptiveTabBar()
+                    .toolbarVisibility(.hidden, for: .tabBar)
+                    .safeAreaInset(edge: .bottom, spacing: 0) {
+                        PersistentTabBar(selection: $selectedTab)
+                    }
 
                     if assistant.registeredContext == nil {
                         Button { assistant.presentGeneral() } label: {
@@ -42,7 +46,7 @@ struct RootView: View {
                         .accessibilityLabel("召唤常曦")
                         .accessibilityIdentifier("global-assistant")
                         .padding(.trailing, 16)
-                        .padding(.bottom, 68)
+                        .padding(.bottom, 86)
                     }
                 }
                 .fullScreenCover(isPresented: $assistant.generalPresented) {
@@ -81,6 +85,57 @@ struct RootView: View {
                     .background(.yellow.opacity(0.28))
             }
         }
+    }
+}
+
+private enum RootTab: String, CaseIterable, Identifiable {
+    case home = "首页"
+    case health = "健康"
+    case services = "服务"
+    case profile = "我的"
+
+    var id: Self { self }
+    var symbol: String {
+        switch self {
+        case .home: "house"
+        case .health: "heart.text.square"
+        case .services: "cross.case"
+        case .profile: "person.crop.circle"
+        }
+    }
+}
+
+private struct PersistentTabBar: View {
+    @Binding var selection: RootTab
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(RootTab.allCases) { tab in
+                Button { selection = tab } label: {
+                    VStack(spacing: 3) {
+                        Image(systemName: selection == tab ? "\(tab.symbol).fill" : tab.symbol)
+                            .font(.system(size: 17, weight: .medium))
+                            .symbolRenderingMode(.hierarchical)
+                        Text(tab.rawValue).font(.caption2.weight(.semibold))
+                    }
+                    .foregroundStyle(selection == tab ? CX.blue : CX.muted)
+                    .frame(maxWidth: .infinity, minHeight: 48)
+                    .background(selection == tab ? CX.blue.opacity(0.10) : .clear, in: Capsule())
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(tab.rawValue)
+                .accessibilityAddTraits(selection == tab ? .isSelected : [])
+            }
+        }
+        .padding(6)
+        .frame(maxWidth: 460)
+        .background(.regularMaterial, in: Capsule())
+        .overlay { Capsule().strokeBorder(CX.separator.opacity(0.16), lineWidth: 0.5) }
+        .shadow(color: .black.opacity(0.08), radius: 18, y: 8)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity)
     }
 }
 
