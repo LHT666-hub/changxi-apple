@@ -58,24 +58,31 @@ struct MoonPoolView: View {
     }
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: paused)) { timeline in
-            let time = paused ? 0 : timeline.date.timeIntervalSince(entered)
+        ZStack(alignment: .bottom) {
+            TimelineView(.animation(minimumInterval: 1.0 / 30, paused: paused)) { timeline in
+                let time = paused ? 0 : timeline.date.timeIntervalSince(entered)
 
-            ZStack(alignment: .bottom) {
-                ambientGlow(time: time)
-                pool(time: time)
-
-                if character {
-                    characterView(time: time)
+                ZStack {
+                    celestialMotes(time: time)
+                    secondaryBloom(time: time)
+                    ambientGlow(time: time)
+                    pool(time: time)
                 }
+            }
 
-                if state == .notification || state == .doctorReply {
+            if character {
+                characterView
+            }
+
+            if state == .notification || state == .doctorReply {
+                TimelineView(.animation(minimumInterval: 1.0 / 20, paused: paused)) { timeline in
+                    let time = paused ? 0 : timeline.date.timeIntervalSince(entered)
                     notificationLights(time: time)
                 }
-
-                MoonStatusPill(state: state, reduceTransparency: reduceTransparency)
-                    .padding(.bottom, compact ? 4 : 12)
             }
+
+            MoonStatusPill(state: state, reduceTransparency: reduceTransparency)
+                .padding(.bottom, compact ? 4 : 12)
         }
         .frame(height: compact ? 188 : 292)
         .accessibilityElement(children: .ignore)
@@ -85,12 +92,67 @@ struct MoonPoolView: View {
         }
     }
 
+    private func celestialMotes(time: TimeInterval) -> some View {
+        Canvas { context, size in
+            let motes = compact ? 5 : 9
+            for index in 0..<motes {
+                let seed = Double(index + 1)
+                let orbit = time * (0.10 + seed * 0.006) + seed * 1.71
+                let x = size.width * (0.18 + 0.64 * normalizedSine(seed * 2.13))
+                    + sin(orbit) * (compact ? 5 : 9)
+                let y = size.height * (0.14 + 0.48 * normalizedSine(seed * 3.07))
+                    + cos(orbit * 0.82) * (compact ? 3 : 6)
+                let pulse = paused ? 0.42 : 0.30 + Double(normalizedSine(time * 0.9 + seed)) * 0.38
+                let diameter = compact ? 1.8 : 2.4 + CGFloat(index % 3) * 0.45
+                let rect = CGRect(
+                    x: x - diameter / 2,
+                    y: y - diameter / 2,
+                    width: diameter,
+                    height: diameter
+                )
+
+                var mote = context
+                mote.addFilter(.shadow(color: state.accent.opacity(pulse), radius: 4))
+                mote.fill(Path(ellipseIn: rect), with: .color(.white.opacity(pulse)))
+            }
+        }
+        .allowsHitTesting(false)
+    }
+
+    private func secondaryBloom(time: TimeInterval) -> some View {
+        let drift = paused ? 0 : sin(time * 0.24) * (compact ? 5 : 9)
+        let scale = paused ? 1 : 1 + sin(time * 0.38 + 1.4) * 0.035
+
+        return Ellipse()
+            .fill(
+                RadialGradient(
+                    colors: [
+                        .white.opacity(reduceTransparency ? 0.05 : 0.19),
+                        CX.moonlight.opacity(reduceTransparency ? 0.02 : 0.10),
+                        .clear
+                    ],
+                    center: .center,
+                    startRadius: 0,
+                    endRadius: compact ? 84 : 132
+                )
+            )
+            .frame(width: compact ? 190 : 300, height: compact ? 108 : 170)
+            .scaleEffect(scale)
+            .offset(x: drift, y: compact ? -14 : -22)
+            .blendMode(.plusLighter)
+            .allowsHitTesting(false)
+    }
     private func ambientGlow(time: TimeInterval) -> some View {
-        let pulse = paused ? 1 : 1 + sin(time * 0.7) * 0.025
+        let pulse = paused ? 1 : 1 + sin(time * 0.55) * 0.032
         return Circle()
             .fill(
                 RadialGradient(
-                    colors: [state.accent.opacity(0.22), state.accent.opacity(0.06), .clear],
+                    colors: [
+                        .white.opacity(reduceTransparency ? 0.04 : 0.16),
+                        state.accent.opacity(reduceTransparency ? 0.08 : 0.24),
+                        state.accent.opacity(0.05),
+                        .clear
+                    ],
                     center: .center,
                     startRadius: 2,
                     endRadius: compact ? 116 : 178
@@ -113,18 +175,48 @@ struct MoonPoolView: View {
         .allowsHitTesting(false)
     }
 
-    private func characterView(time: TimeInterval) -> some View {
-        let restingOffset = paused ? 0 : sin(time * 0.72) * 1.5
-        let stateRotation: Double = state == .listening ? 1.4 : state == .thinking ? 2.2 : 0
-
-        return Image(decorative: "ChangXiCharacter")
+    private var characterView: some View {
+        Image(decorative: "ChangXiCharacter")
             .resizable()
             .scaledToFit()
             .frame(height: compact ? 142 : 226)
-            .rotationEffect(.degrees(stateRotation), anchor: .bottom)
-            .offset(x: compact ? -4 : -14, y: (compact ? -34 : -55) + restingOffset)
-            .shadow(color: state.accent.opacity(0.14), radius: 18, y: 10)
-            .animation(reduceMotion ? nil : .spring(duration: 0.42, bounce: 0.12), value: state)
+            .phaseAnimator(reduceMotion ? [CharacterRestPhase.still] : CharacterRestPhase.allCases) { content, phase in
+                content
+                    .scaleEffect(x: phase.scaleX, y: phase.scaleY, anchor: .bottom)
+                    .rotationEffect(.degrees(phase.rotation), anchor: .bottom)
+                    .offset(y: phase.offset)
+            } animation: { phase in
+                phase.animation
+            }
+            .keyframeAnimator(
+                initialValue: CharacterResponse(),
+                trigger: reduceMotion ? MoonPoolState.idle : state
+            ) { content, value in
+                content
+                    .scaleEffect(value.scale, anchor: .bottom)
+                    .rotationEffect(.degrees(value.rotation), anchor: .bottom)
+                    .offset(x: value.x, y: value.y)
+            } keyframes: { _ in
+                KeyframeTrack(\.scale) {
+                    CubicKeyframe(state.response.scale, duration: 0.12)
+                    SpringKeyframe(1, duration: 0.36)
+                }
+                KeyframeTrack(\.rotation) {
+                    CubicKeyframe(state.response.rotation, duration: 0.14)
+                    SpringKeyframe(0, duration: 0.38)
+                }
+                KeyframeTrack(\.x) {
+                    CubicKeyframe(state.response.x, duration: 0.11)
+                    SpringKeyframe(0, duration: 0.34)
+                }
+                KeyframeTrack(\.y) {
+                    CubicKeyframe(state.response.y, duration: 0.14)
+                    SpringKeyframe(0, duration: 0.38)
+                }
+            }
+            .offset(x: compact ? -4 : -14, y: compact ? -34 : -55)
+            .shadow(color: .white.opacity(reduceTransparency ? 0.04 : 0.32), radius: 7, y: -2)
+            .shadow(color: state.accent.opacity(0.18), radius: 20, y: 11)
             .allowsHitTesting(false)
     }
 
@@ -179,6 +271,22 @@ struct MoonPoolView: View {
             lineWidth: 0.8
         )
 
+        let highlight = CGRect(
+            x: base.minX + base.width * 0.12,
+            y: base.minY + base.height * 0.05,
+            width: base.width * 0.76,
+            height: base.height * 0.34
+        )
+        context.stroke(
+            Path(ellipseIn: highlight),
+            with: .linearGradient(
+                Gradient(colors: [.clear, .white.opacity(0.64), .clear]),
+                startPoint: CGPoint(x: highlight.minX, y: highlight.midY),
+                endPoint: CGPoint(x: highlight.maxX, y: highlight.midY)
+            ),
+            lineWidth: 1.1
+        )
+
         let speed = state == .listening ? 0.42 : state == .thinking ? 0.20 : 0.11
         let waveCount = state == .quietAlert ? 2 : 5
         for index in 0..<waveCount {
@@ -199,15 +307,113 @@ struct MoonPoolView: View {
             wave.addFilter(.shadow(color: .white.opacity(opacity * 0.8), radius: 5))
             wave.stroke(
                 Path(ellipseIn: rect),
-                with: .color(.white.opacity(opacity)),
+                with: .linearGradient(
+                    Gradient(colors: [
+                        state.accent.opacity(opacity * 0.32),
+                        .white.opacity(opacity),
+                        state.accent.opacity(opacity * 0.18)
+                    ]),
+                    startPoint: CGPoint(x: rect.minX, y: rect.midY),
+                    endPoint: CGPoint(x: rect.maxX, y: rect.midY)
+                ),
                 lineWidth: state == .listening ? 1.2 + amplitude * 1.6 : 1
             )
         }
+
+        let glintTravel = paused ? 0.34 : normalizedSine(time * 0.45)
+        let glintX = base.minX + base.width * (0.22 + glintTravel * 0.56)
+        let glintRect = CGRect(x: glintX - 2, y: base.minY + base.height * 0.19, width: 4, height: 4)
+        var glint = context
+        glint.addFilter(.shadow(color: .white.opacity(0.85), radius: 6))
+        glint.fill(Path(ellipseIn: glintRect), with: .color(.white.opacity(paused ? 0.38 : 0.74)))
 
         if state == .success {
             let progress = min(time / 1.6, 1)
             let ring = base.insetBy(dx: (1 - progress) * poolWidth / 2, dy: (1 - progress) * poolHeight / 2)
             context.stroke(Path(ellipseIn: ring), with: .color(CX.teal.opacity(1 - progress)), lineWidth: 2.5)
+        }
+    }
+
+    private func normalizedSine(_ value: Double) -> CGFloat {
+        CGFloat((sin(value) + 1) / 2)
+    }
+}
+
+private enum CharacterRestPhase: CaseIterable {
+    case still, inhale, hover, exhale
+
+    var offset: CGFloat {
+        switch self {
+        case .still: 0
+        case .inhale: -1.5
+        case .hover: -3.5
+        case .exhale: -1
+        }
+    }
+
+    var scaleX: CGFloat {
+        switch self {
+        case .still: 1
+        case .inhale: 0.997
+        case .hover: 1.002
+        case .exhale: 1
+        }
+    }
+
+    var scaleY: CGFloat {
+        switch self {
+        case .still: 1
+        case .inhale: 1.006
+        case .hover: 1.011
+        case .exhale: 1.003
+        }
+    }
+
+    var rotation: Double {
+        switch self {
+        case .still: 0
+        case .inhale: -0.22
+        case .hover: 0.26
+        case .exhale: 0.08
+        }
+    }
+
+    var animation: Animation {
+        switch self {
+        case .still: .easeInOut(duration: 0.9)
+        case .inhale: .easeInOut(duration: 1.35)
+        case .hover: .easeInOut(duration: 1.65)
+        case .exhale: .easeInOut(duration: 1.2)
+        }
+    }
+}
+
+private struct CharacterResponse {
+    var scale: CGFloat = 1
+    var rotation: Double = 0
+    var x: CGFloat = 0
+    var y: CGFloat = 0
+}
+
+private extension MoonPoolState {
+    var response: CharacterResponse {
+        switch self {
+        case .idle:
+            CharacterResponse()
+        case .listening:
+            CharacterResponse(scale: 1.012, rotation: -1.4, x: -1, y: -2)
+        case .thinking:
+            CharacterResponse(scale: 1.008, rotation: 1.8, x: 2, y: -1)
+        case .responding:
+            CharacterResponse(scale: 1.022, rotation: -0.6, x: -1, y: -3)
+        case .success:
+            CharacterResponse(scale: 1.04, rotation: 0, x: 0, y: -5)
+        case .notification:
+            CharacterResponse(scale: 1.018, rotation: -1.8, x: -3, y: -2)
+        case .doctorReply:
+            CharacterResponse(scale: 1.026, rotation: 1.3, x: 2, y: -3)
+        case .quietAlert:
+            CharacterResponse(scale: 0.995, rotation: 0, x: 0, y: 1)
         }
     }
 }
@@ -226,6 +432,18 @@ private struct MoonStatusPill: View {
             .contentTransition(.symbolEffect(.replace))
             .symbolEffect(.bounce, value: state)
             .animation(.snappy(duration: 0.28), value: state)
+            .sensoryFeedback(state.feedback, trigger: state)
+    }
+}
+
+private extension MoonPoolState {
+    var feedback: SensoryFeedback {
+        switch self {
+        case .success: .success
+        case .quietAlert: .warning
+        case .notification, .doctorReply: .impact(flexibility: .soft)
+        default: .selection
+        }
     }
 }
 
