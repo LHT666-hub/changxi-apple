@@ -467,9 +467,16 @@ struct RhythmView: View {
                     .contentTransition(.numericText(value: Double(completed)))
             }
 
-            ProgressView(value: progress)
-                .tint(CX.blue)
-                .animation(.spring(duration: 0.42, bounce: 0.12), value: completed)
+            HStack(spacing: 14) {
+                Image(systemName: progressSymbol)
+                    .font(.system(size: 32, weight: .light))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(CX.blue)
+                    .contentTransition(.symbolEffect(.replace))
+                ProgressView(value: progress)
+                    .tint(CX.blue)
+                    .animation(.spring(duration: 0.42, bounce: 0.12), value: completed)
+            }
 
             Text(completed == total && total > 0 ? "今天的安排都完成了" : "不必追赶，按自己的节奏来")
                 .font(.subheadline)
@@ -477,5 +484,15 @@ struct RhythmView: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("今日计划，已完成\(completed)项，共\(total)项")
+    }
+
+    private var progressSymbol: String {
+        switch progress {
+        case ..<0.13: "moonphase.new.moon"
+        case ..<0.38: "moonphase.waxing.crescent"
+        case ..<0.63: "moonphase.first.quarter"
+        case ..<0.88: "moonphase.waxing.gibbous"
+        default: "moonphase.full.moon"
+        }
     }
 }

@@ -49,6 +49,12 @@ struct PlanDetailView: View {
         .onAppear { note = store.data.journal }
         .sheet(isPresented: $showRecord) { NavigationStack { RecordReadingView(kind: .pressure, onSave: { if plan?.completed == false { complete() } }) } }
         .confirmationDialog("撤销这项计划的完成记录？", isPresented: $showUndo, titleVisibility: .visible) { Button("撤销完成", role: .destructive) { store.togglePlan(planID) } }
+        .assistantFormContext(title: "\(plan?.title ?? "计划")备注", draft: note) { value in
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return false }
+            note = trimmed
+            return true
+        }
     }
     private func complete() {
         store.togglePlan(planID)

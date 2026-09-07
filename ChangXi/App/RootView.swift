@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RootView: View {
     @State private var store = AppStore()
+    @State private var assistant = AssistantCoordinator()
     /// 认证会话：与 `store` 同为 `@MainActor @Observable`，在此创建并注入环境，
     /// 供 `DemoAuthView` / `ChatView` / `ProfileView` 等下游视图通过
     /// `@Environment(AuthSession.self)` 读取。
@@ -11,27 +12,49 @@ struct RootView: View {
     var body: some View {
         Group {
             if store.data.onboarded {
-                TabView {
-                    Tab("首页", systemImage: "house.fill") {
-                        NavigationStack { HomeView() }
+                ZStack(alignment: .bottomTrailing) {
+                    TabView {
+                        Tab("首页", systemImage: "house") {
+                            NavigationStack { HomeView() }
+                        }
+                        Tab("健康", systemImage: "heart.text.square") {
+                            NavigationStack { HealthView() }
+                        }
+                        Tab("服务", systemImage: "cross.case") {
+                            NavigationStack { ServicesView() }
+                        }
+                        Tab("我的", systemImage: "person.crop.circle") {
+                            NavigationStack { ProfileView() }
+                        }
                     }
-                    Tab("健康", systemImage: "heart.text.square.fill") {
-                        NavigationStack { HealthView() }
+                    .cxAdaptiveTabBar()
+
+                    Button { assistant.present() } label: {
+                        Label("常曦", systemImage: "moonphase.waxing.crescent")
+                            .font(.subheadline.weight(.semibold))
+                            .padding(.horizontal, 14)
+                            .frame(minHeight: 44)
+                            .cxInteractiveGlass(cornerRadius: 22)
                     }
-                    Tab("服务", systemImage: "cross.case.fill") {
-                        NavigationStack { ServicesView() }
-                    }
-                    Tab("我的", systemImage: "person.crop.circle.fill") {
-                        NavigationStack { ProfileView() }
-                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(assistant.registeredContext == nil ? "召唤常曦" : "召唤常曦帮助填写\(assistant.registeredContext?.title ?? "当前表单")")
+                    .accessibilityIdentifier("global-assistant")
+                    .padding(.trailing, 16)
+                    .padding(.bottom, 68)
                 }
-                .cxAdaptiveTabBar()
+                .fullScreenCover(isPresented: $assistant.isPresented) {
+                    NavigationStack { ChatView(initialPrompt: assistant.initialPrompt) }
+                        .environment(store)
+                        .environment(auth)
+                        .environment(assistant)
+                }
             } else {
                 NavigationStack { WelcomeView() }
             }
         }
         .environment(store)
         .environment(auth)
+        .environment(assistant)
         .tint(CX.blue)
         .transformEnvironment(\.dynamicTypeSize) { size in
             if store.data.largeText && size < .xxxLarge {

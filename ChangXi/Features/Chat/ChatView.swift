@@ -1,9 +1,11 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ChatView: View {
     var initialPrompt = ""
     @Environment(AppStore.self) private var store
     @Environment(AuthSession.self) private var auth
+    @Environment(AssistantCoordinator.self) private var assistant
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -12,6 +14,9 @@ struct ChatView: View {
     @State private var state = MoonPoolState.idle
     @State private var showCamera = false
     @State private var showHistory = false
+    @State private var showFiles = false
+    @State private var pendingAttachment: String?
+    @State private var lastUserText = ""
     @State private var activeRequest: UUID?
     @State private var pendingText = ""
     @State private var error: String?
@@ -35,6 +40,19 @@ struct ChatView: View {
                 ScrollView {
                     VStack(spacing: 20) {
                         MoonPoolView(state: speech.isRecording ? .listening : state, amplitude: speech.level, compact: !store.data.messages.isEmpty)
+                        if let context = assistant.activeContext {
+                            Card {
+                                Label("正在帮你填写\(context.title)", systemImage: "wand.and.stars")
+                                    .font(.headline)
+                                Text("可以用语音或文字告诉我，填回后会留在原页面供你核对，不会自动提交。")
+                                    .font(.subheadline)
+                                    .foregroundStyle(CX.muted)
+                                Button("填回\(context.title)") { fillBack() }
+                                    .buttonStyle(PrimaryButton())
+                                    .disabled(lastUserText.isEmpty && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                                    .accessibilityIdentifier("fill-back")
+                            }
+                        }
                         if store.data.messages.isEmpty && !isStreaming {
                             Card {
                                 Text("有什么想和我说的？").font(.title2.bold())
@@ -98,8 +116,21 @@ struct ChatView: View {
         }
         .sheet(isPresented: $showCamera) { NavigationStack { ReportImportView(onAttach: { text = $0; keyboard = true }) } }
         .sheet(isPresented: $showHistory) { NavigationStack { ChatHistoryView() } }
+        .fileImporter(isPresented: $showFiles, allowedContentTypes: [.pdf, .plainText], allowsMultipleSelection: false) { result in
+            switch result {
+            case .success(let urls):
+                guard let url = urls.first else { return }
+                pendingAttachment = url.lastPathComponent
+                if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    text = "我想请你帮我看看这个附件"
+                }
+                keyboard = true
+            case .failure:
+                error = "没有读取到文件，请重新选择。"
+            }
+        }
         .onAppear { if !initialPrompt.isEmpty { text = initialPrompt } }
-        .onDisappear { speech.stop(); cancelRequest() }
+        .onDisappear { speech.stop(); cancelRequest(); assistant.finish() }
         .onChange(of: scenePhase) { _, phase in if phase != .active { speech.stop(); if isBusy { cancelRequest() } } }
         .onChange(of: speech.transcript) { _, transcript in text = transcript }
         .task(id: activeRequest) {
@@ -111,21 +142,61 @@ struct ChatView: View {
     // MARK: - 输入区
 
     private var composer: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 8) {
             if speech.isRecording { Text("正在听 · 停止后可修改文字再发送").font(.caption).foregroundStyle(CX.muted) }
+            if let pendingAttachment {
+                HStack(spacing: 8) {
+                    Image(systemName: "doc")
+                    Text(pendingAttachment).lineLimit(1)
+                    Spacer()
+                    Button { self.pendingAttachment = nil } label: { Image(systemName: "xmark.circle.fill") }
+                        .accessibilityLabel("移除附件")
+                }
+                .font(.caption)
+                .foregroundStyle(CX.muted)
+                .padding(.horizontal, 12)
+            }
             CXGlassGroup(spacing: 10) {
-                HStack(alignment: .bottom, spacing: 10) {
+                HStack(alignment: .bottom, spacing: 8) {
+                    Menu {
+                        Button { speech.stop(); showCamera = true } label: {
+                            Label("拍照或选择照片", systemImage: "camera")
+                        }
+                        Button { speech.stop(); showFiles = true } label: {
+                            Label("选择 PDF 或文本", systemImage: "doc.badge.plus")
+                        }
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.headline.weight(.medium))
+                            .frame(width: 44, height: 44)
+                            .cxInteractiveGlassCircle()
+                    }
+                    .accessibilityLabel("添加照片或文件")
+
                     TextField("输入想说的话…", text: $text, axis: .vertical)
                         .lineLimit(1...5)
                         .focused($keyboard)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 12)
-                        .cxInteractiveGlass(cornerRadius: 16)
+                        .padding(.horizontal, 12)
+                        .frame(minHeight: 44)
                         .accessibilityIdentifier("chat-input")
+
+                    Button {
+                        if speech.isRecording || speech.isStarting { speech.stop() }
+                        else { keyboard = false; Task { await speech.start() } }
+                    } label: {
+                        Image(systemName: speech.isRecording ? "stop.fill" : "mic")
+                            .font(.headline.weight(.medium))
+                            .frame(width: 44, height: 44)
+                            .foregroundStyle(speech.isRecording ? CX.coral : CX.ink)
+                            .cxInteractiveGlassCircle()
+                    }
+                    .disabled(isBusy)
+                    .accessibilityLabel(speech.isRecording ? "停止录音" : "语音输入")
+
                     Button(action: send) {
                         Image(systemName: isBusy ? "stop.fill" : "arrow.up")
                             .font(.headline.weight(.bold))
-                            .frame(width: 48, height: 48)
+                            .frame(width: 44, height: 44)
                             .foregroundStyle(.white)
                             .cxProminentGlassCircle()
                     }
@@ -133,20 +204,8 @@ struct ChatView: View {
                     .accessibilityLabel(isBusy ? "停止" : "发送")
                     .accessibilityIdentifier("send-chat")
                 }
-            }
-            HStack(spacing: 12) {
-                Button {
-                    if speech.isRecording || speech.isStarting { speech.stop() }
-                    else { keyboard = false; Task { await speech.start() } }
-                } label: { Label(speech.isStarting ? "正在开启…" : speech.isRecording ? "停止录音" : "点击说话", systemImage: speech.isRecording ? "stop.fill" : "mic.fill") }.buttonStyle(PrimaryButton()).disabled(isBusy)
-                Button { speech.stop(); showCamera = true } label: {
-                    Image(systemName: "camera.fill")
-                        .font(.title3.weight(.semibold))
-                        .symbolRenderingMode(.hierarchical)
-                        .frame(width: 54, height: 52)
-                        .background(CX.raisedSurface, in: .rect(cornerRadius: 16, style: .continuous))
-                }
-                .accessibilityLabel("拍照或选择报告")
+                .padding(6)
+                .cxInteractiveGlass(cornerRadius: 24)
             }
         }
         .frame(maxWidth: 720)
@@ -186,10 +245,27 @@ struct ChatView: View {
         let value = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !value.isEmpty else { return }
         speech.stop()
-        store.data.messages.append(ConversationMessage(isUser: true, text: value))
+        lastUserText = value
+        let outgoing = pendingAttachment.map { "\(value)\n附件：\($0)" } ?? value
+        store.data.messages.append(ConversationMessage(isUser: true, text: outgoing))
+        pendingAttachment = nil
         text = ""; keyboard = false
-        requestReply(value)
+        requestReply(outgoing)
         MoonHaptics.shared.play(enabled: store.data.haptics)
+    }
+
+    private func fillBack() {
+        let value = text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? lastUserText
+            : text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else { return }
+        if assistant.fillActive(with: value) {
+            MoonHaptics.shared.play(success: true, enabled: store.data.haptics)
+            assistant.finish()
+            dismiss()
+        } else {
+            error = "这段内容还不能安全填入当前表单，请只提供一组明确的数值或更具体的说明。"
+        }
     }
 
     private func requestReply(_ value: String) {

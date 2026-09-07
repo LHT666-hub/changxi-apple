@@ -247,6 +247,20 @@ struct RecordReadingView: View {
                 WorkflowProgressView(result: result, onClose: { pendingWorkflow = nil; dismiss() })
             }
         }
+        .assistantFormContext(
+            title: "\(kind.rawValue)记录",
+            draft: [value, secondary, note].filter { !$0.isEmpty }.joined(separator: " / ")
+        ) { input in
+            if kind == .pressure {
+                guard let reading = AssistantFillParser.bloodPressure(from: input) else { return false }
+                value = reading.systolic
+                secondary = reading.diastolic
+                return true
+            }
+            guard let number = AssistantFillParser.singleNumber(from: input, range: kind.inputRange) else { return false }
+            value = number
+            return true
+        }
     }
     private func save() {
         guard let number = Double(value.replacingOccurrences(of: ",", with: ".")), number.isFinite, kind.inputRange.contains(number) else { error = "请检查测量值，输入\(kind.inputRange.lowerBound.formatted())至\(kind.inputRange.upperBound.formatted())之间的数字。"; return }

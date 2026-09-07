@@ -69,4 +69,16 @@ import XCTest
         XCTAssertFalse(FileManager.default.fileExists(atPath: store.reportURL(report).path))
         XCTAssertTrue(AppStore(fileURL: file).data.importedReports.isEmpty)
     }
+
+    func testAssistantFillAcceptsOneClearBloodPressureReading() {
+        let reading = AssistantFillParser.bloodPressure(from: "今天晨起血压 123/77 mmHg")
+        XCTAssertEqual(reading?.systolic, "123")
+        XCTAssertEqual(reading?.diastolic, "77")
+    }
+
+    func testAssistantFillRejectsAmbiguousOrInvalidBloodPressure() {
+        XCTAssertNil(AssistantFillParser.bloodPressure(from: "早上 123/77，晚上 128/80"))
+        XCTAssertNil(AssistantFillParser.bloodPressure(from: "血压 80/120"))
+        XCTAssertNil(AssistantFillParser.bloodPressure(from: "日期 2026/09/07"))
+    }
 }

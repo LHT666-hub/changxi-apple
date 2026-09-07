@@ -135,7 +135,15 @@ struct ServiceDetailView: View {
                 }.buttonStyle(PrimaryButton()).disabled(saved)
                 if saved { Label("尚未提交至医疗机构", systemImage: "checkmark.circle").foregroundStyle(CX.teal); NavigationLink("查看服务记录") { BookingsView() } }
             }
-        }.navigationTitle(service.title)
+        }
+        .navigationTitle(service.title)
+        .assistantFormContext(title: "\(service.title)说明", draft: note) { value in
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return false }
+            note = trimmed
+            saved = false
+            return true
+        }
     }
 }
 
@@ -176,7 +184,15 @@ struct ConsultationView: View {
                 }.buttonStyle(PrimaryButton()).disabled(question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || saved)
                 if saved { NavigationLink("查看我的咨询") { BookingsView() } }
             }
-        }.navigationTitle("家医咨询")
+        }
+        .navigationTitle("家医咨询")
+        .assistantFormContext(title: "咨询草稿", draft: question) { value in
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return false }
+            question = trimmed
+            saved = false
+            return true
+        }
     }
 }
 

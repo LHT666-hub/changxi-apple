@@ -5,7 +5,7 @@ final class FlowTests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing"]
         app.launch()
-        XCTAssertTrue(app.tabBars.buttons["首页"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["首页"].firstMatch.waitForExistence(timeout: 10))
         capture("01-home")
         let openChat = app.buttons["open-chat"]
         openChat.tap()
@@ -28,7 +28,7 @@ final class FlowTests: XCTestCase {
         app.buttons["send-chat"].tap()
         XCTAssertTrue(app.staticTexts["assistant-message-label"].waitForExistence(timeout: 8))
         app.buttons["关闭"].firstMatch.tap()
-        app.tabBars.buttons["健康"].tap()
+        app.buttons["健康"].firstMatch.tap()
         capture("03-health")
         app.segmentedControls.buttons["趋势"].tap()
         capture("04-trends")
@@ -36,9 +36,9 @@ final class FlowTests: XCTestCase {
         capture("05-reports")
         app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "9月5日体检报告")).firstMatch.tap()
         capture("05b-report-detail")
-        app.tabBars.buttons["服务"].tap()
+        app.buttons["服务"].firstMatch.tap()
         capture("06-services")
-        app.tabBars.buttons["我的"].tap()
+        app.buttons["我的"].firstMatch.tap()
         capture("07-profile")
         app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "常曦记忆")).firstMatch.tap()
         capture("08-memory")
@@ -53,7 +53,7 @@ final class FlowTests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing"]
         app.launch()
-        app.tabBars.buttons["健康"].tap()
+        app.buttons["健康"].firstMatch.tap()
         app.buttons["metric-血压"].tap()
         app.buttons["添加血压记录"].tap()
         let primary = app.textFields["reading-primary"]
@@ -63,7 +63,7 @@ final class FlowTests: XCTestCase {
         app.buttons["save-reading"].tap()
         XCTAssertTrue(app.staticTexts["123/77"].waitForExistence(timeout: 5))
         capture("10-record-saved")
-        app.tabBars.buttons["服务"].tap()
+        app.buttons["服务"].firstMatch.tap()
         app.buttons["service-帮预约"].tap()
         app.buttons["保存预约意向"].tap()
         XCTAssertTrue(app.staticTexts["尚未提交至医疗机构"].exists)
@@ -78,14 +78,45 @@ final class FlowTests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--large-text"]
         app.launch()
-        XCTAssertTrue(app.tabBars.buttons["首页"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["首页"].firstMatch.waitForExistence(timeout: 10))
         capture("12-large-text-home")
-        app.tabBars.buttons["健康"].tap()
+        app.buttons["健康"].firstMatch.tap()
         capture("13-large-text-health")
         XCUIDevice.shared.orientation = .landscapeLeft
-        XCTAssertTrue(app.tabBars.buttons["健康"].exists)
+        XCTAssertTrue(app.buttons["健康"].firstMatch.exists)
         capture("14-landscape")
         XCUIDevice.shared.orientation = .portrait
+    }
+
+    func testDoctorReplyAndContextualFill() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing"]
+        app.launch()
+
+        let doctorPool = app.buttons["doctor-reply-pool"]
+        XCTAssertTrue(doctorPool.waitForExistence(timeout: 10))
+        doctorPool.tap()
+        XCTAssertTrue(app.navigationBars["医生回复"].waitForExistence(timeout: 5))
+
+        app.buttons["首页"].firstMatch.tap()
+        app.buttons["健康"].firstMatch.tap()
+        app.buttons["metric-血压"].tap()
+        app.buttons["添加血压记录"].tap()
+
+        let summon = app.buttons["global-assistant"]
+        XCTAssertTrue(summon.waitForExistence(timeout: 5))
+        summon.tap()
+        let input = app.textFields["chat-input"]
+        XCTAssertTrue(input.waitForExistence(timeout: 5))
+        input.tap()
+        input.typeText("晨起血压 123/77 mmHg")
+        app.buttons["send-chat"].tap()
+        let fill = app.buttons["fill-back"]
+        XCTAssertTrue(fill.waitForExistence(timeout: 5))
+        fill.tap()
+
+        XCTAssertEqual(app.textFields["reading-primary"].value as? String, "123")
+        XCTAssertEqual(app.textFields["reading-secondary"].value as? String, "77")
     }
     private func capture(_ name: String) {
         // Accessibility updates precede the end of native tab/navigation transitions.

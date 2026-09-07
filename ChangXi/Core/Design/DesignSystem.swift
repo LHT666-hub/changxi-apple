@@ -318,10 +318,18 @@ extension View {
     @ViewBuilder
     func cxAdaptiveTabBar() -> some View {
         if #available(iOS 26, *) {
-            self.tabBarMinimizeBehavior(.onScrollDown)
+            self.tabBarMinimizeBehavior(.never)
         } else {
             self.toolbarBackground(.visible, for: .tabBar)
         }
+    }
+
+    func assistantFormContext(
+        title: String,
+        draft: String,
+        fill: @escaping @MainActor (String) -> Bool
+    ) -> some View {
+        modifier(AssistantFormContextModifier(title: title, draft: draft, fill: fill))
     }
 
     @ViewBuilder
@@ -342,6 +350,124 @@ extension View {
         } else {
             self.background(.regularMaterial)
         }
+    }
+}
+
+private struct AssistantFormContextModifier: ViewModifier {
+    @Environment(AssistantCoordinator.self) private var assistant
+    @State private var id = UUID()
+    let title: String
+    let draft: String
+    let fill: @MainActor (String) -> Bool
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear { assistant.register(id: id, title: title, draft: draft, fill: fill) }
+            .onChange(of: draft) { _, value in
+                assistant.update(id: id, title: title, draft: value, fill: fill)
+            }
+            .onDisappear { assistant.unregister(id: id) }
+    }
+}
+
+struct LunarPhase {
+    let lunarMonth: Int
+    let lunarDay: Int
+
+    static var today: LunarPhase {
+        let values = Calendar(identifier: .chinese).dateComponents([.month, .day], from: .now)
+        return LunarPhase(lunarMonth: values.month ?? 1, lunarDay: values.day ?? 1)
+    }
+
+    var dateLabel: String {
+        let months = ["正月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "冬月", "腊月"]
+        let days = ["初一", "初二", "初三", "初四", "初五", "初六", "初七", "初八", "初九", "初十", "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十", "廿一", "廿二", "廿三", "廿四", "廿五", "廿六", "廿七", "廿八", "廿九", "三十"]
+        return "\(months[max(0, min(lunarMonth - 1, months.count - 1))])\(days[max(0, min(lunarDay - 1, days.count - 1))])"
+    }
+
+    var phaseName: String {
+        switch lunarDay {
+        case 1...2: "新月"
+        case 3...6: "蛾眉月"
+        case 7...9: "上弦月"
+        case 10...13: "盈凸月"
+        case 14...16: "满月"
+        case 17...21: "亏凸月"
+        case 22...24: "下弦月"
+        default: "残月"
+        }
+    }
+
+    var rhythmLabel: String { lunarDay <= 15 ? "月光渐盈" : "月光渐隐" }
+
+    var symbol: String {
+        switch lunarDay {
+        case 1...2: "moonphase.new.moon"
+        case 3...6: "moonphase.waxing.crescent"
+        case 7...9: "moonphase.first.quarter"
+        case 10...13: "moonphase.waxing.gibbous"
+        case 14...16: "moonphase.full.moon"
+        case 17...21: "moonphase.waning.gibbous"
+        case 22...24: "moonphase.last.quarter"
+        default: "moonphase.waning.crescent"
+        }
+    }
+}
+
+struct MoonPhaseCard: View {
+    private let phase = LunarPhase.today
+
+    var body: some View {
+        HStack(spacing: 16) {
+            Image(systemName: phase.symbol)
+                .font(.system(size: 34, weight: .light))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(CX.blue)
+                .frame(width: 54, height: 54)
+                .background(CX.moonlight.opacity(0.11), in: Circle())
+            VStack(alignment: .leading, spacing: 4) {
+                Text(phase.phaseName).font(.headline)
+                Text("\(phase.dateLabel) · \(phase.rhythmLabel)")
+                    .font(.subheadline)
+                    .foregroundStyle(CX.muted)
+            }
+            Spacer()
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(CX.faint)
+        }
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("今日月相，\(phase.phaseName)，\(phase.dateLabel)，\(phase.rhythmLabel)")
+    }
+}
+
+struct MoonRhythmDetailView: View {
+    private let phase = LunarPhase.today
+
+    var body: some View {
+        Page(illustrated: true) {
+            VStack(spacing: 12) {
+                Image(systemName: phase.symbol)
+                    .font(.system(size: 108, weight: .ultraLight))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(CX.blue)
+                    .shadow(color: CX.moonlight.opacity(0.35), radius: 22)
+                Text(phase.phaseName).font(.largeTitle.weight(.semibold)).fontDesign(.serif)
+                Text("\(phase.dateLabel) · \(phase.rhythmLabel)").foregroundStyle(CX.muted)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+
+            Card {
+                Text("月相节律").font(.title2.weight(.semibold))
+                Text("常曦用月相表达一天一天积累的过程。月光的盈亏只是一种温柔的时间提示，不用于判断健康好坏。")
+                    .lineSpacing(6)
+                NavigationLink("查看今日计划") { PlanView() }
+                    .buttonStyle(PrimaryButton())
+            }
+        }
+        .navigationTitle("今日月相")
     }
 }
 

@@ -77,6 +77,12 @@ struct ReportImportView: View {
             } catch is CancellationError { } catch { self.error = "照片读取失败，请重新选择。" }
         }
         .onChange(of: mode) { _, _ in if preview != nil { readingSaved = false; runAnalysis() } }
+        .assistantFormContext(title: "报告问题", draft: note) { value in
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return false }
+            note = trimmed
+            return true
+        }
     }
 
     // MARK: - 识别结果

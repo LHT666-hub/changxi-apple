@@ -84,6 +84,12 @@ struct MedicationEditor: View {
         }.navigationTitle(medication == nil ? "添加药品" : "修改用药计划")
         .toolbar { ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } } }
         .onAppear { if let medication { name = medication.name; dosage = medication.dosage; instructions = medication.instructions; time = Calendar.current.date(from: DateComponents(hour: medication.hour, minute: medication.minute)) ?? .now } }
+        .assistantFormContext(title: "用药计划备注", draft: instructions) { value in
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return false }
+            instructions = trimmed
+            return true
+        }
     }
 
     /// Task #25：保存用药计划后，尽力归档到云端 health-records（record_type = medication）。

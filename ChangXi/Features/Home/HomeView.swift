@@ -2,8 +2,8 @@ import SwiftUI
 
 struct HomeView: View {
     @Environment(AppStore.self) private var store
+    @Environment(AssistantCoordinator.self) private var assistant
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var showChat = false
     @State private var appeared = false
 
     private var greeting: String {
@@ -21,17 +21,25 @@ struct HomeView: View {
                 HomeHeader(name: store.data.name, greeting: greeting, hasUnreadMessage: !store.data.doctorMessageRead)
                     .entrance(index: 0, appeared: appeared, reduceMotion: reduceMotion)
 
-                MoonPoolView(state: store.data.doctorMessageRead ? .idle : .doctorReply)
+                moonPool
                     .entrance(index: 1, appeared: appeared, reduceMotion: reduceMotion)
 
                 talkButton
                     .entrance(index: 2, appeared: appeared, reduceMotion: reduceMotion)
 
+                NavigationLink { MoonRhythmDetailView() } label: {
+                    MoonPhaseCard()
+                        .padding(16)
+                        .cxInteractiveGlass(cornerRadius: 20)
+                }
+                .buttonStyle(.plain)
+                .entrance(index: 3, appeared: appeared, reduceMotion: reduceMotion)
+
                 SectionEyebrow(title: "今天", action: Date.now.formatted(.dateTime.month().day().weekday(.abbreviated)))
-                    .entrance(index: 3, appeared: appeared, reduceMotion: reduceMotion)
+                    .entrance(index: 4, appeared: appeared, reduceMotion: reduceMotion)
 
                 TodaySummaryCard(nextPlan: nextPlan)
-                    .entrance(index: 4, appeared: appeared, reduceMotion: reduceMotion)
+                    .entrance(index: 5, appeared: appeared, reduceMotion: reduceMotion)
 
                 NavigationLink {
                     PlanView()
@@ -41,11 +49,11 @@ struct HomeView: View {
                     }
                 }
                 .buttonStyle(.plain)
-                .entrance(index: 5, appeared: appeared, reduceMotion: reduceMotion)
+                .entrance(index: 6, appeared: appeared, reduceMotion: reduceMotion)
 
                 DemoLabel()
                     .frame(maxWidth: .infinity)
-                    .entrance(index: 6, appeared: appeared, reduceMotion: reduceMotion)
+                    .entrance(index: 7, appeared: appeared, reduceMotion: reduceMotion)
             }
             .frame(maxWidth: 680)
             .padding(.horizontal, 20)
@@ -56,24 +64,32 @@ struct HomeView: View {
         .background { MoonBackground(illustrated: true) }
         .foregroundStyle(CX.ink)
         .toolbarVisibility(.hidden, for: .navigationBar)
-        .fullScreenCover(isPresented: $showChat) {
-            NavigationStack { ChatView() }
-        }
-        .sensoryFeedback(.impact(weight: .light), trigger: showChat) { _, newValue in
-            newValue
-        }
         .onAppear {
             appeared = true
         }
     }
 
+    @ViewBuilder private var moonPool: some View {
+        if store.data.doctorMessageRead {
+            MoonPoolView(state: .idle)
+        } else {
+            NavigationLink { DoctorMessageView() } label: {
+                MoonPoolView(state: .doctorReply)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("医生有了新回复，点按查看")
+            .accessibilityIdentifier("doctor-reply-pool")
+        }
+    }
+
     private var talkButton: some View {
         Button {
-            showChat = true
+            assistant.presentGeneral()
         } label: {
             HStack(spacing: 14) {
-                Image(systemName: "waveform")
-                    .font(.title2.weight(.semibold))
+                Image(systemName: "waveform.badge.mic")
+                    .font(.title3.weight(.medium))
                     .symbolRenderingMode(.hierarchical)
                 VStack(alignment: .leading, spacing: 3) {
                     Text("和常曦说说")
@@ -83,11 +99,16 @@ struct HomeView: View {
                         .opacity(0.82)
                 }
                 Spacer()
-                Image(systemName: "arrow.up.right")
-                    .font(.subheadline.weight(.semibold))
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(CX.faint)
             }
+            .foregroundStyle(CX.ink)
+            .padding(.horizontal, 17)
+            .frame(minHeight: 64)
+            .cxInteractiveGlass(cornerRadius: 20)
         }
-        .buttonStyle(PrimaryButton())
+        .buttonStyle(.plain)
         .accessibilityIdentifier("open-chat")
     }
 }

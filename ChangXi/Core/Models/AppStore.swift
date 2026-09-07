@@ -1,6 +1,91 @@
 import Foundation
 import Observation
 
+struct AssistantFillContext: Identifiable {
+    let id: UUID
+    var title: String
+    var draft: String
+    let fill: @MainActor (String) -> Bool
+}
+
+@MainActor @Observable
+final class AssistantCoordinator {
+    var registeredContext: AssistantFillContext?
+    var activeContext: AssistantFillContext?
+    var isPresented = false
+
+    func register(id: UUID, title: String, draft: String, fill: @escaping @MainActor (String) -> Bool) {
+        registeredContext = AssistantFillContext(id: id, title: title, draft: draft, fill: fill)
+    }
+
+    func update(id: UUID, title: String, draft: String, fill: @escaping @MainActor (String) -> Bool) {
+        guard registeredContext?.id == id else { return }
+        registeredContext = AssistantFillContext(id: id, title: title, draft: draft, fill: fill)
+    }
+
+    func unregister(id: UUID) {
+        if registeredContext?.id == id { registeredContext = nil }
+    }
+
+    func present() {
+        activeContext = registeredContext
+        isPresented = true
+    }
+
+    func presentGeneral() {
+        activeContext = nil
+        isPresented = true
+    }
+
+    var initialPrompt: String {
+        guard let context = activeContext else { return "" }
+        let draft = context.draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        return draft.isEmpty ? "" : "请帮我完善\(context.title)：\(draft)"
+    }
+
+    func fillActive(with value: String) -> Bool {
+        activeContext?.fill(value) ?? false
+    }
+
+    func finish() {
+        isPresented = false
+        activeContext = nil
+    }
+}
+
+enum AssistantFillParser {
+    static func bloodPressure(from input: String) -> (systolic: String, diastolic: String)? {
+        let normalized = input.replacingOccurrences(of: "／", with: "/")
+        let pattern = #"(?<!\d)(\d{2,3})\s*[/\-]\s*(\d{2,3})(?!\d)"#
+        guard let expression = try? NSRegularExpression(pattern: pattern) else { return nil }
+        let range = NSRange(normalized.startIndex..., in: normalized)
+        let matches = expression.matches(in: normalized, range: range)
+        guard matches.count == 1,
+              let systolicRange = Range(matches[0].range(at: 1), in: normalized),
+              let diastolicRange = Range(matches[0].range(at: 2), in: normalized),
+              let systolic = Int(normalized[systolicRange]),
+              let diastolic = Int(normalized[diastolicRange]),
+              (40...300).contains(systolic),
+              (20...200).contains(diastolic),
+              diastolic < systolic else { return nil }
+        return (String(systolic), String(diastolic))
+    }
+
+    static func singleNumber(from input: String, range: ClosedRange<Double>) -> String? {
+        let pattern = #"(?<!\d)(\d+(?:[.,]\d+)?)(?!\d)"#
+        guard let expression = try? NSRegularExpression(pattern: pattern) else { return nil }
+        let normalized = input.replacingOccurrences(of: ",", with: ".")
+        let sourceRange = NSRange(normalized.startIndex..., in: normalized)
+        let matches = expression.matches(in: normalized, range: sourceRange)
+        guard matches.count == 1,
+              let valueRange = Range(matches[0].range(at: 1), in: normalized),
+              let value = Double(normalized[valueRange]),
+              value.isFinite,
+              range.contains(value) else { return nil }
+        return String(normalized[valueRange])
+    }
+}
+
 struct HealthReading: Codable, Identifiable {
     var id = UUID()
     var kind: MetricKind

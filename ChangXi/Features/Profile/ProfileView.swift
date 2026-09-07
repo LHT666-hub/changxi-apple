@@ -334,7 +334,17 @@ struct HelpView: View {
                 Button(saved ? "已保存反馈草稿" : "保存反馈草稿") { store.data.feedback = feedback; saved = true }.buttonStyle(PrimaryButton()).disabled(feedback.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 ShareLink("分享反馈", item: feedback).disabled(feedback.isEmpty)
             }
-        }.navigationTitle("帮助与反馈").onAppear { feedback = store.data.feedback }.onChange(of: feedback) { _, _ in saved = false }
+        }
+        .navigationTitle("帮助与反馈")
+        .onAppear { feedback = store.data.feedback }
+        .onChange(of: feedback) { _, _ in saved = false }
+        .assistantFormContext(title: "反馈草稿", draft: feedback) { value in
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return false }
+            feedback = trimmed
+            saved = false
+            return true
+        }
     }
 }
 
