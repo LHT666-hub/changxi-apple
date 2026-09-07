@@ -10,6 +10,7 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
+        @Bindable var assistant = assistant
         Group {
             if store.data.onboarded {
                 ZStack(alignment: .bottomTrailing) {
@@ -29,20 +30,22 @@ struct RootView: View {
                     }
                     .cxAdaptiveTabBar()
 
-                    Button { assistant.present() } label: {
-                        Label("常曦", systemImage: "moonphase.waxing.crescent")
-                            .font(.subheadline.weight(.semibold))
-                            .padding(.horizontal, 14)
-                            .frame(minHeight: 44)
-                            .cxInteractiveGlass(cornerRadius: 22)
+                    if assistant.registeredContext == nil {
+                        Button { assistant.presentGeneral() } label: {
+                            Label("常曦", systemImage: "moonphase.waxing.crescent")
+                                .font(.subheadline.weight(.semibold))
+                                .padding(.horizontal, 14)
+                                .frame(minHeight: 44)
+                                .cxInteractiveGlass(cornerRadius: 22)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("召唤常曦")
+                        .accessibilityIdentifier("global-assistant")
+                        .padding(.trailing, 16)
+                        .padding(.bottom, 68)
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(assistant.registeredContext == nil ? "召唤常曦" : "召唤常曦帮助填写\(assistant.registeredContext?.title ?? "当前表单")")
-                    .accessibilityIdentifier("global-assistant")
-                    .padding(.trailing, 16)
-                    .padding(.bottom, 68)
                 }
-                .fullScreenCover(isPresented: $assistant.isPresented) {
+                .fullScreenCover(isPresented: $assistant.generalPresented) {
                     NavigationStack { ChatView(initialPrompt: assistant.initialPrompt) }
                         .environment(store)
                         .environment(auth)

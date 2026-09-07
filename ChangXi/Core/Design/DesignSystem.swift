@@ -361,12 +361,29 @@ private struct AssistantFormContextModifier: ViewModifier {
     let fill: @MainActor (String) -> Bool
 
     func body(content: Content) -> some View {
+        @Bindable var assistant = assistant
         content
             .onAppear { assistant.register(id: id, title: title, draft: draft, fill: fill) }
             .onChange(of: draft) { _, value in
                 assistant.update(id: id, title: title, draft: value, fill: fill)
             }
             .onDisappear { assistant.unregister(id: id) }
+            .overlay(alignment: .bottomTrailing) {
+                Button { assistant.present() } label: {
+                    Label("帮我填", systemImage: "wand.and.stars")
+                        .font(.subheadline.weight(.semibold))
+                        .padding(.horizontal, 14)
+                        .frame(minHeight: 44)
+                        .cxInteractiveGlass(cornerRadius: 22)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("召唤常曦帮助填写\(title)")
+                .accessibilityIdentifier("global-assistant")
+                .padding(16)
+            }
+            .fullScreenCover(isPresented: $assistant.contextPresented) {
+                NavigationStack { ChatView(initialPrompt: assistant.initialPrompt) }
+            }
     }
 }
 
