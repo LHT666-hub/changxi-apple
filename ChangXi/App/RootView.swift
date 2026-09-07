@@ -4,6 +4,7 @@ struct RootView: View {
     @State private var store = AppStore()
     @State private var assistant = AssistantCoordinator()
     @State private var selectedTab = RootTab.home
+    @State private var showGeneralChat = false
     /// 认证会话：与 `store` 同为 `@MainActor @Observable`，在此创建并注入环境，
     /// 供 `DemoAuthView` / `ChatView` / `ProfileView` 等下游视图通过
     /// `@Environment(AuthSession.self)` 读取。
@@ -11,31 +12,24 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
-        @Bindable var assistant = assistant
         Group {
             if store.data.onboarded {
                 ZStack(alignment: .bottomTrailing) {
-                    TabView(selection: $selectedTab) {
-                        Tab("首页", systemImage: "house", value: RootTab.home) {
-                            NavigationStack { HomeView() }
-                        }
-                        Tab("健康", systemImage: "heart.text.square", value: RootTab.health) {
-                            NavigationStack { HealthView() }
-                        }
-                        Tab("服务", systemImage: "cross.case", value: RootTab.services) {
-                            NavigationStack { ServicesView() }
-                        }
-                        Tab("我的", systemImage: "person.crop.circle", value: RootTab.profile) {
-                            NavigationStack { ProfileView() }
-                        }
+                    ZStack {
+                        tabLayer(.home) { NavigationStack { HomeView() } }
+                        tabLayer(.health) { NavigationStack { HealthView() } }
+                        tabLayer(.services) { NavigationStack { ServicesView() } }
+                        tabLayer(.profile) { NavigationStack { ProfileView() } }
                     }
-                    .toolbarVisibility(.hidden, for: .tabBar)
                     .safeAreaInset(edge: .bottom, spacing: 0) {
                         PersistentTabBar(selection: $selectedTab)
                     }
 
                     if assistant.registeredContext == nil {
-                        Button { assistant.presentGeneral() } label: {
+                        Button {
+                            assistant.activateGeneral()
+                            showGeneralChat = true
+                        } label: {
                             Label("常曦", systemImage: "moonphase.waxing.crescent")
                                 .font(.subheadline.weight(.semibold))
                                 .padding(.horizontal, 14)
@@ -49,7 +43,7 @@ struct RootView: View {
                         .padding(.bottom, 86)
                     }
                 }
-                .fullScreenCover(isPresented: $assistant.generalPresented) {
+                .fullScreenCover(isPresented: $showGeneralChat) {
                     NavigationStack { ChatView(initialPrompt: assistant.initialPrompt) }
                         .environment(store)
                         .environment(auth)
@@ -86,6 +80,13 @@ struct RootView: View {
             }
         }
     }
+
+    private func tabLayer<Content: View>(_ tab: RootTab, @ViewBuilder content: () -> Content) -> some View {
+        content()
+            .opacity(selectedTab == tab ? 1 : 0)
+            .allowsHitTesting(selectedTab == tab)
+            .accessibilityHidden(selectedTab != tab)
+    }
 }
 
 private enum RootTab: String, CaseIterable, Identifiable {
@@ -103,6 +104,7 @@ private enum RootTab: String, CaseIterable, Identifiable {
         case .profile: "person.crop.circle"
         }
     }
+
 }
 
 private struct PersistentTabBar: View {

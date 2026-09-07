@@ -5,6 +5,7 @@ struct HomeView: View {
     @Environment(AssistantCoordinator.self) private var assistant
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
+    @State private var showChat = false
 
     private var greeting: String {
         let hour = Calendar.current.component(.hour, from: .now)
@@ -67,6 +68,9 @@ struct HomeView: View {
         .onAppear {
             appeared = true
         }
+        .fullScreenCover(isPresented: $showChat) {
+            NavigationStack { ChatView(initialPrompt: assistant.initialPrompt) }
+        }
     }
 
     @ViewBuilder private var moonPool: some View {
@@ -85,7 +89,8 @@ struct HomeView: View {
 
     private var talkButton: some View {
         Button {
-            assistant.presentGeneral()
+            assistant.activateGeneral()
+            showChat = true
         } label: {
             HStack(spacing: 14) {
                 Image(systemName: "waveform.badge.mic")

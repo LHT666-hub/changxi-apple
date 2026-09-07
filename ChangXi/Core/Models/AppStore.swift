@@ -12,8 +12,6 @@ struct AssistantFillContext: Identifiable {
 final class AssistantCoordinator {
     var registeredContext: AssistantFillContext?
     var activeContext: AssistantFillContext?
-    var generalPresented = false
-    var contextPresented = false
 
     func register(id: UUID, title: String, draft: String, fill: @escaping @MainActor (String) -> Bool) {
         registeredContext = AssistantFillContext(id: id, title: title, draft: draft, fill: fill)
@@ -28,19 +26,15 @@ final class AssistantCoordinator {
         if registeredContext?.id == id { registeredContext = nil }
     }
 
-    func present() {
-        if let registeredContext {
-            activeContext = registeredContext
-            contextPresented = true
-        } else {
-            activeContext = nil
-            generalPresented = true
-        }
+    @discardableResult
+    func activateRegistered() -> Bool {
+        guard let registeredContext else { return false }
+        activeContext = registeredContext
+        return true
     }
 
-    func presentGeneral() {
+    func activateGeneral() {
         activeContext = nil
-        generalPresented = true
     }
 
     var initialPrompt: String {
@@ -54,8 +48,6 @@ final class AssistantCoordinator {
     }
 
     func finish() {
-        generalPresented = false
-        contextPresented = false
         activeContext = nil
     }
 }

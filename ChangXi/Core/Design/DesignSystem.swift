@@ -356,12 +356,12 @@ extension View {
 private struct AssistantFormContextModifier: ViewModifier {
     @Environment(AssistantCoordinator.self) private var assistant
     @State private var id = UUID()
+    @State private var showChat = false
     let title: String
     let draft: String
     let fill: @MainActor (String) -> Bool
 
     func body(content: Content) -> some View {
-        @Bindable var assistant = assistant
         content
             .onAppear { assistant.register(id: id, title: title, draft: draft, fill: fill) }
             .onChange(of: draft) { _, value in
@@ -369,7 +369,9 @@ private struct AssistantFormContextModifier: ViewModifier {
             }
             .onDisappear { assistant.unregister(id: id) }
             .overlay(alignment: .bottomTrailing) {
-                Button { assistant.present() } label: {
+                Button {
+                    if assistant.activateRegistered() { showChat = true }
+                } label: {
                     Label("帮我填", systemImage: "wand.and.stars")
                         .font(.subheadline.weight(.semibold))
                         .padding(.horizontal, 14)
@@ -381,7 +383,7 @@ private struct AssistantFormContextModifier: ViewModifier {
                 .accessibilityIdentifier("global-assistant")
                 .padding(16)
             }
-            .fullScreenCover(isPresented: $assistant.contextPresented) {
+            .fullScreenCover(isPresented: $showChat) {
                 NavigationStack { ChatView(initialPrompt: assistant.initialPrompt) }
             }
     }
