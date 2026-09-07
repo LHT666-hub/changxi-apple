@@ -109,7 +109,7 @@ private struct HomeHeader: View {
                         .foregroundStyle(CX.muted)
                 }
 
-                Text("(greeting)，(name)")
+                Text("\(greeting)，\(name)")
                     .font(.largeTitle.weight(.semibold))
                     .fontDesign(.serif)
                     .minimumScaleFactor(0.82)
@@ -130,9 +130,8 @@ private struct HomeHeader: View {
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(CX.blue)
                     .frame(width: 46, height: 46)
-                    .background(.thinMaterial, in: Circle())
-                    .overlay { Circle().strokeBorder(CX.separator.opacity(0.18), lineWidth: 0.5) }
                     .contentTransition(.symbolEffect(.replace))
+                    .cxInteractiveGlassCircle()
             }
             .buttonStyle(.plain)
             .accessibilityLabel(hasUnreadMessage ? "消息中心，有新消息" : "消息中心")
@@ -152,7 +151,7 @@ private struct TodaySummaryCard: View {
                 } label: {
                     RowLabel(
                         title: nextPlan.title,
-                        subtitle: "(nextPlan.time) · 下一项安排",
+                        subtitle: "\(nextPlan.time) · 下一项安排",
                         icon: nextPlan.icon
                     )
                 }

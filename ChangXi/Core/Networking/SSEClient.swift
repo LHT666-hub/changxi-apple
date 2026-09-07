@@ -102,49 +102,60 @@ struct SSEClient: Sendable {
             throw APIError.parse(data: errorData, response: http, underlying: nil, requestID: requestID)
         }
 
-        var eventName: String?
-        var dataLines: [String] = []
+        var buffer = Data()
 
-        // 逐行读取并按空行分帧。
-        for try await line in bytes.lines {
+        // AsyncLineSequence 在部分 URLProtocol 实现中会折叠空行；直接按字节识别帧边界，
+        // 同时兼容 LF 与 CRLF，并保留跨网络分片的半帧。
+        for try await byte in bytes {
             try Task.checkCancellation()
-
-            if line.isEmpty {
-                // 报文块结束：派发已累积的事件。
-                if dataLines.isEmpty && eventName == nil { continue }
-                let event = SSEEvent(name: eventName ?? "message", data: dataLines.joined(separator: "\n"))
+            buffer.append(byte)
+            while let delimiter = Self.frameDelimiter(in: buffer) {
+                let frame = Data(buffer[..<delimiter.lowerBound])
+                buffer.removeSubrange(..<delimiter.upperBound)
+                guard let event = Self.parseFrame(frame) else { continue }
                 await onEvent(event)
-                eventName = nil
-                dataLines = []
-                // complete / timeout 为终止事件，主动关闭连接。
                 if event.name == "complete" || event.name == "timeout" {
                     return
                 }
-                continue
             }
-
-            if line.hasPrefix(":") {
-                // 注释 / 心跳行，丢弃。
-                continue
-            }
-            if line.hasPrefix("event:") {
-                eventName = String(line.dropFirst("event:".count))
-                    .trimmingCharacters(in: .whitespaces)
-                continue
-            }
-            if line.hasPrefix("data:") {
-                var value = String(line.dropFirst("data:".count))
-                if value.hasPrefix(" ") { value.removeFirst() } // SSE 规范：data: 后一个空格需去除
-                dataLines.append(value)
-                continue
-            }
-            // 其它字段（id: / retry:）当前后端未使用，忽略。
         }
 
         // 流自然结束但未收到显式终止事件：派发残留的最后一块（若有）。
-        if !dataLines.isEmpty || eventName != nil {
-            let event = SSEEvent(name: eventName ?? "message", data: dataLines.joined(separator: "\n"))
+        if let event = Self.parseFrame(buffer) {
             await onEvent(event)
         }
+    }
+
+    private static func frameDelimiter(in data: Data) -> Range<Data.Index>? {
+        let lf = Data([0x0A, 0x0A])
+        let crlf = Data([0x0D, 0x0A, 0x0D, 0x0A])
+        let lfRange = data.range(of: lf)
+        let crlfRange = data.range(of: crlf)
+        switch (lfRange, crlfRange) {
+        case let (left?, right?): return left.lowerBound < right.lowerBound ? left : right
+        case let (left?, nil): return left
+        case let (nil, right?): return right
+        case (nil, nil): return nil
+        }
+    }
+
+    private static func parseFrame(_ data: Data) -> SSEEvent? {
+        guard !data.isEmpty, let text = String(data: data, encoding: .utf8) else { return nil }
+        var eventName: String?
+        var dataLines: [String] = []
+
+        for rawLine in text.components(separatedBy: .newlines) {
+            let line = rawLine.hasSuffix("\r") ? String(rawLine.dropLast()) : rawLine
+            if line.hasPrefix(":") || line.isEmpty { continue }
+            if line.hasPrefix("event:") {
+                eventName = String(line.dropFirst("event:".count)).trimmingCharacters(in: .whitespaces)
+            } else if line.hasPrefix("data:") {
+                var value = String(line.dropFirst("data:".count))
+                if value.hasPrefix(" ") { value.removeFirst() }
+                dataLines.append(value)
+            }
+        }
+        guard eventName != nil || !dataLines.isEmpty else { return nil }
+        return SSEEvent(name: eventName ?? "message", data: dataLines.joined(separator: "\n"))
     }
 }

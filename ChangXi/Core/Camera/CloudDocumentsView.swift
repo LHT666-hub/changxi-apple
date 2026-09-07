@@ -71,7 +71,7 @@ struct CloudDocumentsView: View {
         } catch let e as APIError {
             error = e.userFacingMessage
         } catch {
-            error = "云端文档加载失败，请稍后重试。"
+            self.error = "云端文档加载失败，请稍后重试。"
         }
     }
 
@@ -85,7 +85,7 @@ struct CloudDocumentsView: View {
         } catch let e as APIError {
             error = e.userFacingMessage
         } catch {
-            error = "删除失败，请稍后重试。"
+            self.error = "删除失败，请稍后重试。"
         }
     }
 }

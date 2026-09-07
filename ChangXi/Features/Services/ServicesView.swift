@@ -20,11 +20,13 @@ struct ServicesView: View {
             }
             Picker("服务分类", selection: $category) { ForEach(["医疗服务", "活动通知", "家医课堂"], id: \.self) { Text($0) } }.pickerStyle(.segmented)
             if category == "医疗服务" {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 156), spacing: 12)], spacing: 12) {
-                    ForEach(ServiceItem.all) { item in
-                        NavigationLink { ServiceDetailView(service: item) } label: {
-                            ServiceTile(item: item)
-                        }.buttonStyle(.plain).accessibilityIdentifier("service-\(item.title)")
+                CXGlassGroup(spacing: 12) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 156), spacing: 12)], spacing: 12) {
+                        ForEach(ServiceItem.all) { item in
+                            NavigationLink { ServiceDetailView(service: item) } label: {
+                                ServiceTile(item: item)
+                            }.buttonStyle(.plain).accessibilityIdentifier("service-\(item.title)")
+                        }
                     }
                 }
             } else {
@@ -70,11 +72,7 @@ private struct ServiceTile: View {
         }
         .frame(maxWidth: .infinity, minHeight: 164, alignment: .leading)
         .padding(16)
-        .background(.regularMaterial, in: .rect(cornerRadius: 20, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .strokeBorder(CX.separator.opacity(0.18), lineWidth: 0.5)
-        }
+        .cxInteractiveGlass(cornerRadius: 20)
         .contentShape(Rectangle())
     }
 }

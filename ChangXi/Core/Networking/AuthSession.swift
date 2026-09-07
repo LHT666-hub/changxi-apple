@@ -30,7 +30,7 @@ final class AuthSession {
     private let auth: AuthService
     private let tokenStore: TokenStore
     private let appStore: AppStore?
-    private var expiryObserver: NSObjectProtocol?
+    @ObservationIgnored nonisolated(unsafe) private var expiryObserver: NSObjectProtocol?
 
     /// 已登录用户（`state == .signedIn` 时非空）。
     var currentUser: User? {

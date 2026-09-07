@@ -7,12 +7,14 @@ import XCTest
     override func tearDown() { try? FileManager.default.removeItem(at: file) }
     func testMutationsPersistAndReload() {
         let store = AppStore(fileURL: file)
+        let patientID = store.data.patientID
         store.data.name = "测试用户"
         let id = store.data.plans[2].id
         store.togglePlan(id)
         store.data.memories[0].confirmed = true
         store.data.readings.append(HealthReading(kind: .pressure, value: 121, secondary: 76))
         let reload = AppStore(fileURL: file)
+        XCTAssertEqual(reload.data.patientID, patientID)
         XCTAssertEqual(reload.data.name, "测试用户")
         XCTAssertTrue(reload.data.plans.first { $0.id == id }!.completed)
         XCTAssertTrue(reload.data.memories[0].confirmed)

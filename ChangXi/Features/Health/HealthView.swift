@@ -42,19 +42,21 @@ struct HealthView: View {
                     .foregroundStyle(CX.muted)
             }
 
-            LazyVGrid(
-                columns: typeSize.isAccessibilitySize
-                    ? [GridItem(.flexible())]
-                    : [GridItem(.adaptive(minimum: 150), spacing: 12)],
-                spacing: 12
-            ) {
-                ForEach(MetricKind.allCases) { kind in
-                    NavigationLink { MetricDetailView(kind: kind) } label: {
-                        MetricSummaryTile(
-                            kind: kind,
-                            value: store.latest(kind)?.display ?? "—"
-                        )
-                    }.buttonStyle(.plain).accessibilityIdentifier("metric-\(kind.rawValue)")
+            CXGlassGroup(spacing: 12) {
+                LazyVGrid(
+                    columns: typeSize.isAccessibilitySize
+                        ? [GridItem(.flexible())]
+                        : [GridItem(.adaptive(minimum: 150), spacing: 12)],
+                    spacing: 12
+                ) {
+                    ForEach(MetricKind.allCases) { kind in
+                        NavigationLink { MetricDetailView(kind: kind) } label: {
+                            MetricSummaryTile(
+                                kind: kind,
+                                value: store.latest(kind)?.display ?? "—"
+                            )
+                        }.buttonStyle(.plain).accessibilityIdentifier("metric-\(kind.rawValue)")
+                    }
                 }
             }
             SectionEyebrow(title: "最近趋势", action: "7 天")
@@ -108,11 +110,7 @@ private struct MetricSummaryTile: View {
         }
         .frame(maxWidth: .infinity, minHeight: 112, alignment: .leading)
         .padding(16)
-        .background(.regularMaterial, in: .rect(cornerRadius: 18, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .strokeBorder(CX.separator.opacity(0.18), lineWidth: 0.5)
-        }
+        .cxInteractiveGlass(cornerRadius: 18)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
     }

@@ -141,6 +141,7 @@ struct ImportedReport: Codable, Identifiable {
 }
 
 struct LocalState: Codable {
+    var patientID = UUID().uuidString
     var name = "张阿姨"
     var person = "张阿姨（本人）"
     var onboarded = false

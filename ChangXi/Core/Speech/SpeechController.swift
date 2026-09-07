@@ -129,7 +129,7 @@ final class SpeechController {
             } catch {
                 // 回落到本机转写：已有文字则静默保留，仅在完全无文字时低调提示。
                 if fallback.isEmpty {
-                    error = "云端识别暂不可用，已保留本机识别结果，可重试或改用键盘输入。"
+                    self.error = "云端识别暂不可用，已保留本机识别结果，可重试或改用键盘输入。"
                 }
             }
         }

@@ -7,14 +7,26 @@ final class FlowTests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.tabBars.buttons["首页"].waitForExistence(timeout: 10))
         capture("01-home")
-        app.buttons["open-chat"].tap()
-        XCTAssertTrue(app.textFields["chat-input"].waitForExistence(timeout: 5) || app.textViews["chat-input"].exists)
+        let openChat = app.buttons["open-chat"]
+        openChat.tap()
+        let chatField = app.textFields["chat-input"]
+        let chatTextView = app.textViews["chat-input"]
+        if !(chatField.waitForExistence(timeout: 5) || chatTextView.exists) {
+            openChat.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        }
+        guard chatField.waitForExistence(timeout: 5) || chatTextView.waitForExistence(timeout: 5) else {
+            return XCTFail("点击主按钮后未打开聊天界面")
+        }
         capture("02-chat")
-        let input = app.textFields["chat-input"].exists ? app.textFields["chat-input"] : app.textViews["chat-input"]
+        let input = chatField.exists ? chatField : chatTextView
         input.tap()
+        if !app.keyboards.firstMatch.waitForExistence(timeout: 2) {
+            input.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        }
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 3))
         input.typeText("Hello")
         app.buttons["send-chat"].tap()
-        XCTAssertTrue(app.staticTexts["常曦 · 示例回复"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.staticTexts["assistant-message-label"].waitForExistence(timeout: 8))
         app.buttons["关闭"].firstMatch.tap()
         app.tabBars.buttons["健康"].tap()
         capture("03-health")

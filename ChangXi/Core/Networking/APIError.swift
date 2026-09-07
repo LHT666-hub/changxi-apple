@@ -116,7 +116,7 @@ enum APIError: Error {
             return messages.first ?? "提交的信息有误，请检查后重试。"
         case .http(let status, let message):
             // 后端已给出可读描述时优先展示，否则按状态码兜底。
-            return message.isEmpty ? defaultMessage(for: status) : message
+            return message.isEmpty ? Self.defaultMessage(for: status) : message
         }
     }
 

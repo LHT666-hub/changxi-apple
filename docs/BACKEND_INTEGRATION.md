@@ -1,6 +1,6 @@
 # 常曦 iOS ↔ 玄同后端 对接说明
 
-本文件描述常曦 iOS 客户端与「玄同」后端的对接契约，供联调、回归与后续维护参考。后端源码为只读参考，不在本仓库。
+本文件描述常曦 iOS 客户端的网络基础设施，供联调、回归与后续维护参考。已核验后端基线为 `xuantong/main@c05543a`；具体已上线契约以服务端源码和 [常曦 × 玄同对接约定](XUANTONG_INTEGRATION.md) 为准。
 
 ## 1. 运行配置
 
@@ -18,7 +18,7 @@
 | 前缀 | 常量 | 覆盖 |
 | --- | --- | --- |
 | `/api/auth` | `.auth` | 注册、登录、当前用户 |
-| `/api/v1` | `.v1` | 对话、流式对话、多模态、文档识别、语音转写、SSE 事件流 |
+| `/api/v1` | `.v1` | 多模态、文档识别、语音转写，以及尚待后端实现的聊天/SSE 客户端预留 |
 | `/api` | `.legacy` | 患者、健康记录、测量、事件（工作流）、任务、时间线 |
 
 ## 3. 认证
@@ -29,6 +29,8 @@
 - 会话过期：收到 **401** 时清空 token 并发出 `Notification.Name.cxSessionExpired`；后端**无 refresh 机制**，上层据此跳转登录。
 
 ## 4. 对话
+
+当前 App 的对话主链使用服务端已存在的 `POST /api/events`，事件类型为 `patient.message.received`；回复读取 `workflow.patient_communication`，风险读取 `workflow.clinical_risk`。下面的 `RemoteConversationService` 与 `/api/v1/chat*` 仅为客户端预留实现：`xuantong/main@c05543a` 尚未注册这些路由，当前 UI 不会调用它们。
 
 | 能力 | 方法 | 端点 |
 | --- | --- | --- |
@@ -42,9 +44,9 @@
 
 请求体 `ChatRequest`：`message` / `patient_id` / `session_id` / `context`（`{role, content}` 数组）。响应 `ChatReply`：`reply` / `agent_role`（固定 `family_doctor`）/ `session_id` / `metadata`。
 
-### 4.1 POST-SSE 事件流
+### 4.1 预留的 POST-SSE 事件流
 
-后端 `/chat/stream` 是 **POST** 方式的 `text/event-stream`，浏览器 `EventSource` 只支持 GET，故客户端用 `URLSession.bytes(for:)` 逐行分帧（`SSEClient`）：
+若后端后续实现 `/chat/stream`，客户端将按 **POST** 方式的 `text/event-stream` 接入。浏览器 `EventSource` 只支持 GET，因此预留客户端用 `URLSession.AsyncBytes` 按字节保留空行并分帧（`SSEClient`）：
 
 - 以空行分隔报文块；块内 `event:` 取事件名（缺省 `message`），`data:` 取内容（多行按换行拼接）。
 - 以冒号开头的行是心跳/注释，直接丢弃。

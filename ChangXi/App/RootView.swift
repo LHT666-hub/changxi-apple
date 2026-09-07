@@ -25,7 +25,7 @@ struct RootView: View {
                         NavigationStack { ProfileView() }
                     }
                 }
-                .toolbarBackground(.visible, for: .tabBar)
+                .cxAdaptiveTabBar()
             } else {
                 NavigationStack { WelcomeView() }
             }

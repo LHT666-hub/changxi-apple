@@ -79,7 +79,7 @@ struct MoonPoolView: View {
         }
         .frame(height: compact ? 188 : 292)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("月池，(state.label)")
+        .accessibilityLabel("月池，\(state.label)")
         .onChange(of: state) {
             entered = .now
         }
@@ -222,11 +222,7 @@ private struct MoonStatusPill: View {
             .foregroundStyle(CX.ink)
             .padding(.horizontal, 14)
             .frame(minHeight: 36)
-            .background(
-                reduceTransparency ? AnyShapeStyle(CX.raisedSurface) : AnyShapeStyle(.thinMaterial),
-                in: Capsule()
-            )
-            .overlay { Capsule().strokeBorder(CX.separator.opacity(0.18), lineWidth: 0.5) }
+            .cxGlassCapsule(reduceTransparency: reduceTransparency)
             .contentTransition(.symbolEffect(.replace))
             .symbolEffect(.bounce, value: state)
             .animation(.snappy(duration: 0.28), value: state)
@@ -247,7 +243,7 @@ struct RhythmView: View {
                 Text("今日节律")
                     .font(.headline)
                 Spacer()
-                Text("(completed)/(total)")
+                Text("\(completed)/\(total)")
                     .font(.headline)
                     .monospacedDigit()
                     .contentTransition(.numericText(value: Double(completed)))
@@ -262,6 +258,6 @@ struct RhythmView: View {
                 .foregroundStyle(CX.muted)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("今日计划，已完成(completed)项，共(total)项")
+        .accessibilityLabel("今日计划，已完成\(completed)项，共\(total)项")
     }
 }

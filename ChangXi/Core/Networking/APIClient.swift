@@ -40,7 +40,9 @@ final class APIClient: Sendable {
     static func makeDecoder() -> JSONDecoder {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
-        decoder.dateDecodingStrategy = .custom(decodeDate)
+        decoder.dateDecodingStrategy = .custom { decoder in
+            try Self.decodeDate(decoder)
+        }
         return decoder
     }
 
@@ -49,7 +51,7 @@ final class APIClient: Sendable {
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .convertToSnakeCase
         encoder.dateEncodingStrategy = .iso8601
-        encoder.outputFormatting = [.sortedKeys]
+        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
         return encoder
     }
 

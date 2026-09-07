@@ -120,20 +120,46 @@ struct Card<Content: View>: View {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        let card = VStack(alignment: .leading, spacing: 16) {
             content
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
-        .background(
-            reduceTransparency ? AnyShapeStyle(CX.surface) : AnyShapeStyle(.regularMaterial),
-            in: .rect(cornerRadius: 22, style: .continuous)
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .strokeBorder(CX.separator.opacity(0.18), lineWidth: 0.5)
+
+        if reduceTransparency {
+            card
+                .background(CX.surface, in: .rect(cornerRadius: 22, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .strokeBorder(CX.separator.opacity(0.18), lineWidth: 0.5)
+                }
+        } else if #available(iOS 26, *) {
+            card
+                .glassEffect(.regular, in: .rect(cornerRadius: 22, style: .continuous))
+        } else {
+            card
+                .background(.regularMaterial, in: .rect(cornerRadius: 22, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .strokeBorder(CX.separator.opacity(0.18), lineWidth: 0.5)
+                }
+                .shadow(color: .black.opacity(0.055), radius: 18, y: 8)
         }
-        .shadow(color: .black.opacity(0.055), radius: 18, y: 8)
+    }
+}
+
+struct CXGlassGroup<Content: View>: View {
+    let spacing: CGFloat
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        if #available(iOS 26, *) {
+            GlassEffectContainer(spacing: spacing) {
+                content
+            }
+        } else {
+            content
+        }
     }
 }
 
@@ -177,19 +203,145 @@ struct RowLabel: View {
 
 struct PrimaryButton: ButtonStyle {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
+        let label = configuration.label
             .font(.headline)
             .frame(maxWidth: .infinity, minHeight: 54)
             .padding(.horizontal, 20)
             .foregroundStyle(.white)
-            .background(CX.blue, in: .rect(cornerRadius: 16, style: .continuous))
-            .shadow(color: CX.blue.opacity(configuration.isPressed ? 0.12 : 0.24), radius: 14, y: 8)
             .opacity(isEnabled ? (configuration.isPressed ? 0.86 : 1) : 0.42)
             .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1)
             .animation(.spring(duration: 0.18, bounce: 0), value: configuration.isPressed)
+
+        if #available(iOS 26, *), !reduceTransparency {
+            label
+                .glassEffect(
+                    .regular.tint(CX.blue).interactive(),
+                    in: .rect(cornerRadius: 16, style: .continuous)
+                )
+        } else {
+            label
+                .background(CX.blue, in: .rect(cornerRadius: 16, style: .continuous))
+                .shadow(
+                    color: CX.blue.opacity(configuration.isPressed ? 0.12 : 0.24),
+                    radius: 14,
+                    y: 8
+                )
+        }
+    }
+}
+
+private struct CXInteractiveGlassModifier: ViewModifier {
+    let cornerRadius: CGFloat
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if reduceTransparency {
+            content
+                .background(CX.raisedSurface, in: .rect(cornerRadius: cornerRadius, style: .continuous))
+                .overlay { glassBorder }
+        } else if #available(iOS 26, *) {
+            content.glassEffect(
+                .regular.interactive(),
+                in: .rect(cornerRadius: cornerRadius, style: .continuous)
+            )
+        } else {
+            content
+                .background(.regularMaterial, in: .rect(cornerRadius: cornerRadius, style: .continuous))
+                .overlay { glassBorder }
+        }
+    }
+
+    private var glassBorder: some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .strokeBorder(CX.separator.opacity(0.18), lineWidth: 0.5)
+    }
+}
+
+private struct CXInteractiveGlassCircleModifier: ViewModifier {
+    var prominent = false
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if prominent && reduceTransparency {
+            content.background(CX.blue, in: Circle())
+        } else if reduceTransparency {
+            content
+                .background(CX.raisedSurface, in: Circle())
+                .overlay { Circle().strokeBorder(CX.separator.opacity(0.18), lineWidth: 0.5) }
+        } else if #available(iOS 26, *) {
+            content.glassEffect(
+                prominent ? .regular.tint(CX.blue).interactive() : .regular.interactive(),
+                in: .circle
+            )
+        } else if prominent {
+            content.background(CX.blue, in: Circle())
+        } else {
+            content
+                .background(.thinMaterial, in: Circle())
+                .overlay { Circle().strokeBorder(CX.separator.opacity(0.18), lineWidth: 0.5) }
+        }
+    }
+}
+
+extension View {
+    func cxInteractiveGlass(cornerRadius: CGFloat) -> some View {
+        modifier(CXInteractiveGlassModifier(cornerRadius: cornerRadius))
+    }
+
+    func cxInteractiveGlassCircle() -> some View {
+        modifier(CXInteractiveGlassCircleModifier())
+    }
+
+    func cxProminentGlassCircle() -> some View {
+        modifier(CXInteractiveGlassCircleModifier(prominent: true))
+    }
+
+    @ViewBuilder
+    func cxGlassCapsule(reduceTransparency: Bool) -> some View {
+        if reduceTransparency {
+            self.background(CX.raisedSurface, in: Capsule())
+        } else if #available(iOS 26, *) {
+            self.glassEffect(.regular, in: .capsule)
+        } else {
+            self
+                .background(.thinMaterial, in: Capsule())
+                .overlay { Capsule().strokeBorder(CX.separator.opacity(0.18), lineWidth: 0.5) }
+        }
+    }
+
+    @ViewBuilder
+    func cxAdaptiveTabBar() -> some View {
+        if #available(iOS 26, *) {
+            self.tabBarMinimizeBehavior(.onScrollDown)
+        } else {
+            self.toolbarBackground(.visible, for: .tabBar)
+        }
+    }
+
+    @ViewBuilder
+    func cxNavigationChrome() -> some View {
+        if #available(iOS 26, *) {
+            self
+        } else {
+            self
+                .toolbarBackground(CX.mist.opacity(0.95), for: .navigationBar)
+                .toolbarBackground(.visible, for: .navigationBar)
+        }
+    }
+
+    @ViewBuilder
+    func cxComposerBackground() -> some View {
+        if #available(iOS 26, *) {
+            self.background(.clear)
+        } else {
+            self.background(.regularMaterial)
+        }
     }
 }
 

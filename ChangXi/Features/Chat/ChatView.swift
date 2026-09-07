@@ -22,16 +22,13 @@ struct ChatView: View {
     @State private var lastMetadata: ChatMetadata?
     @State private var didRestoreHistory = false
     @FocusState private var keyboard: Bool
-
     private let demo = DemoConversationService()
+    private let eventService = XuantongEventConversationService.configured()
 
     /// 是否有一次问答正在进行（用于禁用输入 / 显示停止按钮）。
     private var isBusy: Bool { activeRequest != nil }
-    /// 助手消息的署名：联网时为“常曦”，离线演示时保留“常曦 · 示例回复”（UI 测试依赖）。
-    private var assistantLabel: String { AppConfiguration.useRemoteAPI ? "常曦" : "常曦 · 示例回复" }
-    /// 当前患者标识：登录后用用户 ID 作为绑定标识，否则用稳定的本地匿名 UUID。
-    private var currentPatientId: String { auth.currentUser?.id ?? RemoteConversationService.localPatientId }
-
+    /// 登录用户优先使用云端 ID，匿名用户使用稳定的本地 UUID。
+    private var currentPatientId: String { auth.currentUser?.id ?? store.data.patientID }
     var body: some View {
         VStack(spacing: 0) {
             ScrollViewReader { proxy in
@@ -49,7 +46,10 @@ struct ChatView: View {
                             HStack {
                                 if message.isUser { Spacer(minLength: 32) }
                                 VStack(alignment: .leading, spacing: 7) {
-                                    Text(message.isUser ? "我" : assistantLabel).font(.caption).foregroundStyle(CX.muted)
+                                    Text(message.isUser ? "我" : "常曦")
+                                        .font(.caption)
+                                        .foregroundStyle(CX.muted)
+                                        .accessibilityIdentifier(message.isUser ? "user-message-label" : "assistant-message-label")
                                     Text(message.text).font(.body).lineSpacing(5).textSelection(.enabled)
                                 }
                                 .padding(.horizontal, 16)
@@ -91,7 +91,7 @@ struct ChatView: View {
         }
         .background { MoonBackground(illustrated: true) }.foregroundStyle(CX.ink)
         .navigationTitle("告诉常曦").navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(CX.mist.opacity(0.95), for: .navigationBar).toolbarBackground(.visible, for: .navigationBar)
+        .cxNavigationChrome()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) { Button("关闭") { speech.stop(); cancelRequest(); dismiss() } }
             ToolbarItem(placement: .topBarTrailing) { Button { showHistory = true } label: { Image(systemName: "clock.arrow.circlepath").frame(width: 44, height: 44) }.accessibilityLabel("对话历史") }
@@ -100,7 +100,6 @@ struct ChatView: View {
         .sheet(isPresented: $showHistory) { NavigationStack { ChatHistoryView() } }
         .onAppear { if !initialPrompt.isEmpty { text = initialPrompt } }
         .onDisappear { speech.stop(); cancelRequest() }
-        .task { await restoreLatestSession() }
         .onChange(of: scenePhase) { _, phase in if phase != .active { speech.stop(); if isBusy { cancelRequest() } } }
         .onChange(of: speech.transcript) { _, transcript in text = transcript }
         .task(id: activeRequest) {
@@ -114,23 +113,26 @@ struct ChatView: View {
     private var composer: some View {
         VStack(spacing: 12) {
             if speech.isRecording { Text("正在听 · 停止后可修改文字再发送").font(.caption).foregroundStyle(CX.muted) }
-            HStack(alignment: .bottom, spacing: 10) {
-                TextField("输入想说的话…", text: $text, axis: .vertical)
-                    .lineLimit(1...5)
-                    .focused($keyboard)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 12)
-                    .background(CX.raisedSurface, in: .rect(cornerRadius: 16, style: .continuous))
-                    .accessibilityIdentifier("chat-input")
-                Button(action: send) {
-                    Image(systemName: isBusy ? "stop.circle.fill" : "arrow.up.circle.fill")
-                        .font(.largeTitle)
-                        .symbolRenderingMode(.hierarchical)
-                        .frame(width: 48, height: 48)
+            CXGlassGroup(spacing: 10) {
+                HStack(alignment: .bottom, spacing: 10) {
+                    TextField("输入想说的话…", text: $text, axis: .vertical)
+                        .lineLimit(1...5)
+                        .focused($keyboard)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 12)
+                        .cxInteractiveGlass(cornerRadius: 16)
+                        .accessibilityIdentifier("chat-input")
+                    Button(action: send) {
+                        Image(systemName: isBusy ? "stop.fill" : "arrow.up")
+                            .font(.headline.weight(.bold))
+                            .frame(width: 48, height: 48)
+                            .foregroundStyle(.white)
+                            .cxProminentGlassCircle()
+                    }
+                    .disabled((text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isBusy) || speech.isRecording)
+                    .accessibilityLabel(isBusy ? "停止" : "发送")
+                    .accessibilityIdentifier("send-chat")
                 }
-                .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isBusy || speech.isRecording)
-                .accessibilityLabel(isBusy ? "停止" : "发送")
-                .accessibilityIdentifier("send-chat")
             }
             HStack(spacing: 12) {
                 Button {
@@ -151,7 +153,7 @@ struct ChatView: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity)
-        .background(.regularMaterial)
+        .cxComposerBackground()
     }
 
     // MARK: - 安全护栏 / 降级提示
@@ -200,58 +202,32 @@ struct ChatView: View {
         activeRequest = UUID()
     }
 
-    /// 三级降级：① POST-SSE 流式 → ② 非流式 `POST /chat` → ③ 本地演示服务。
+    /// 玄同当前公开契约以 `POST /api/events` 驱动工作流；不可用时明确降级到本地演示。
     @MainActor
     private func performReply(requestId: UUID) async {
         guard AppConfiguration.useRemoteAPI else {
             await demoFallback(requestId: requestId)
             return
         }
-        let service = RemoteConversationService(patientId: currentPatientId)
-        let context = recentContext()
-
-        // ① 流式（打字机）
         do {
-            isStreaming = true
-            let final = try await service.streamReply(
-                message: pendingText,
-                sessionId: sessionID,
-                context: context
-            ) { chunk in
-                guard activeRequest == requestId else { return }
-                if streamingText.isEmpty { state = .responding }
-                streamingText += chunk
+            let reply = try await eventService.reply(to: pendingText, patientID: currentPatientId)
+            try Task.checkCancellation()
+            guard activeRequest == requestId else { return }
+            state = switch reply.clinicalRisk {
+            case .red: .quietAlert
+            case .yellow: .notification
+            default: .responding
             }
-            try Task.checkCancellation()
+            store.data.messages.append(ConversationMessage(isUser: false, text: reply.text))
+            try await Task.sleep(for: .seconds(reduceMotion ? 0.3 : 1.2))
             guard activeRequest == requestId else { return }
-            commit(reply: final.reply, sessionId: final.sessionId, metadata: final.metadata)
-            briefRespondingThenFinish(requestId: requestId)
-            return
+            finishTurn()
         } catch is CancellationError {
             finishTurn()
-            return
         } catch {
             guard activeRequest == requestId else { return }
-            streamingText = ""; isStreaming = false; state = .thinking
+            await demoFallback(requestId: requestId)
         }
-
-        // ② 非流式兜底
-        do {
-            let reply = try await service.send(message: pendingText, sessionId: sessionID, context: context)
-            try Task.checkCancellation()
-            guard activeRequest == requestId else { return }
-            commit(reply: reply.reply, sessionId: reply.sessionId, metadata: reply.metadata)
-            briefRespondingThenFinish(requestId: requestId)
-            return
-        } catch is CancellationError {
-            finishTurn()
-            return
-        } catch {
-            guard activeRequest == requestId else { return }
-        }
-
-        // ③ 本地演示兜底
-        await demoFallback(requestId: requestId)
     }
 
     /// 演示服务回复（离线 / UI 测试 / 后端不可达时使用）。
@@ -276,26 +252,6 @@ struct ChatView: View {
         }
     }
 
-    /// 采纳一次成功回复：写入会话、记录 sessionID 与 metadata。
-    @MainActor
-    private func commit(reply: String, sessionId: String?, metadata: ChatMetadata?) {
-        if let sessionId { sessionID = sessionId }
-        lastMetadata = metadata
-        let finalText = reply.isEmpty ? streamingText : reply
-        store.data.messages.append(ConversationMessage(isUser: false, text: finalText))
-    }
-
-    /// 让月池短暂停留在“回应”态后复位，形成完整的动画节奏。
-    @MainActor
-    private func briefRespondingThenFinish(requestId: UUID) {
-        state = .responding
-        Task { @MainActor in
-            try? await Task.sleep(for: .seconds(reduceMotion ? 0.3 : 1.0))
-            guard activeRequest == requestId else { return }
-            finishTurn()
-        }
-    }
-
     @MainActor
     private func finishTurn() {
         isStreaming = false
@@ -311,81 +267,28 @@ struct ChatView: View {
         state = .idle
     }
 
-    /// 取最近若干轮历史作为上下文（排除刚发送的当前用户消息）。
-    private func recentContext(limit: Int = 6) -> [ChatContextTurn] {
-        let prior = store.data.messages.dropLast()
-        return prior.suffix(limit).compactMap { message in
-            let content = message.text.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !content.isEmpty else { return nil }
-            return ChatContextTurn(role: message.isUser ? "user" : "assistant", content: content)
-        }
-    }
-
     private func scrollToBottom(_ proxy: ScrollViewProxy) {
         withAnimation(reduceMotion ? nil : .easeOut(duration: 0.25)) { proxy.scrollTo("bottom", anchor: .bottom) }
     }
 
-    // MARK: - 会话恢复
-
-    /// 进入页面时若后端可达，恢复最近会话并（在本机消息为空时）拉取历史消息。
-    @MainActor
-    private func restoreLatestSession() async {
-        guard AppConfiguration.useRemoteAPI, !didRestoreHistory else { return }
-        didRestoreHistory = true
-        let service = RemoteConversationService(patientId: currentPatientId)
-        guard let sessions = try? await service.listSessions(), let latest = sessions.first else { return }
-        sessionID = latest.id
-        guard store.data.messages.isEmpty else { return }
-        guard let messages = try? await service.listMessages(sessionId: latest.id, limit: 50) else { return }
-        let mapped = messages.compactMap { message -> ConversationMessage? in
-            guard message.role == "user" || message.role == "assistant", !message.content.isEmpty else { return nil }
-            return ConversationMessage(isUser: message.isUser, text: message.content, date: message.createdAt)
-        }
-        if !mapped.isEmpty { store.data.messages.append(contentsOf: mapped) }
-    }
 }
 
 // MARK: - 对话历史
 
 struct ChatHistoryView: View {
     @Environment(AppStore.self) private var store
-    @Environment(AuthSession.self) private var auth
     @Environment(\.dismiss) private var dismiss
     @State private var clear = false
-    @State private var sessions: [ChatSession] = []
-    @State private var loadingSessions = false
-    @State private var sessionError: String?
-
-    private var currentPatientId: String { auth.currentUser?.id ?? RemoteConversationService.localPatientId }
 
     var body: some View {
         List {
-            if AppConfiguration.useRemoteAPI {
-                Section("云端会话") {
-                    if loadingSessions {
-                        HStack { ProgressView(); Text("正在加载会话…").foregroundStyle(CX.muted) }
-                    } else if let sessionError {
-                        Text(sessionError).foregroundStyle(CX.muted).font(.footnote)
-                    } else if sessions.isEmpty {
-                        Text("暂无云端会话记录。").foregroundStyle(CX.muted).font(.footnote)
-                    } else {
-                        ForEach(sessions) { session in
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text(sessionTitle(session)).font(.subheadline)
-                                Text("\(session.messageCount) 条消息 · \(session.createdAt.formatted(date: .abbreviated, time: .shortened))")
-                                    .font(.caption2).foregroundStyle(CX.muted)
-                            }
-                        }
-                    }
-                }
-            }
-            Section(AppConfiguration.useRemoteAPI ? "本机记录（离线回退）" : "本机对话记录") {
+            Section("本机对话记录") {
                 if store.data.messages.isEmpty {
                     ContentUnavailableView("还没有对话", systemImage: "bubble.left.and.bubble.right")
                 } else {
                     ForEach(store.data.messages) { message in
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(message.isUser ? "我" : (AppConfiguration.useRemoteAPI ? "常曦" : "常曦 · 示例")).font(.caption).foregroundStyle(.secondary)
+                            Text(message.isUser ? "我" : "常曦").font(.caption).foregroundStyle(.secondary)
                             Text(message.text)
                             Text(message.date.formatted(date: .abbreviated, time: .shortened)).font(.caption2).foregroundStyle(.secondary)
                         }
@@ -400,29 +303,6 @@ struct ChatHistoryView: View {
         }
         .confirmationDialog("清空本机对话记录？", isPresented: $clear, titleVisibility: .visible) {
             Button("清空对话", role: .destructive) { store.data.messages = [] }
-        }
-        .task { await loadSessions() }
-    }
-
-    private func sessionTitle(_ session: ChatSession) -> String {
-        "会话 \(String(session.id.prefix(8)))"
-    }
-
-    @MainActor
-    private func loadSessions() async {
-        guard AppConfiguration.useRemoteAPI else { return }
-        loadingSessions = true
-        sessionError = nil
-        defer { loadingSessions = false }
-        let service = RemoteConversationService(patientId: currentPatientId)
-        do {
-            sessions = try await service.listSessions()
-        } catch is CancellationError {
-            // 忽略取消
-        } catch let error as APIError {
-            sessionError = error.userFacingMessage
-        } catch {
-            sessionError = "云端会话加载失败。"
         }
     }
 }

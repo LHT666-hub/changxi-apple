@@ -1,6 +1,6 @@
 # 常曦 · ChangXi
 
-原生 SwiftUI 健康陪伴应用，支持 iPhone / iPad，目标 iOS 18+。
+原生 SwiftUI 健康陪伴应用，使用 Xcode 26 / iOS 26 SDK 构建，支持 iPhone / iPad，最低兼容 iOS 18。iOS 26 使用系统 Liquid Glass，iOS 18–25 保留 Material 降级样式。
 
 **月相表达过程，数据表达健康。** 月池是实时交互组件，人物、环境与数据各自承担清晰的职责。
 
@@ -28,9 +28,10 @@ open ChangXi.xcodeproj
 
 ## 后端对接
 
-应用已接入「玄同」后端，覆盖认证、对话（含流式）、语音转写、报告识别、患者档案、健康记录/测量、异常读数触发的会诊工作流与照护任务。全部远程能力遵循**本地优先、上行 best-effort**：离线或后端不可用时降级为本地演示，绝不阻断本机使用。
+应用已接入「玄同」后端的认证、语音转写、报告识别、患者档案、健康记录/测量、事件工作流与照护任务基础设施。全部远程能力遵循**本地优先、上行 best-effort**：离线或后端不可用时降级为本地演示，绝不阻断本机使用。
 
 - 后端地址、路由前缀、各端点契约与错误结构见 [后端对接说明](docs/BACKEND_INTEGRATION.md)。
+- 当前 `xuantong/main` 没有 `/api/v1/chat*` 路由；对话严格使用已存在的 `POST /api/events` 与 `patient.message.received` 事件，响应只展示 `workflow.patient_communication`。准确契约与上线前安全缺口见 [常曦 × 玄同对接约定](docs/XUANTONG_INTEGRATION.md)。
 - UI 测试以 `--ui-testing` 启动，`AppConfiguration.useRemoteAPI` 强制为 `false`，**所有网络路径直接返回，不发任何真实请求**，保证 CI（无后端）确定性通过。
 - 报告中「报告详情 / 分组」等纯离线演示视图渲染内置示例数据，不消费云端结果；真正消费云端识别结果的是导入报告详情视图。
 
@@ -38,7 +39,7 @@ open ChangXi.xcodeproj
 
 ## 验证
 
-GitHub Actions 使用 macOS-15、XcodeGen 与 iOS Simulator 构建及测试。测试分两层：
+GitHub Actions 使用 macOS-26、XcodeGen 与 iOS Simulator 构建及测试。测试分两层：
 
 - **单元测试（`Tests/Unit`）**：本地状态保存/重载、跨日重置、损坏文件保护、趋势筛选、记忆与用药持久化、报告文件生命周期；网络层的编解码策略、错误归类、请求构造、401 处理、SSE 分帧、健康同步阈值与 payload、患者服务、对话服务。网络测试用自研 `MockURLProtocol`（零第三方依赖）离线拦截，Keychain 相关用例在环境不可用时自动 `XCTSkip`。
 - **UI 流程测试（`Tests/UI`）**：主流程导航、记录与服务、大字/横屏布局与截图，全部离线。
@@ -61,4 +62,4 @@ xcodebuild test -project ChangXi.xcodeproj -scheme ChangXi \
 - `Features`：首页、对话、健康、服务、个人与隐私。
 - `Tests`：单元测试与 UI 流程测试。
 
-详细范围和剩余项见 [交付记录](docs/DELIVERY.md)，后端契约见 [后端对接说明](docs/BACKEND_INTEGRATION.md)，素材生成提示见 [素材说明](docs/ASSET_PROMPTS.md)。
+详细范围和剩余项见 [交付记录](docs/DELIVERY.md)，完整网络层说明见 [后端对接说明](docs/BACKEND_INTEGRATION.md)，当前玄同事件契约见 [常曦 × 玄同对接约定](docs/XUANTONG_INTEGRATION.md)，素材生成提示见 [素材说明](docs/ASSET_PROMPTS.md)。
