@@ -1,6 +1,6 @@
 # 常曦 · ChangXi
 
-> 最新连接状态与可用能力以 [已验证的本机连接](docs/LOCAL_BACKEND.md) 为准。当前玄同提供事件与照护任务接口；认证、文档归档及健康记录跨设备恢复尚未实现。GitHub 仓库本身不是正在运行的后端。
+> 本仓库是开发验证版，不是已完成线上验收的医疗产品。能力边界见 [连接状态](docs/LOCAL_BACKEND.md)，分支取舍与验证见 [前端合并审查](docs/FRONTEND_MERGE_REVIEW.md)。玄同最新开发在 `master`，不是旧 `main`；GitHub 仓库本身不是正在运行的后端。
 
 原生 SwiftUI 健康陪伴应用，使用 Xcode 26 / iOS 26 SDK 构建，支持 iPhone / iPad，最低 iOS 26。导航与悬浮操作使用玻璃材质，内容卡片保持清晰的阅读层次。
 
@@ -27,16 +27,16 @@ open ChangXi.xcodeproj
 - 健康曲线、测量记录、报告详情、每日计划、用药与服药历史。
 - 医生示例消息、咨询草稿、预约意向、活动与课堂。
 - 全局“常曦”入口会识别当前表单，确认后可回填血压等结构化内容。
-- 记忆确认/编辑/删除、家人服务对象、个人资料、登录注册。
+- 记忆确认/编辑/删除、家人服务对象、个人资料、本地访客体验；远程登录注册适配器保留但未启用。
 - 本地通知、Dynamic Type、大字模式、Reduce Motion、触觉反馈。
 - 原子保存与文件保护、导出、清除数据、错误和空状态。
 
 ## 后端对接
 
-当前已对齐玄同实际存在的事件工作流与照护任务接口。健康测量以事件上传，本地记录始终保留；对话连接失败明确提示重试，不将演示回复冒充云端结果。旧的认证、语音、文档和档案服务适配器仍保留，但对应后端端点尚未实现，相关请求已关闭。
+当前客户端使用事件工作流与照护任务接口。健康测量以事件上传，本地记录始终保留；对话连接失败明确提示重试，不将演示回复冒充云端结果。玄同 `master` 已新增认证、语音、文档和健康记录接口，但这些能力尚未与当前客户端完成端到端验收，`supportsExtendedAPI` 仍为 `false`。不能把适配器存在等同于功能已上线。
 
 - 后端地址、路由前缀、各端点契约与错误结构见 [后端对接说明](docs/BACKEND_INTEGRATION.md)。
-- 当前 `xuantong/main` 没有 `/api/v1/chat*` 路由；对话严格使用已存在的 `POST /api/events` 与 `patient.message.received` 事件，响应只展示 `workflow.patient_communication`。准确契约与上线前安全缺口见 [常曦 × 玄同对接约定](docs/XUANTONG_INTEGRATION.md)。
+- 当前常曦对话使用 `POST /api/events` 与 `patient.message.received` 事件，响应展示 `workflow.patient_communication`；不是 SSE 流式对话。玄同 `master` 有 `/api/v1` 系列接口，旧 [事件接入约定](docs/XUANTONG_INTEGRATION.md) 仅描述当时 `xuantong/main` 的基线。
 - UI 测试以 `--ui-testing` 启动，`AppConfiguration.useRemoteAPI` 强制为 `false`，**所有网络路径直接返回，不发任何真实请求**，保证 CI（无后端）确定性通过。
 - 报告中「报告详情 / 分组」等纯离线演示视图渲染内置示例数据，不消费云端结果；真正消费云端识别结果的是导入报告详情视图。
 
@@ -49,7 +49,7 @@ GitHub Actions 使用 macOS-26、XcodeGen 与 iOS Simulator 构建及测试。�
 - **单元测试（`Tests/Unit`）**：本地状态保存/重载、跨日重置、损坏文件保护、趋势筛选、记忆与用药持久化、报告文件生命周期；网络层的编解码策略、错误归类、请求构造、401 处理、SSE 分帧、健康同步阈值与 payload、患者服务、对话服务。网络测试用自研 `MockURLProtocol`（零第三方依赖）离线拦截，Keychain 相关用例在环境不可用时自动 `XCTSkip`。
 - **UI 流程测试（`Tests/UI`）**：主流程导航、记录与服务、大字/横屏布局与截图，全部离线。
 
-共约 53 个用例（单元 + UI）。实际通过情况以 [Actions](https://github.com/LHT666-hub/changxi-apple/actions) 的对应提交结果为准。
+2026-09-08 合并审查实跑 59 个用例（55 单元 + 4 UI），全部通过，无跳过。UI 与网络契约测试使用示例数据 / Mock，不能证明线上服务器与真实模型可用。云端 CI 状态以 [Actions](https://github.com/LHT666-hub/changxi-apple/actions) 的对应提交结果为准。
 
 ```sh
 xcodebuild test -project ChangXi.xcodeproj -scheme ChangXi \

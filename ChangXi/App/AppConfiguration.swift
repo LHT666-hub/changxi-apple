@@ -13,7 +13,7 @@ enum AppConfiguration {
     /// 是否连接远程玄同后端。
     ///
     /// - UI 测试（`--ui-testing`）下强制返回 `false`，保证测试确定性、不依赖网络；
-    /// - 其余开发/生产场景默认连接后端，后端不可用时由上层降级到本地示例服务。
+    /// - 其余场景默认连接后端；对话连接失败明确报错，不伪装成本地示例回复。
     static var useRemoteAPI: Bool {
         if ProcessInfo.processInfo.arguments.contains("--ui-testing") { return false }
         return true
@@ -99,7 +99,7 @@ enum AppConfiguration {
     static let apiPrefixV1 = "/api/v1"
     /// 旧版路由前缀：`/api`（patients / health_records / events / tasks / timeline）。
     static let apiPrefixLegacy = "/api"
-    /// Current xuantong/main exposes events/tasks, not the planned v1 archive/auth APIs.
+    /// Extended APIs exist on xuantong/master but remain disabled until client integration is verified.
     static let supportsExtendedAPI = false
 
     // MARK: - 超时

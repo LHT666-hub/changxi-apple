@@ -17,7 +17,7 @@ struct SpeechSettingsView: View {
                 Toggle("使用云端语音识别（支持方言）", isOn: $cloudEnabled)
                     .disabled(!AppConfiguration.supportsExtendedAPI)
                 if !AppConfiguration.supportsExtendedAPI {
-                    Text("当前玄同版本未提供云端转写接口，语音输入使用 Apple 语音识别。")
+                    Text("此版本尚未启用玄同云端转写，语音输入使用 Apple 语音识别。")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
                 Text(cloudEnabled

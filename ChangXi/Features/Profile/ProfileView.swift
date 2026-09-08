@@ -72,7 +72,7 @@ struct BackendConnectionView: View {
             Card {
                 Text("当前可用的后端能力").font(.headline)
                 Text("对话事件、健康测量事件、照护任务与任务完成。")
-                Text("此仓库尚未提供账户登录、文档归档和健康记录跨设备恢复接口，这些内容仍保存在本机。")
+                Text("此版本尚未启用远程账户登录、文档归档和健康记录跨设备恢复。最新玄同接口仍需联调，资料目前保存在本机。")
                     .font(.footnote).foregroundStyle(CX.muted)
             }
             Text("GitHub 是代码仓库地址，不是运行中的服务。真机请使用手机能访问的服务器地址；127.0.0.1 仅适用于在同一台 Mac 上运行的模拟器。")

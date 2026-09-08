@@ -49,7 +49,7 @@ struct ReportImportView: View {
                     TextField("关于这份报告，想问什么？", text: $note, axis: .vertical).lineLimit(2...5)
                     Text((AppConfiguration.useRemoteAPI && AppConfiguration.supportsExtendedAPI)
                          ? "识别由常曦云端完成，照片仅在你主动导入时上传；即使识别失败，照片也会保留在本机。"
-                         : "当前玄同版本尚未提供报告识别与归档接口。照片先保存在本机，文字说明可以加入对话。")
+                         : "此版本尚未启用云端报告识别与归档。照片先保存在本机，文字说明可以加入对话。")
                         .font(.footnote).foregroundStyle(CX.muted)
                     Button(saved ? "已保存到本机报告" : "保存报告到本机") { saveReport() }
                         .buttonStyle(PrimaryButton()).disabled(saved)
