@@ -22,6 +22,10 @@ struct ProfileView: View {
                 NavigationLink { DevicesView() } label: { RowLabel(title: "我的设备", subtitle: "设备管理 · 数据同步", icon: "applewatch", tint: .purple) }
             }.buttonStyle(.plain)
             Card {
+                NavigationLink { BackendConnectionView() } label: {
+                    RowLabel(title: "玄同连接", subtitle: "服务地址 · 连接检查", icon: "network")
+                }
+                Divider()
                 NavigationLink { PrivacyView() } label: { RowLabel(title: "隐私与授权", subtitle: "数据安全 · 权限管理", icon: "checkmark.shield.fill", tint: CX.teal) }
                 Divider()
                 NavigationLink { NotificationSettingsView() } label: { RowLabel(title: "通知设置", subtitle: "用药提醒 · 健康提醒", icon: "bell.fill", tint: .orange) }
@@ -34,6 +38,70 @@ struct ProfileView: View {
             }.buttonStyle(.plain)
             DemoLabel()
         }.navigationTitle("我的")
+    }
+}
+
+struct BackendConnectionView: View {
+    @Environment(AuthSession.self) private var auth
+    @State private var address = AppConfiguration.apiBaseURL.absoluteString
+    @State private var checking = false
+    @State private var status = "尚未检查连接"
+    @State private var connected = false
+
+    var body: some View {
+        Page {
+            Card {
+                Label("常曦 × 玄同", systemImage: "network").font(.title2.weight(.medium))
+                Text("连接正在运行的玄同服务，让常曦调用家庭医生团队。")
+                    .font(.subheadline).foregroundStyle(CX.muted)
+                TextField("https://你的服务器地址", text: $address)
+                    .textInputAutocapitalization(.never).autocorrectionDisabled()
+                    .keyboardType(.URL).padding(14)
+                    .background(CX.mist, in: .rect(cornerRadius: 14))
+                    .accessibilityIdentifier("backend-address")
+                Button {
+                    Task { await connect() }
+                } label: {
+                    HStack { if checking { ProgressView().tint(.white) }; Text(checking ? "正在连接…" : "检查并使用这个地址") }
+                }.buttonStyle(PrimaryButton()).disabled(checking)
+                    .accessibilityIdentifier("check-backend")
+                Label(status, systemImage: connected ? "checkmark.circle" : "info.circle")
+                    .font(.footnote).foregroundStyle(connected ? CX.teal : CX.muted)
+                    .accessibilityIdentifier("backend-status")
+            }
+            Card {
+                Text("当前可用的后端能力").font(.headline)
+                Text("对话事件、健康测量事件、照护任务与任务完成。")
+                Text("此仓库尚未提供账户登录、文档归档和健康记录跨设备恢复接口，这些内容仍保存在本机。")
+                    .font(.footnote).foregroundStyle(CX.muted)
+            }
+            Text("GitHub 是代码仓库地址，不是运行中的服务。真机请使用手机能访问的服务器地址；127.0.0.1 仅适用于在同一台 Mac 上运行的模拟器。")
+                .font(.footnote).foregroundStyle(CX.muted)
+        }.navigationTitle("玄同连接")
+        .onChange(of: address) { connected = false; status = "地址已更改，请重新检查" }
+    }
+
+    @MainActor private func connect() async {
+        guard let url = AppConfiguration.sanitizedURL(address),
+              url.scheme == "https" || AppConfiguration.allowsInsecureHTTP(url) else {
+            status = "请输入服务的根地址，例如 https://api.example.com，不要填 GitHub 仓库地址。"; return
+        }
+        #if !targetEnvironment(simulator)
+        if AppConfiguration.isLocalDevelopment(url) {
+            status = "这个地址指向手机自己，请改为后端服务器地址。"; return
+        }
+        #endif
+        checking = true; connected = false
+        defer { checking = false }
+        do {
+            let probe = try await BackendProbe.check(url)
+            if url != AppConfiguration.apiBaseURL { auth.logout() }
+            UserDefaults.standard.set(url.absoluteString, forKey: "cx.backend.url")
+            connected = true
+            status = probe.provider == "mock" ? "已连接玄同 · 当前为 Mock 测试模型，非真实 AI" : "已连接玄同 · \(probe.provider)"
+        } catch {
+            status = "未能连接，地址没有更改。请确认玄同已经启动、网络可达。"
+        }
     }
 }
 

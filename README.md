@@ -1,6 +1,8 @@
 # 常曦 · ChangXi
 
-原生 SwiftUI 健康陪伴应用，使用 Xcode 26 / iOS 26 SDK 构建，支持 iPhone / iPad，最低兼容 iOS 18。iOS 26 使用系统 Liquid Glass，iOS 18–25 保留 Material 降级样式。
+> 最新连接状态与可用能力以 [已验证的本机连接](docs/LOCAL_BACKEND.md) 为准。当前玄同提供事件与照护任务接口；认证、文档归档及健康记录跨设备恢复尚未实现。GitHub 仓库本身不是正在运行的后端。
+
+原生 SwiftUI 健康陪伴应用，使用 Xcode 26 / iOS 26 SDK 构建，支持 iPhone / iPad，最低 iOS 26。导航与悬浮操作使用玻璃材质，内容卡片保持清晰的阅读层次。
 
 **月相表达过程，数据表达健康。** 月池是实时交互组件，人物、环境与数据各自承担清晰的职责。
 
@@ -31,7 +33,7 @@ open ChangXi.xcodeproj
 
 ## 后端对接
 
-应用已接入「玄同」后端的认证、语音转写、报告识别、患者档案、健康记录/测量、事件工作流与照护任务基础设施。全部远程能力遵循**本地优先、上行 best-effort**：离线或后端不可用时降级为本地演示，绝不阻断本机使用。
+当前已对齐玄同实际存在的事件工作流与照护任务接口。健康测量以事件上传，本地记录始终保留；对话连接失败明确提示重试，不将演示回复冒充云端结果。旧的认证、语音、文档和档案服务适配器仍保留，但对应后端端点尚未实现，相关请求已关闭。
 
 - 后端地址、路由前缀、各端点契约与错误结构见 [后端对接说明](docs/BACKEND_INTEGRATION.md)。
 - 当前 `xuantong/main` 没有 `/api/v1/chat*` 路由；对话严格使用已存在的 `POST /api/events` 与 `patient.message.received` 事件，响应只展示 `workflow.patient_communication`。准确契约与上线前安全缺口见 [常曦 × 玄同对接约定](docs/XUANTONG_INTEGRATION.md)。

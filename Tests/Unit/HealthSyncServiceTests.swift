@@ -36,7 +36,11 @@ final class HealthSyncServiceTests: XCTestCase {
         XCTAssertTrue(json.contains("\"systolic\":150"), json)
         XCTAssertTrue(json.contains("\"diastolic\":95"), json)
         XCTAssertTrue(json.contains("\"symptom\":\"头晕\""), json)
-        XCTAssertFalse(json.contains("unit"), "血压 payload 不含 unit")
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: APIClient.makeEncoder().encode(payload)) as? [String: Any])
+        let measurements = try XCTUnwrap(object["measurements"] as? [[String: Any]])
+        XCTAssertEqual(measurements.first?["type"] as? String, "blood_pressure")
+        XCTAssertEqual(measurements.first?["unit"] as? String, "mmHg")
+        XCTAssertEqual(measurements.first?["secondary_value"] as? Double, 95)
     }
 
     func testPayloadGlucoseAndWeight() throws {

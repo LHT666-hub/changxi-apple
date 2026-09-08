@@ -28,7 +28,7 @@ struct DemoAuthView: View {
 
     var body: some View {
         Page {
-            if AppConfiguration.useRemoteAPI {
+            if AppConfiguration.useRemoteAPI && AppConfiguration.supportsExtendedAPI {
                 remoteCard
             }
             offlineCard
@@ -107,7 +107,7 @@ struct DemoAuthView: View {
             .frame(minHeight: 44)
             .accessibilityIdentifier("offline-demo-toggle")
 
-            if showOffline || !AppConfiguration.useRemoteAPI {
+            if showOffline || !AppConfiguration.useRemoteAPI || !AppConfiguration.supportsExtendedAPI {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("无需真实账户，验证码固定为 123456，仅在本机体验。")
                         .font(.footnote).foregroundStyle(CX.muted)

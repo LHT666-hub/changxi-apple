@@ -18,18 +18,19 @@ final class APIClient: Sendable {
     static let shared = APIClient()
 
     /// 后端基础地址。
-    let baseURL: URL
+    private let configuredBaseURL: URL?
+    var baseURL: URL { configuredBaseURL ?? AppConfiguration.apiBaseURL }
     /// 底层 URL 会话（可注入以便测试）。
     let session: URLSession
     /// JWT 存储（可注入以便测试）。
     let tokenStore: TokenStore
 
     init(
-        baseURL: URL = AppConfiguration.apiBaseURL,
+        baseURL: URL? = nil,
         session: URLSession = .shared,
         tokenStore: TokenStore = TokenStore()
     ) {
-        self.baseURL = baseURL
+        self.configuredBaseURL = baseURL
         self.session = session
         self.tokenStore = tokenStore
     }

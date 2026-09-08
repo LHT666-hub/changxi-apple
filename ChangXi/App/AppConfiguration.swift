@@ -32,6 +32,8 @@ enum AppConfiguration {
         if let fromArgs = baseURLOverride(fromArguments: ProcessInfo.processInfo.arguments) {
             return fromArgs
         }
+        if let raw = ProcessInfo.processInfo.environment["XUANTONG_BASE_URL"], let url = sanitizedURL(raw) { return url }
+        if let raw = UserDefaults.standard.string(forKey: "cx.backend.url"), let url = sanitizedURL(raw) { return url }
         // ② Info.plist 配置
         if let plistValue = Bundle.main.object(forInfoDictionaryKey: "CX_API_BASE_URL") as? String,
            let url = URL(string: plistValue.trimmingCharacters(in: .whitespacesAndNewlines)),
@@ -76,9 +78,14 @@ enum AppConfiguration {
         return nil
     }
 
-    private static func sanitizedURL(_ raw: String) -> URL? {
+    static func sanitizedURL(_ raw: String) -> URL? {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, let url = URL(string: trimmed), url.scheme != nil, url.host != nil else {
+        guard !trimmed.isEmpty, let url = URL(string: trimmed),
+              ["https", "http"].contains(url.scheme?.lowercased() ?? ""),
+              let host = url.host, !host.isEmpty,
+              url.user == nil, url.password == nil, url.query == nil, url.fragment == nil,
+              url.path.isEmpty || url.path == "/",
+              !["github.com", "www.github.com"].contains(host.lowercased()) else {
             return nil
         }
         return url
@@ -92,6 +99,8 @@ enum AppConfiguration {
     static let apiPrefixV1 = "/api/v1"
     /// 旧版路由前缀：`/api`（patients / health_records / events / tasks / timeline）。
     static let apiPrefixLegacy = "/api"
+    /// Current xuantong/main exposes events/tasks, not the planned v1 archive/auth APIs.
+    static let supportsExtendedAPI = false
 
     // MARK: - 超时
 
@@ -134,4 +143,23 @@ extension Notification.Name {
     ///
     /// 后端**没有 refresh 机制**，收到该通知后应清空本地会话并跳转登录页。
     static let cxSessionExpired = Notification.Name("com.lht.changxi.session.expired")
+}
+
+struct BackendProbe {
+    struct Response: Decodable {
+        struct App: Decodable { let status: String }
+        struct LLM: Decodable { let provider: String; let healthy: Bool }
+        let app: App
+        let llm: LLM
+    }
+    let provider: String
+    static func check(_ baseURL: URL, session: URLSession = .shared) async throws -> BackendProbe {
+        var request = URLRequest(url: baseURL.appending(path: "api/health/detail"))
+        request.timeoutInterval = 8
+        let (data, response) = try await session.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }
+        let result = try JSONDecoder().decode(Response.self, from: data)
+        guard result.app.status == "ok", result.llm.healthy else { throw URLError(.cannotConnectToHost) }
+        return .init(provider: result.llm.provider)
+    }
 }

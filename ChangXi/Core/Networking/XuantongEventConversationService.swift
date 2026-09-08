@@ -57,13 +57,11 @@ struct XuantongEventConversationService: Sendable {
     var session: URLSession = .shared
 
     static func configured() -> Self {
-        let environment = ProcessInfo.processInfo.environment["XUANTONG_BASE_URL"]
-        let url = environment.flatMap(URL.init(string:)) ?? AppConfiguration.apiBaseURL
-        return Self(baseURL: url)
+        Self(baseURL: AppConfiguration.apiBaseURL)
     }
 
     func reply(to message: String, patientID: String) async throws -> XuantongEventReply {
-        guard baseURL.scheme == "https" || AppConfiguration.isLocalDevelopment(baseURL) else {
+        guard baseURL.scheme == "https" || AppConfiguration.allowsInsecureHTTP(baseURL) else {
             throw URLError(.secureConnectionFailed)
         }
         var request = URLRequest(url: baseURL.appending(path: "api/events"))

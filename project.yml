@@ -2,7 +2,7 @@ name: ChangXi
 options:
   bundleIdPrefix: com.lht
   deploymentTarget:
-    iOS: "18.0"
+    iOS: "26.0"
   xcodeVersion: "26.0"
 settings:
   base:
@@ -23,6 +23,7 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: 常曦
         INFOPLIST_KEY_NSCameraUsageDescription: 常曦仅在你主动拍摄报告或药盒时使用相机。
         INFOPLIST_KEY_NSMicrophoneUsageDescription: 常曦仅在你主动发起语音输入时使用麦克风。
+        INFOPLIST_KEY_NSLocalNetworkUsageDescription: 常曦仅在你配置局域网玄同服务后连接该服务。
         INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: 常曦将你主动输入的语音转成可修改的文字。
         INFOPLIST_KEY_NSAppTransportSecurity_NSAllowsLocalNetworking: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES

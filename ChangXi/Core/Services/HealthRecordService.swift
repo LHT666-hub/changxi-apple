@@ -15,6 +15,8 @@ enum EventPayloadValue: Encodable, Sendable {
     case double(Double)
     case string(String)
     case bool(Bool)
+    case array([EventPayloadValue])
+    case object([String: EventPayloadValue])
 
     func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
@@ -23,6 +25,8 @@ enum EventPayloadValue: Encodable, Sendable {
         case .double(let value): try container.encode(value)
         case .string(let value): try container.encode(value)
         case .bool(let value): try container.encode(value)
+        case .array(let value): try container.encode(value)
+        case .object(let value): try container.encode(value)
         }
     }
 }
@@ -57,9 +61,9 @@ enum HealthMetricMapping {
     /// 触发工作流的事件类型（写入 `POST /api/events` 的 `event_type`）。
     static func eventType(_ kind: MetricKind) -> String {
         switch kind {
-        case .pressure: return "bp_reading"
-        case .glucose: return "glucose_reading"
-        case .weight: return "weight_reading"
+        case .pressure: return "blood_pressure.recorded"
+        case .glucose: return "blood_glucose.recorded"
+        case .weight: return "weight.recorded"
         }
     }
 

@@ -43,7 +43,7 @@ struct MoonBackground: View {
                     .scaledToFill()
                     .frame(height: 520)
                     .clipped()
-                    .opacity(colorScheme == .dark ? 0.16 : 0.22)
+                    .opacity(colorScheme == .dark ? 0.10 : 0.12)
                     .mask(
                         LinearGradient(
                             colors: [.white, .white.opacity(0.72), .clear],
@@ -133,9 +133,6 @@ struct Card<Content: View>: View {
                     RoundedRectangle(cornerRadius: 22, style: .continuous)
                         .strokeBorder(CX.separator.opacity(0.18), lineWidth: 0.5)
                 }
-        } else if #available(iOS 26, *) {
-            card
-                .glassEffect(.regular, in: .rect(cornerRadius: 22, style: .continuous))
         } else {
             card
                 .background(.regularMaterial, in: .rect(cornerRadius: 22, style: .continuous))
@@ -143,7 +140,7 @@ struct Card<Content: View>: View {
                     RoundedRectangle(cornerRadius: 22, style: .continuous)
                         .strokeBorder(CX.separator.opacity(0.18), lineWidth: 0.5)
                 }
-                .shadow(color: .black.opacity(0.055), radius: 18, y: 8)
+                .shadow(color: CX.blue.opacity(0.035), radius: 12, y: 5)
         }
     }
 }
@@ -172,12 +169,12 @@ struct RowLabel: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            Image(systemName: icon)
-                .font(.title3.weight(.semibold))
-                .symbolRenderingMode(.hierarchical)
+            Image(systemName: icon.replacingOccurrences(of: ".fill", with: ""))
+                .font(.title3.weight(.regular))
+                .symbolRenderingMode(.monochrome)
                 .foregroundStyle(tint)
                 .frame(width: 44, height: 44)
-                .background(tint.opacity(0.11), in: .rect(cornerRadius: 13, style: .continuous))
+                .background(tint.opacity(0.05), in: Circle())
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(title).font(.headline)
@@ -216,21 +213,28 @@ struct PrimaryButton: ButtonStyle {
             .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1)
             .animation(.spring(duration: 0.18, bounce: 0), value: configuration.isPressed)
 
-        if #available(iOS 26, *), !reduceTransparency {
-            label
-                .glassEffect(
-                    .regular.tint(CX.blue).interactive(),
-                    in: .rect(cornerRadius: 16, style: .continuous)
-                )
-        } else {
-            label
-                .background(CX.blue, in: .rect(cornerRadius: 16, style: .continuous))
-                .shadow(
-                    color: CX.blue.opacity(configuration.isPressed ? 0.12 : 0.24),
-                    radius: 14,
-                    y: 8
-                )
-        }
+        label
+            .background(
+                LinearGradient(colors: reduceTransparency ? [CX.blue, CX.blue] :
+                    [Color(red: 0.30, green: 0.48, blue: 0.74), CX.blue, Color(red: 0.13, green: 0.29, blue: 0.54)],
+                    startPoint: .topLeading, endPoint: .bottomTrailing),
+                in: .rect(cornerRadius: 18, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 18).strokeBorder(
+                    LinearGradient(colors: [.white.opacity(0.42), .white.opacity(0.05)], startPoint: .top, endPoint: .bottom), lineWidth: 0.7)
+            }
+            .shadow(color: CX.blue.opacity(isEnabled ? 0.16 : 0), radius: configuration.isPressed ? 2 : 8, y: configuration.isPressed ? 1 : 4)
+            .offset(y: configuration.isPressed && !reduceMotion ? 1 : 0)
+    }
+}
+
+struct QuietPressButton: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.985 : 1)
+            .opacity(configuration.isPressed ? 0.88 : 1)
+            .animation(reduceMotion ? nil : .spring(duration: 0.24, bounce: 0.12), value: configuration.isPressed)
     }
 }
 
@@ -438,12 +442,8 @@ struct MoonPhaseCard: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            Image(systemName: phase.symbol)
-                .font(.system(size: 34, weight: .light))
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(CX.blue)
-                .frame(width: 54, height: 54)
-                .background(CX.moonlight.opacity(0.11), in: Circle())
+            MoonDisc(phase: Double(phase.lunarDay - 1) / 29.53)
+                .frame(width: 44, height: 44).padding(5)
             VStack(alignment: .leading, spacing: 4) {
                 Text(phase.phaseName).font(.headline)
                 Text("\(phase.dateLabel) · \(phase.rhythmLabel)")
@@ -467,11 +467,8 @@ struct MoonRhythmDetailView: View {
     var body: some View {
         Page(illustrated: true) {
             VStack(spacing: 12) {
-                Image(systemName: phase.symbol)
-                    .font(.system(size: 108, weight: .ultraLight))
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(CX.blue)
-                    .shadow(color: CX.moonlight.opacity(0.35), radius: 22)
+                MoonDisc(phase: Double(phase.lunarDay - 1) / 29.53)
+                    .frame(width: 108, height: 108).padding(12)
                 Text(phase.phaseName).font(.largeTitle.weight(.semibold)).fontDesign(.serif)
                 Text("\(phase.dateLabel) · \(phase.rhythmLabel)").foregroundStyle(CX.muted)
             }

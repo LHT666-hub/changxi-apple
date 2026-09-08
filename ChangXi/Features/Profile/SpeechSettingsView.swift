@@ -15,12 +15,17 @@ struct SpeechSettingsView: View {
         Form {
             Section("语音输入") {
                 Toggle("使用云端语音识别（支持方言）", isOn: $cloudEnabled)
+                    .disabled(!AppConfiguration.supportsExtendedAPI)
+                if !AppConfiguration.supportsExtendedAPI {
+                    Text("当前玄同版本未提供云端转写接口，语音输入使用 Apple 语音识别。")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
                 Text(cloudEnabled
                      ? "开启后，你主动录制的语音会上传到常曦后端识别，支持普通话与部分方言；识别失败时自动回落到 Apple 本机识别。"
                      : "关闭时仅使用 Apple 本机语音识别，你的语音不会上传。")
                     .font(.footnote).foregroundStyle(.secondary)
             }
-            if cloudEnabled {
+            if cloudEnabled && AppConfiguration.supportsExtendedAPI {
                 Section("识别语言 / 方言") {
                     Picker("方言", selection: $dialectRawValue) {
                         ForEach(SpeechDialect.allCases) { dialect in

@@ -121,7 +121,7 @@ final class AuthSession {
     ///
     /// - Note: `--ui-testing` / 离线（`useRemoteAPI == false`）下不发起网络请求，直接保持 `signedOut`。
     func restoreSession() async {
-        guard AppConfiguration.useRemoteAPI else {
+        guard AppConfiguration.useRemoteAPI, AppConfiguration.supportsExtendedAPI else {
             state = .signedOut
             return
         }

@@ -26,7 +26,7 @@ struct HealthView: View {
     /// Task #25：进入健康页时，一次性 best-effort 绑定患者档案并拉取云端测量历史（本地优先合并去重）。
     /// 离线（`useRemoteAPI == false`）时不发任何请求。
     @MainActor private func syncOnAppear() async {
-        guard AppConfiguration.useRemoteAPI else { return }
+        guard AppConfiguration.useRemoteAPI, AppConfiguration.supportsExtendedAPI else { return }
         let pid = PatientContext.effectiveID(auth)
         await PatientContext.bindProfileIfNeeded(auth: auth, name: store.data.name, person: store.data.person)
         await HealthSyncService.shared.pullRemote(store: store, patientID: pid)

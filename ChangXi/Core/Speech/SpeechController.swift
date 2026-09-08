@@ -105,7 +105,7 @@ final class SpeechController {
     /// - 成功且返回文本非空 → 覆盖 ``transcript``（对话页据此把文字填入输入框）；
     /// - 失败 / 返回空 → 保留 Apple 本机转写；仅当本机也没有任何文字时才给出低调提示。
     private func transcribeInCloud(audio: Data?) {
-        guard AppConfiguration.useRemoteAPI else { return }
+        guard (AppConfiguration.useRemoteAPI && AppConfiguration.supportsExtendedAPI) else { return }
         guard UserDefaults.standard.bool(forKey: SpeechSettingsKeys.cloudEnabled) else { return }
         guard let audio, audio.count > 44 else { return }
         let storedDialect = UserDefaults.standard.string(forKey: SpeechSettingsKeys.dialect) ?? SpeechDialect.zh.rawValue

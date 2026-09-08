@@ -10,7 +10,7 @@ struct ReportListContent: View {
         NavigationLink { ReportDetailView() } label: { Card { RowLabel(title: "9月5日体检报告", subtitle: "示例报告 · 3组指标已整理", icon: "doc.text.fill") } }.buttonStyle(.plain)
         Button { upload = true } label: { Label("添加报告照片", systemImage: "plus") }.buttonStyle(PrimaryButton())
             .sheet(isPresented: $upload) { NavigationStack { ReportImportView() } }
-        if AppConfiguration.useRemoteAPI {
+        if AppConfiguration.useRemoteAPI && AppConfiguration.supportsExtendedAPI {
             NavigationLink { CloudDocumentsView() } label: { Card { RowLabel(title: "云端文档", subtitle: "已归档的报告与图片", icon: "externaldrive.fill") } }.buttonStyle(.plain)
         }
     }

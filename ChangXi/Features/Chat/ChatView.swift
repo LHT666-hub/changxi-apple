@@ -1,5 +1,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import PDFKit
 
 struct ChatView: View {
     var initialPrompt = ""
@@ -16,6 +17,7 @@ struct ChatView: View {
     @State private var showHistory = false
     @State private var showFiles = false
     @State private var pendingAttachment: String?
+    @State private var pendingAttachmentText: String?
     @State private var lastUserText = ""
     @State private var activeRequest: UUID?
     @State private var pendingText = ""
@@ -28,7 +30,7 @@ struct ChatView: View {
     @State private var didRestoreHistory = false
     @FocusState private var keyboard: Bool
     private let demo = DemoConversationService()
-    private let eventService = XuantongEventConversationService.configured()
+    private var eventService: XuantongEventConversationService { .configured() }
 
     /// 是否有一次问答正在进行（用于禁用输入 / 显示停止按钮）。
     private var isBusy: Bool { activeRequest != nil }
@@ -39,7 +41,9 @@ struct ChatView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(spacing: 20) {
-                        MoonPoolView(state: speech.isRecording ? .listening : state, amplitude: speech.level, compact: !store.data.messages.isEmpty)
+                        if store.data.messages.isEmpty && !keyboard {
+                            MoonPoolView(state: speech.isRecording ? .listening : state, amplitude: speech.level, compact: true)
+                        }
                         if let context = assistant.activeContext {
                             Card {
                                 Label("正在帮你填写\(context.title)", systemImage: "wand.and.stars")
@@ -54,11 +58,18 @@ struct ChatView: View {
                             }
                         }
                         if store.data.messages.isEmpty && !isStreaming {
-                            Card {
-                                Text("有什么想和我说的？").font(.title2.bold())
-                                Text("说说今天的感受，或一起看看健康记录。").foregroundStyle(CX.muted)
-                                ForEach(["我想了解这份体检报告", "看看今天的用药计划", "我想记录今天的感受"], id: \.self) { prompt in Button(prompt) { text = prompt; keyboard = true }.frame(minHeight: 44) }
+                            VStack(alignment: .leading, spacing: 18) {
+                                Text("此刻，想聊些什么？").font(.title2.weight(.medium)).fontDesign(.serif)
+                                Text("一段心事，一次记录，或一个小小的疑问。")
+                                    .font(.subheadline).foregroundStyle(CX.muted)
+                                ForEach(["我想了解这份体检报告", "看看今天的用药计划", "我想记录今天的感受"], id: \.self) { prompt in
+                                    Button { text = prompt; keyboard = true } label: {
+                                        HStack { Text(prompt).font(.subheadline); Spacer(); Image(systemName: "arrow.up.left").font(.caption).foregroundStyle(CX.muted) }
+                                            .frame(minHeight: 44).contentShape(Rectangle())
+                                    }.buttonStyle(QuietPressButton())
+                                }
                             }
+                            .padding(.horizontal, 8)
                         }
                         ForEach(store.data.messages.suffix(40)) { message in
                             HStack {
@@ -105,10 +116,10 @@ struct ChatView: View {
                 .onChange(of: store.data.messages.count) { _, _ in scrollToBottom(proxy) }
                 .onChange(of: streamingText) { _, _ in scrollToBottom(proxy) }
             }
-            composer
         }
-        .background { MoonBackground(illustrated: true) }.foregroundStyle(CX.ink)
-        .navigationTitle("告诉常曦").navigationBarTitleDisplayMode(.inline)
+        .safeAreaInset(edge: .bottom, spacing: 0) { composer }
+        .background { MoonBackground() }.foregroundStyle(CX.ink)
+        .navigationTitle("常曦").navigationBarTitleDisplayMode(.inline)
         .cxNavigationChrome()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) { Button("关闭") { speech.stop(); cancelRequest(); dismiss() } }
@@ -120,7 +131,7 @@ struct ChatView: View {
             switch result {
             case .success(let urls):
                 guard let url = urls.first else { return }
-                pendingAttachment = url.lastPathComponent
+                guard readAttachment(url) else { return }
                 if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     text = "我想请你帮我看看这个附件"
                 }
@@ -149,7 +160,7 @@ struct ChatView: View {
                     Image(systemName: "doc")
                     Text(pendingAttachment).lineLimit(1)
                     Spacer()
-                    Button { self.pendingAttachment = nil } label: { Image(systemName: "xmark.circle.fill") }
+                    Button { self.pendingAttachment = nil; pendingAttachmentText = nil } label: { Image(systemName: "xmark.circle.fill") }
                         .accessibilityLabel("移除附件")
                 }
                 .font(.caption)
@@ -169,7 +180,6 @@ struct ChatView: View {
                         Image(systemName: "plus")
                             .font(.headline.weight(.medium))
                             .frame(width: 44, height: 44)
-                            .cxInteractiveGlassCircle()
                     }
                     .accessibilityLabel("添加照片或文件")
 
@@ -188,7 +198,6 @@ struct ChatView: View {
                             .font(.headline.weight(.medium))
                             .frame(width: 44, height: 44)
                             .foregroundStyle(speech.isRecording ? CX.coral : CX.ink)
-                            .cxInteractiveGlassCircle()
                     }
                     .disabled(isBusy)
                     .accessibilityLabel(speech.isRecording ? "停止录音" : "语音输入")
@@ -246,9 +255,10 @@ struct ChatView: View {
         guard !value.isEmpty else { return }
         speech.stop()
         lastUserText = value
-        let outgoing = pendingAttachment.map { "\(value)\n附件：\($0)" } ?? value
+        let outgoing = pendingAttachment.map { "\(value)\n附件：\($0)\n\(pendingAttachmentText ?? "")" } ?? value
         store.data.messages.append(ConversationMessage(isUser: true, text: outgoing))
         pendingAttachment = nil
+        pendingAttachmentText = nil
         text = ""; keyboard = false
         requestReply(outgoing)
         MoonHaptics.shared.play(enabled: store.data.haptics)
@@ -266,6 +276,24 @@ struct ChatView: View {
         } else {
             error = "这段内容还不能安全填入当前表单，请只提供一组明确的数值或更具体的说明。"
         }
+    }
+
+    private func readAttachment(_ url: URL) -> Bool {
+        let access = url.startAccessingSecurityScopedResource()
+        defer { if access { url.stopAccessingSecurityScopedResource() } }
+        do {
+            guard (try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0) < 10_000_000 else {
+                error = "请选择小于 10 MB 的文件。"; return false
+            }
+            let content = url.pathExtension.lowercased() == "pdf" ? (PDFDocument(url: url)?.string ?? "") : try String(contentsOf: url, encoding: .utf8)
+            guard !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                error = "这个文件没有可提取的文字，扫描版 PDF 请先转换成文字。"; return false
+            }
+            pendingAttachment = url.lastPathComponent
+            pendingAttachmentText = String(content.prefix(12000))
+            if content.count > 12000 { pendingAttachmentText? += "\n（文件较长，本次附上前 12000 字）" }
+            return true
+        } catch { self.error = "文件读取失败，请重新选择 PDF 或 UTF-8 文本。"; return false }
     }
 
     private func requestReply(_ value: String) {
@@ -286,7 +314,8 @@ struct ChatView: View {
             return
         }
         do {
-            let reply = try await eventService.reply(to: pendingText, patientID: currentPatientId)
+            let request = assistant.activeContext.map { "当前页面：\($0.title)。请只根据我提供的事实协助整理，不要编造数据。\n\(pendingText)" } ?? pendingText
+            let reply = try await eventService.reply(to: request, patientID: currentPatientId)
             try Task.checkCancellation()
             guard activeRequest == requestId else { return }
             state = switch reply.clinicalRisk {
@@ -302,7 +331,8 @@ struct ChatView: View {
             finishTurn()
         } catch {
             guard activeRequest == requestId else { return }
-            await demoFallback(requestId: requestId)
+            self.error = "暂时没有连接上玄同，未生成云端回复。请在「我的 → 玄同连接」检查服务地址，然后重试。"
+            finishTurn()
         }
     }
 

@@ -60,7 +60,7 @@ struct CloudDocumentsView: View {
     }
 
     @MainActor private func load() async {
-        guard AppConfiguration.useRemoteAPI else { return }
+        guard AppConfiguration.useRemoteAPI, AppConfiguration.supportsExtendedAPI else { return }
         loading = true; error = nil
         defer { loading = false }
         do {

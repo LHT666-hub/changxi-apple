@@ -62,23 +62,16 @@ struct MoonPoolView: View {
             TimelineView(.animation(minimumInterval: 1.0 / 30, paused: paused)) { timeline in
                 let time = paused ? 0 : timeline.date.timeIntervalSince(entered)
 
-                ZStack {
+                ZStack(alignment: .bottom) {
                     celestialMotes(time: time)
                     secondaryBloom(time: time)
                     ambientGlow(time: time)
                     pool(time: time)
-                }
+                }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }
 
             if character {
                 characterView
-            }
-
-            if state == .notification || state == .doctorReply {
-                TimelineView(.animation(minimumInterval: 1.0 / 20, paused: paused)) { timeline in
-                    let time = paused ? 0 : timeline.date.timeIntervalSince(entered)
-                    notificationLights(time: time)
-                }
             }
 
             MoonStatusPill(state: state, reduceTransparency: reduceTransparency)
@@ -149,17 +142,18 @@ struct MoonPoolView: View {
                 RadialGradient(
                     colors: [
                         .white.opacity(reduceTransparency ? 0.04 : 0.16),
-                        state.accent.opacity(reduceTransparency ? 0.08 : 0.24),
-                        state.accent.opacity(0.05),
+                        CX.moonlight.opacity(reduceTransparency ? 0.03 : 0.10),
+                        CX.moonlight.opacity(0.02),
                         .clear
                     ],
                     center: .center,
                     startRadius: 2,
-                    endRadius: compact ? 116 : 178
+                    endRadius: compact ? 78 : 120
                 )
             )
             .scaleEffect(pulse)
             .frame(width: compact ? 250 : 360, height: compact ? 170 : 270)
+            .blur(radius: 22)
             .offset(y: compact ? 12 : 18)
             .allowsHitTesting(false)
     }
@@ -169,9 +163,9 @@ struct MoonPoolView: View {
             drawPool(context: &context, size: size, time: time)
         }
         .frame(maxWidth: 520)
-        .frame(height: compact ? 68 : 98)
+        .frame(height: compact ? 80 : 120)
         .padding(.horizontal, compact ? 6 : 12)
-        .offset(y: compact ? 14 : 24)
+        .offset(y: compact ? -6 : -10)
         .allowsHitTesting(false)
     }
 
@@ -180,7 +174,7 @@ struct MoonPoolView: View {
             .resizable()
             .scaledToFit()
             .frame(height: compact ? 142 : 226)
-            .phaseAnimator(reduceMotion ? [CharacterRestPhase.still] : CharacterRestPhase.allCases) { content, phase in
+            .phaseAnimator(paused ? [CharacterRestPhase.still] : CharacterRestPhase.allCases) { content, phase in
                 content
                     .scaleEffect(x: phase.scaleX, y: phase.scaleY, anchor: .bottom)
                     .rotationEffect(.degrees(phase.rotation), anchor: .bottom)
@@ -216,28 +210,14 @@ struct MoonPoolView: View {
             }
             .offset(x: compact ? -4 : -14, y: compact ? -34 : -55)
             .shadow(color: .white.opacity(reduceTransparency ? 0.04 : 0.32), radius: 7, y: -2)
-            .shadow(color: state.accent.opacity(0.18), radius: 20, y: 11)
+            .shadow(color: CX.blue.opacity(0.12), radius: 14, y: 8)
             .allowsHitTesting(false)
-    }
-
-    private func notificationLights(time: TimeInterval) -> some View {
-        HStack(spacing: compact ? 54 : 84) {
-            ForEach(0..<(state == .doctorReply ? 2 : 1), id: \.self) { index in
-                Circle()
-                    .fill(CX.gold)
-                    .frame(width: 8, height: 8)
-                    .shadow(color: CX.gold.opacity(0.8), radius: 8)
-                    .offset(y: paused ? 0 : sin(time * 1.2 + Double(index)) * 3)
-            }
-        }
-        .offset(y: compact ? -55 : -88)
-        .allowsHitTesting(false)
     }
 
     private func drawPool(context: inout GraphicsContext, size: CGSize, time: TimeInterval) {
         let center = CGPoint(x: size.width / 2, y: size.height * 0.52)
         let poolWidth = size.width * 0.94
-        let poolHeight = size.height * 0.58
+        let poolHeight = size.height * 0.78
         let base = CGRect(
             x: center.x - poolWidth / 2,
             y: center.y - poolHeight / 2,
@@ -246,30 +226,41 @@ struct MoonPoolView: View {
         )
 
         var baseContext = context
-        baseContext.addFilter(.shadow(color: state.accent.opacity(0.20), radius: 18, x: 0, y: 10))
+        baseContext.addFilter(.blur(radius: 5))
         baseContext.fill(
             Path(ellipseIn: base),
-            with: .radialGradient(
+            with: .linearGradient(
                 Gradient(colors: [
-                    .white.opacity(0.92),
-                    CX.moonlight.opacity(state == .responding ? 0.58 : 0.36),
-                    state.accent.opacity(0.10)
+                    Color(red: 0.24, green: 0.51, blue: 0.69).opacity(0.32),
+                    Color(red: 0.37, green: 0.67, blue: 0.82).opacity(0.48),
+                    CX.moonlight.opacity(0.28),
+                    .clear
                 ]),
-                center: CGPoint(x: center.x, y: base.minY + base.height * 0.36),
-                startRadius: 0,
-                endRadius: poolWidth * 0.56
+                startPoint: CGPoint(x: center.x, y: base.minY),
+                endPoint: CGPoint(x: center.x, y: base.maxY)
             )
         )
 
-        context.stroke(
-            Path(ellipseIn: base),
-            with: .linearGradient(
-                Gradient(colors: [.white.opacity(0.88), state.accent.opacity(0.34), .white.opacity(0.26)]),
-                startPoint: CGPoint(x: base.minX, y: base.minY),
-                endPoint: CGPoint(x: base.maxX, y: base.maxY)
-            ),
-            lineWidth: 0.8
-        )
+        // Broken horizontal reflections suggest a surface, not a solid glass disc.
+        var surface = context
+        surface.clip(to: Path(ellipseIn: base))
+        for row in 0..<18 {
+            let depth = Double(row) / 18
+            let y = base.minY + base.height * (0.12 + depth * 0.78)
+            let halfWidth = poolWidth * (0.12 + sin(depth * .pi) * 0.30)
+            var line = Path()
+            for step in 0...44 {
+                let x = center.x - halfWidth + 2 * halfWidth * Double(step) / 44
+                let waveY = y + sin(Double(step) * 0.31 + time * 0.6 + Double(row)) * (0.5 + depth)
+                if step == 0 { line.move(to: CGPoint(x: x, y: waveY)) }
+                else { line.addLine(to: CGPoint(x: x, y: waveY)) }
+            }
+            surface.stroke(line, with: .linearGradient(
+                Gradient(colors: [.clear, .white.opacity(row.isMultiple(of: 3) ? 0.55 : 0.20), .clear]),
+                startPoint: CGPoint(x: center.x - halfWidth, y: y),
+                endPoint: CGPoint(x: center.x + halfWidth, y: y)
+            ), lineWidth: row.isMultiple(of: 3) ? 0.9 : 0.5)
+        }
 
         let highlight = CGRect(
             x: base.minX + base.width * 0.12,
@@ -309,9 +300,9 @@ struct MoonPoolView: View {
                 Path(ellipseIn: rect),
                 with: .linearGradient(
                     Gradient(colors: [
-                        state.accent.opacity(opacity * 0.32),
+                        CX.blue.opacity(opacity * 0.32),
                         .white.opacity(opacity),
-                        state.accent.opacity(opacity * 0.18)
+                        CX.blue.opacity(opacity * 0.18)
                     ]),
                     startPoint: CGPoint(x: rect.minX, y: rect.midY),
                     endPoint: CGPoint(x: rect.maxX, y: rect.midY)
@@ -444,6 +435,46 @@ private extension MoonPoolState {
         case .notification, .doctorReply: .impact(flexibility: .soft)
         default: .selection
         }
+    }
+}
+
+struct MoonDisc: View {
+    let phase: Double
+    var body: some View {
+        ZStack {
+            Circle().fill(
+                RadialGradient(colors: [CX.moonlight.opacity(0.36), CX.blue.opacity(0.66)],
+                               center: .topLeading, startRadius: 0, endRadius: 100)
+            )
+            MoonIllumination(phase: phase)
+                .fill(LinearGradient(colors: [.white, Color(red: 0.91, green: 0.94, blue: 0.99), CX.moonlight.opacity(0.9)], startPoint: .topLeading, endPoint: .bottomTrailing))
+            Circle().strokeBorder(.white.opacity(0.55), lineWidth: 0.6)
+        }
+        .shadow(color: CX.moonlight.opacity(0.18), radius: 12, y: 3)
+        .accessibilityHidden(true)
+    }
+}
+
+private struct MoonIllumination: Shape {
+    let phase: Double
+    func path(in rect: CGRect) -> Path {
+        let radius = min(rect.width, rect.height) / 2
+        let waxing = phase < 0.5
+        let terminator = cos(phase * 2 * .pi)
+        var path = Path()
+        for index in 0...80 {
+            let y = -1 + Double(index) / 40
+            let span = sqrt(max(0, 1 - y * y)) * radius
+            let point = CGPoint(x: rect.midX + (waxing ? span : -span), y: rect.midY + y * radius)
+            if index == 0 { path.move(to: point) } else { path.addLine(to: point) }
+        }
+        for index in (0...80).reversed() {
+            let y = -1 + Double(index) / 40
+            let span = sqrt(max(0, 1 - y * y)) * radius
+            path.addLine(to: CGPoint(x: rect.midX + (waxing ? terminator : -terminator) * span, y: rect.midY + y * radius))
+        }
+        path.closeSubpath()
+        return path
     }
 }
 

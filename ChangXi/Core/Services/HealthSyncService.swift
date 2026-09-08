@@ -54,6 +54,14 @@ final class HealthSyncService {
         }
         let symptom = reading.note.trimmingCharacters(in: .whitespacesAndNewlines)
         if !symptom.isEmpty { payload["symptom"] = .string(symptom) }
+        var measurement: [String: EventPayloadValue] = [
+            "type": .string(HealthMetricMapping.measurementType(reading.kind)),
+            "value": .double(reading.value), "unit": .string(reading.kind.unit),
+            "measured_at": .string(reading.date.ISO8601Format())
+        ]
+        if let secondary = reading.secondary { measurement["secondary_value"] = .double(secondary) }
+        payload["measurements"] = .array([.object(measurement)])
+        if !symptom.isEmpty { payload["symptoms"] = .array([.string(symptom)]) }
         return payload
     }
 
@@ -68,6 +76,16 @@ final class HealthSyncService {
         guard AppConfiguration.useRemoteAPI else { return nil }
         setState(reading.id, .syncing, in: store)
         do {
+            if !AppConfiguration.supportsExtendedAPI {
+                if reading.remoteEventID != nil { setState(reading.id, .synced, in: store); return nil }
+                let result = try await EventWorkflowService().reportEvent(
+                    patientID: patientID, eventType: HealthMetricMapping.eventType(reading.kind),
+                    payload: Self.payload(for: reading), occurredAt: reading.date)
+                guard let eventID = result.eventID, result.workflow?.isFailed != true else { throw URLError(.badServerResponse) }
+                setRemoteEventID(reading.id, eventID, in: store)
+                setState(reading.id, .synced, in: store)
+                return result
+            }
             // ① 健康记录（重试时若已有云端 record_id 则复用，避免重复建档）。
             let recordID: String
             if let existing = reading.remoteRecordID {
@@ -135,7 +153,7 @@ final class HealthSyncService {
     ///
     /// `recordType` 分别用 `daily_plan` / `medication` / `memory`。best-effort，失败静默。
     func archive(recordType: String, title: String, content: [String: EventPayloadValue], patientID: String) async {
-        guard AppConfiguration.useRemoteAPI else { return }
+        guard AppConfiguration.useRemoteAPI, AppConfiguration.supportsExtendedAPI else { return }
         do {
             try await HealthRecordService().createRecord(
                 patientID: patientID,
@@ -158,7 +176,7 @@ final class HealthSyncService {
     /// 本地已存在的云端测量跳过；云端独有的追加到本地（`note = "来自云端同步"`、`syncState = .synced`）。
     /// best-effort：失败静默，绝不影响本地数据。离线时直接返回。
     func pullRemote(store: AppStore, patientID: String) async {
-        guard AppConfiguration.useRemoteAPI else { return }
+        guard AppConfiguration.useRemoteAPI, AppConfiguration.supportsExtendedAPI else { return }
         do {
             let page = try await PatientService().getMeasurements(patientID: patientID, page: 1, size: 100)
             guard let measurements = page.measurements, !measurements.isEmpty else { return }

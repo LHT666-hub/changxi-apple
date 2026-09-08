@@ -36,7 +36,7 @@ struct HomeView: View {
                 .buttonStyle(.plain)
                 .entrance(index: 3, appeared: appeared, reduceMotion: reduceMotion)
 
-                SectionEyebrow(title: "今天", action: Date.now.formatted(.dateTime.month().day().weekday(.abbreviated)))
+                SectionEyebrow(title: "今天", action: Date.now.formatted(.dateTime.locale(Locale(identifier: "zh_CN")).month().day().weekday(.abbreviated)))
                     .entrance(index: 4, appeared: appeared, reduceMotion: reduceMotion)
 
                 TodaySummaryCard(nextPlan: nextPlan)
@@ -93,27 +93,27 @@ struct HomeView: View {
             showChat = true
         } label: {
             HStack(spacing: 14) {
-                Image(systemName: "waveform.badge.mic")
-                    .font(.title3.weight(.medium))
+                Image(systemName: "moonphase.waxing.crescent")
+                    .font(.title2.weight(.light))
+                    .foregroundStyle(CX.blue)
                     .symbolRenderingMode(.hierarchical)
                 VStack(alignment: .leading, spacing: 3) {
                     Text("和常曦说说")
                         .font(.headline)
-                    Text("语音或文字都可以")
-                        .font(.subheadline)
-                        .opacity(0.82)
+                    Text("此刻的心事，慢慢说")
+                        .font(.caption).foregroundStyle(CX.muted)
                 }
                 Spacer()
-                Image(systemName: "chevron.right")
+                Image(systemName: "waveform")
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(CX.faint)
             }
             .foregroundStyle(CX.ink)
-            .padding(.horizontal, 17)
-            .frame(minHeight: 64)
-            .cxInteractiveGlass(cornerRadius: 20)
+            .padding(.horizontal, 22)
+            .frame(minHeight: 68)
+            .cxInteractiveGlass(cornerRadius: 28)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(QuietPressButton())
         .accessibilityIdentifier("open-chat")
     }
 }

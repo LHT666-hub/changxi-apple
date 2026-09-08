@@ -31,7 +31,7 @@ struct ReportImportView: View {
         Page {
             Card {
                 RowLabel(title: "拍照 / 报告", subtitle: "只读取你主动选择的照片", icon: "camera", chevron: false)
-                if AppConfiguration.useRemoteAPI {
+                if (AppConfiguration.useRemoteAPI && AppConfiguration.supportsExtendedAPI) {
                     Picker("识别类型", selection: $mode) {
                         Text("报告识别").tag(DocumentMode.analyze)
                         Text("血压计").tag(DocumentMode.bp)
@@ -47,9 +47,9 @@ struct ReportImportView: View {
                     analysisSection
                     TextField("报告名称", text: $title)
                     TextField("关于这份报告，想问什么？", text: $note, axis: .vertical).lineLimit(2...5)
-                    Text(AppConfiguration.useRemoteAPI
+                    Text((AppConfiguration.useRemoteAPI && AppConfiguration.supportsExtendedAPI)
                          ? "识别由常曦云端完成，照片仅在你主动导入时上传；即使识别失败，照片也会保留在本机。"
-                         : "当前为离线体验模式，不会上传照片或发起识别。你可以保存到本机报告列表，或把文字说明加入对话。")
+                         : "当前玄同版本尚未提供报告识别与归档接口。照片先保存在本机，文字说明可以加入对话。")
                         .font(.footnote).foregroundStyle(CX.muted)
                     Button(saved ? "已保存到本机报告" : "保存报告到本机") { saveReport() }
                         .buttonStyle(PrimaryButton()).disabled(saved)
@@ -88,7 +88,7 @@ struct ReportImportView: View {
     // MARK: - 识别结果
 
     @ViewBuilder private var analysisSection: some View {
-        if AppConfiguration.useRemoteAPI {
+        if (AppConfiguration.useRemoteAPI && AppConfiguration.supportsExtendedAPI) {
             if analyzing {
                 HStack(spacing: 10) { ProgressView(); Text(mode == .bp ? "正在识别血压读数…" : "正在识别报告…").foregroundStyle(CX.muted) }
             } else if let analysisError {
@@ -157,7 +157,7 @@ struct ReportImportView: View {
 
     /// 调用后端 analyze 做识别。离线（`useRemoteAPI == false`，含 UI 测试）时不发任何网络请求。
     private func runAnalysis() {
-        guard AppConfiguration.useRemoteAPI, let image = preview else { return }
+        guard (AppConfiguration.useRemoteAPI && AppConfiguration.supportsExtendedAPI), let image = preview else { return }
         analyzing = true; analysisError = nil; analysis = nil
         let currentMode = mode
         Task { @MainActor in
@@ -195,7 +195,7 @@ struct ReportImportView: View {
         if mode == .bp { store.data.importedReports[index].bpReading = analysis?.reading }
         saved = true; error = nil
         // 云端归档：离线时完全不发请求；失败静默（本机已保存）。
-        guard AppConfiguration.useRemoteAPI else { return }
+        guard (AppConfiguration.useRemoteAPI && AppConfiguration.supportsExtendedAPI) else { return }
         archiving = true
         Task { @MainActor in
             defer { archiving = false }
