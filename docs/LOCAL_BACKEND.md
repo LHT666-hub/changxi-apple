@@ -20,6 +20,17 @@ LLM_PROVIDER=mock RAG_USE_RERANKER=false .venv/bin/python -m uvicorn app.main:ap
 
 在常曦「我的 → 玄同连接」输入根地址，点击「检查并使用这个地址」。页面会区分 Mock 测试模型与真实模型提供方。命令行 `-apiBaseURL`、`XUANTONG_BASE_URL` 优先于 App 保存的地址，联调时不要同时设置冲突地址。
 
+需要验证请求确实从 App 发出时，先启动玄同，再运行：
+
+```sh
+XUANTONG_TEST_BASE_URL=http://127.0.0.1:8000 \
+  xcodebuild test -project ChangXi.xcodeproj -scheme ChangXi \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+  -only-testing:ChangXiUITests/FlowTests/testLiveXuantongConversationWhenRequested
+```
+
+测试会先探测玄同：服务在线就用 `--integration-testing` 准备无个人资料的示例状态并走真实网络；服务离线则跳过。因此普通 CI 不依赖本机后端。
+
 真实 AI 需要在后端本机 `.env` 私下配置 `LLM_PROVIDER=qwen`、`LLM_API_KEY` 与服务地址。不要将密钥放进 iOS App、聊天或 Git。当前验证使用独立 SQLite 测试库和 MockProvider，不代表真实 Qwen 调用已完成。
 
 ## 已验证链路

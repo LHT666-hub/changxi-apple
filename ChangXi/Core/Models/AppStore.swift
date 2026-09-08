@@ -284,7 +284,8 @@ final class AppStore {
             if FileManager.default.fileExists(atPath: self.fileURL.path) { storageError = "本地记录未能读取，原文件仍保留。请先导出备份，避免覆盖。" }
         }
         #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("--ui-testing") {
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing")
+            || ProcessInfo.processInfo.arguments.contains("--integration-testing") {
             data = LocalState()
             data.onboarded = true
             if ProcessInfo.processInfo.arguments.contains("--large-text") { data.largeText = true }
