@@ -751,6 +751,9 @@ private struct ReferenceLibraryView: View {
                                 Text(reference.cited == true ? "回答已引用" : "相关资料")
                                     .font(.caption2.weight(.medium))
                                     .foregroundStyle(reference.cited == true ? CX.teal : CX.blue)
+                                Text(reference.source)
+                                    .font(.caption2)
+                                    .foregroundStyle(CX.muted)
                                 Text(reference.excerpt)
                                     .font(.subheadline)
                                     .foregroundStyle(CX.muted)
@@ -777,6 +780,13 @@ private struct ReferenceDetailView: View {
     let number: Int
     let reference: ConversationReference
 
+    private var externalURL: URL? {
+        guard let raw = reference.url,
+              let url = URL(string: raw),
+              url.scheme?.lowercased() == "https" else { return nil }
+        return url
+    }
+
     var body: some View {
         Page {
             HStack(spacing: 12) {
@@ -787,7 +797,7 @@ private struct ReferenceDetailView: View {
                     .background(CX.blue.opacity(0.10), in: Circle())
                 VStack(alignment: .leading, spacing: 3) {
                     Text(reference.title).font(.title3.weight(.semibold))
-                    Text("玄同医学知识库").font(.caption).foregroundStyle(CX.muted)
+                    Text(reference.source).font(.caption).foregroundStyle(CX.muted)
                 }
             }
             Card {
@@ -800,6 +810,13 @@ private struct ReferenceDetailView: View {
                 Text("这是知识库摘录，不是针对你的诊断。需要改变药物或治疗方案时，请由医生结合完整病史确认。")
                     .font(.subheadline)
                     .foregroundStyle(CX.muted)
+            }
+            if let externalURL {
+                Link(destination: externalURL) {
+                    Label("打开原始网页", systemImage: "arrow.up.right.square")
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                }
+                .buttonStyle(.borderedProminent)
             }
         }
         .navigationTitle("资料 \(number)")

@@ -182,6 +182,7 @@ struct ConversationReference: Codable, Identifiable, Hashable, Sendable {
     var evidenceScore: Double?
     var kind: String?
     var cited: Bool? = nil
+    var url: String? = nil
 }
 
 struct ConversationWorkOrder: Codable, Identifiable, Hashable, Sendable {

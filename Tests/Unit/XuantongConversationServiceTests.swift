@@ -54,7 +54,7 @@ final class XuantongEventConversationServiceTests: XCTestCase {
                 httpVersion: nil,
                 headerFields: ["Content-Type": "application/json"]
             )!
-            let data = Data(#"{"workflow":{"status":"completed","patient_communication":"  已记录  ","clinical_risk":"yellow","action_summary":"继续记录","steps":["rag_retrieval","task_generation"],"references":[{"id":"ref-1","title":"高血压健康管理指南","source":"hypertension_guidelines.md","excerpt":"记录血压","evidence_score":0.8,"kind":"local_knowledge_base"}]},"tasks":[{"id":"task-1","title":"指标监测","description":"连续记录血压","task_type":"monitoring","status":"pending","priority":"medium","assignee_role":"assistant","deadline":null}] }"#.utf8)
+            let data = Data(#"{"workflow":{"status":"completed","patient_communication":"  已记录  ","clinical_risk":"yellow","action_summary":"继续记录","steps":["rag_retrieval","task_generation"],"references":[{"id":"ref-1","title":"高血压健康管理指南","source":"WHO","excerpt":"记录血压","evidence_score":0.8,"kind":"web_source","url":"https://www.who.int/example"}]},"tasks":[{"id":"task-1","title":"指标监测","description":"连续记录血压","task_type":"monitoring","status":"pending","priority":"medium","assignee_role":"assistant","deadline":null}] }"#.utf8)
             return (response, data)
         }
         defer { URLProtocolStub.handler = nil }
@@ -68,6 +68,7 @@ final class XuantongEventConversationServiceTests: XCTestCase {
         XCTAssertEqual(reply.text, "已记录")
         XCTAssertEqual(reply.clinicalRisk, .yellow)
         XCTAssertEqual(reply.references.first?.title, "高血压健康管理指南")
+        XCTAssertEqual(reply.references.first?.url, "https://www.who.int/example")
         XCTAssertEqual(reply.workOrders.first?.title, "指标监测")
         XCTAssertEqual(reply.steps, ["rag_retrieval", "task_generation"])
     }
