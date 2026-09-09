@@ -10,6 +10,12 @@ import Foundation
 enum AppConfiguration {
     // MARK: - 远程开关
 
+    /// UI 自动化运行标记，用于关闭持续动画等会干扰测试空闲判定的效果。
+    static var isUITesting: Bool {
+        ProcessInfo.processInfo.arguments.contains("--ui-testing")
+            || ProcessInfo.processInfo.arguments.contains("--integration-testing")
+    }
+
     /// 是否连接远程玄同后端。
     ///
     /// - UI 测试（`--ui-testing`）下强制返回 `false`，保证测试确定性、不依赖网络；

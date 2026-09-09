@@ -54,7 +54,7 @@ struct MoonPoolView: View {
     @State private var entered = Date.now
 
     private var paused: Bool {
-        reduceMotion || state == .quietAlert || scenePhase != .active
+        reduceMotion || AppConfiguration.isUITesting || state == .quietAlert || scenePhase != .active
     }
 
     var body: some View {
