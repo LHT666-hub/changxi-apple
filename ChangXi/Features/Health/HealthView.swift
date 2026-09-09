@@ -42,6 +42,19 @@ struct HealthView: View {
                     .foregroundStyle(CX.muted)
             }
 
+            NavigationLink { HealthPortraitView() } label: {
+                Card {
+                    RowLabel(
+                        title: "我的健康画像",
+                        subtitle: "整体较稳定 · 有 2 项值得关注",
+                        icon: "circle.hexagongrid.fill",
+                        tint: CX.blue
+                    )
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("open-health-portrait")
+
             CXGlassGroup(spacing: 12) {
                 LazyVGrid(
                     columns: typeSize.isAccessibilitySize
