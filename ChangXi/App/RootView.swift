@@ -122,6 +122,7 @@ private enum RootTab: String, CaseIterable, Identifiable {
 
 private struct PersistentTabBar: View {
     @Binding var selection: RootTab
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
         HStack(spacing: 4) {
@@ -134,7 +135,19 @@ private struct PersistentTabBar: View {
                     }
                     .foregroundStyle(selection == tab ? CX.blue : CX.ink)
                     .frame(maxWidth: .infinity, minHeight: 48)
-                    .background(selection == tab ? Color.white.opacity(0.92) : .clear, in: Capsule())
+                    .background {
+                        if selection == tab {
+                            Capsule()
+                                .fill(CX.moonlight.opacity(0.16))
+                                .overlay {
+                                    Capsule().strokeBorder(
+                                        Color.white.opacity(0.52),
+                                        lineWidth: 0.75
+                                    )
+                                }
+                                .shadow(color: CX.blue.opacity(0.10), radius: 8, y: 3)
+                        }
+                    }
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -144,12 +157,58 @@ private struct PersistentTabBar: View {
         }
         .padding(6)
         .frame(maxWidth: 460)
-        .background(CX.blue.opacity(0.10), in: Capsule())
-        .overlay { Capsule().strokeBorder(CX.separator.opacity(0.16), lineWidth: 0.5) }
-        .shadow(color: .black.opacity(0.08), radius: 18, y: 8)
+        .modifier(FrostedTabBarSurface(reduceTransparency: reduceTransparency))
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
         .frame(maxWidth: .infinity)
+        .sensoryFeedback(.selection, trigger: selection)
+    }
+}
+
+private struct FrostedTabBarSurface: ViewModifier {
+    let reduceTransparency: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if reduceTransparency {
+            content
+                .background(CX.surface, in: Capsule())
+                .overlay { border }
+                .shadow(color: .black.opacity(0.10), radius: 20, y: 10)
+        } else if #available(iOS 26, *) {
+            content
+                .glassEffect(
+                    .regular.tint(CX.moonlight.opacity(0.20)),
+                    in: .capsule
+                )
+                .overlay { border }
+                .overlay { highlight }
+                .shadow(color: CX.blue.opacity(0.12), radius: 24, y: 12)
+                .shadow(color: .black.opacity(0.08), radius: 8, y: 3)
+        } else {
+            content
+                .background(.regularMaterial, in: Capsule())
+                .overlay { border }
+                .overlay { highlight }
+                .shadow(color: .black.opacity(0.12), radius: 20, y: 10)
+        }
+    }
+
+    private var border: some View {
+        Capsule().strokeBorder(CX.separator.opacity(0.28), lineWidth: 0.6)
+    }
+
+    private var highlight: some View {
+        Capsule()
+            .strokeBorder(
+                LinearGradient(
+                    colors: [Color.white.opacity(0.72), Color.white.opacity(0.08)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                ),
+                lineWidth: 0.8
+            )
+            .padding(0.5)
     }
 }
 
