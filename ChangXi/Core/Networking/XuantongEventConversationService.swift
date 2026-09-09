@@ -135,4 +135,20 @@ struct XuantongEventConversationService: Sendable {
             }
         )
     }
+
+    /// 患者主动接受一项 proposed 建议后，才让玄同把它激活为待处理工单。
+    func acceptTask(id: String) async throws {
+        guard baseURL.scheme == "https" || AppConfiguration.allowsInsecureHTTP(baseURL) else {
+            throw URLError(.secureConnectionFailed)
+        }
+        var request = URLRequest(url: baseURL.appending(path: "api/tasks/\(id)/accept"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.timeoutInterval = 30
+        let (_, response) = try await session.data(for: request)
+        guard let response = response as? HTTPURLResponse,
+              (200..<300).contains(response.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+    }
 }

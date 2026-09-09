@@ -3,6 +3,12 @@ import XCTest
 @testable import ChangXi
 
 final class XuantongEventConversationServiceTests: XCTestCase {
+    func testWorkflowRolesUsePatientFacingChinese() {
+        XCTAssertEqual(WorkflowNodeName.roleDisplay("assistant"), "常曦助手")
+        XCTAssertEqual(WorkflowNodeName.roleDisplay("human_doctor"), "家庭医生")
+        XCTAssertEqual(WorkflowNodeName.roleDisplay("pharmacist"), "药师")
+    }
+
     func testBackendAddressValidation() {
         XCTAssertNotNil(AppConfiguration.sanitizedURL("https://api.example.com"))
         XCTAssertNotNil(AppConfiguration.sanitizedURL("http://192.168.1.20:8000"))
@@ -64,6 +70,27 @@ final class XuantongEventConversationServiceTests: XCTestCase {
         XCTAssertEqual(reply.references.first?.title, "高血压健康管理指南")
         XCTAssertEqual(reply.workOrders.first?.title, "指标监测")
         XCTAssertEqual(reply.steps, ["rag_retrieval", "task_generation"])
+    }
+
+    func testAcceptProposedTaskUsesExplicitConsentEndpoint() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [URLProtocolStub.self]
+        let session = URLSession(configuration: configuration)
+        URLProtocolStub.handler = { request in
+            XCTAssertEqual(request.url?.path, "/api/tasks/task-1/accept")
+            XCTAssertEqual(request.httpMethod, "POST")
+            return (
+                HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!,
+                Data(#"{"status":"accepted"}"#.utf8)
+            )
+        }
+        defer { URLProtocolStub.handler = nil }
+
+        let service = XuantongEventConversationService(
+            baseURL: URL(string: "http://127.0.0.1:8000")!,
+            session: session
+        )
+        try await service.acceptTask(id: "task-1")
     }
 }
 

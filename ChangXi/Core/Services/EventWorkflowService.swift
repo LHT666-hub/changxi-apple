@@ -134,6 +134,22 @@ enum WorkflowNodeName {
 
     /// 节点中文名；未知节点回落原始字符串。
     static func display(_ node: String) -> String { map[node] ?? node }
+
+    private static let roleMap: [String: String] = [
+        "assistant": "常曦助手",
+        "human_doctor": "家庭医生",
+        "doctor": "家庭医生",
+        "nurse": "护理人员",
+        "pharmacist": "药师",
+        "public_health": "公卫人员",
+        "nutritionist": "营养师",
+        "rehabilitation": "康复师",
+        "patient": "患者本人",
+    ]
+
+    static func roleDisplay(_ role: String) -> String {
+        roleMap[role] ?? role.replacingOccurrences(of: "_", with: " ")
+    }
 }
 
 // MARK: - 事件工作流服务

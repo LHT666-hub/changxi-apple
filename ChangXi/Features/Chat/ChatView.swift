@@ -475,19 +475,23 @@ private struct AssistantAnswerCard: View {
                 MarkdownBody(text: text)
 
                 if let detail {
-                    if !detail.workOrders.isEmpty {
-                        Divider().opacity(0.45)
-                        WorkOrderSummary(orders: detail.workOrders)
-                    }
-                    if !detail.references.isEmpty {
-                        Divider().opacity(0.45)
+                    Divider().opacity(0.45)
+                    if detail.references.isEmpty {
+                        Label("本回答未引用外部资料", systemImage: "books.vertical")
+                            .font(.caption)
+                            .foregroundStyle(CX.muted)
+                            .accessibilityIdentifier("no-references")
+                    } else {
                         NavigationLink {
                             ReferenceLibraryView(references: detail.references)
                         } label: {
                             HStack(spacing: 10) {
                                 Image(systemName: "books.vertical.fill")
                                     .foregroundStyle(CX.blue)
-                                Text("参考资料 \(detail.references.count) 篇")
+                                let citedCount = detail.references.filter { $0.cited == true }.count
+                                Text(citedCount > 0
+                                     ? "回答引用 \(citedCount) 篇"
+                                     : "查看相关资料 \(detail.references.count) 篇")
                                     .font(.subheadline.weight(.semibold))
                                 Spacer()
                                 HStack(spacing: 4) {
@@ -506,6 +510,10 @@ private struct AssistantAnswerCard: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("open-references")
+                    }
+                    if !detail.workOrders.isEmpty {
+                        Divider().opacity(0.45)
+                        WorkOrderSummary(orders: detail.workOrders)
                     }
                 }
             }
@@ -592,52 +600,138 @@ private struct ThinkingRibbon: View {
 
 private struct WorkOrderSummary: View {
     let orders: [ConversationWorkOrder]
+    @State private var acceptedIDs: Set<String> = []
+    @State private var declinedIDs: Set<String> = []
+    @State private var acceptingID: String?
+    @State private var error: String?
+
+    private var proposals: [ConversationWorkOrder] {
+        orders.filter {
+            $0.status == "proposed" && !acceptedIDs.contains($0.id) && !declinedIDs.contains($0.id)
+        }
+    }
+
+    private var activeOrders: [ConversationWorkOrder] {
+        orders.filter { $0.status != "proposed" || acceptedIDs.contains($0.id) }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 11) {
-            HStack {
-                Label("已生成照护工单", systemImage: "checklist.checked")
-                    .font(.subheadline.weight(.semibold))
-                Spacer()
-                Text("\(orders.count) 项")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(CX.teal)
-            }
-            ForEach(orders.prefix(3)) { order in
-                NavigationLink {
-                    WorkOrderDetailView(order: order)
-                } label: {
-                    HStack(spacing: 11) {
-                        Circle()
-                            .fill(order.priority == "high" ? CX.coral.opacity(0.14) : CX.teal.opacity(0.12))
-                            .frame(width: 30, height: 30)
-                            .overlay {
-                                Image(systemName: order.priority == "high" ? "bell.badge.fill" : "checkmark")
-                                    .font(.caption.weight(.bold))
-                                    .foregroundStyle(order.priority == "high" ? CX.coral : CX.teal)
-                            }
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(order.title).font(.subheadline.weight(.medium))
-                            if !order.description.isEmpty {
-                                Text(order.description).font(.caption).foregroundStyle(CX.muted).lineLimit(1)
-                            }
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(CX.faint)
-                    }
-                    .contentShape(Rectangle())
+            if !proposals.isEmpty {
+                HStack {
+                    Label("常曦建议为你安排", systemImage: "sparkles")
+                        .font(.subheadline.weight(.semibold))
+                    Spacer()
+                    Text("需你确认")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(CX.blue)
                 }
-                .buttonStyle(.plain)
+                Text("以下安排会进入你的照护计划，请选择是否需要。")
+                    .font(.caption)
+                    .foregroundStyle(CX.muted)
+                ForEach(proposals.prefix(3)) { order in
+                    proposalCard(order)
+                }
+            }
+
+            if !activeOrders.isEmpty {
+                HStack {
+                    Label("照护工单", systemImage: "checklist.checked")
+                    .font(.subheadline.weight(.semibold))
+                    Spacer()
+                    Text("\(activeOrders.count) 项")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(CX.teal)
+                }
+                ForEach(activeOrders.prefix(3)) { order in
+                    NavigationLink {
+                        WorkOrderDetailView(order: activated(order))
+                    } label: {
+                        HStack(spacing: 11) {
+                            Circle()
+                                .fill(order.priority == "high" ? CX.coral.opacity(0.14) : CX.teal.opacity(0.12))
+                                .frame(width: 30, height: 30)
+                                .overlay {
+                                    Image(systemName: order.priority == "high" ? "bell.badge.fill" : "checkmark")
+                                        .font(.caption.weight(.bold))
+                                        .foregroundStyle(order.priority == "high" ? CX.coral : CX.teal)
+                                }
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(order.title).font(.subheadline.weight(.medium))
+                                if !order.description.isEmpty {
+                                    Text(order.description).font(.caption).foregroundStyle(CX.muted).lineLimit(1)
+                                }
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(CX.faint)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            if let error {
+                Text(error).font(.caption).foregroundStyle(CX.coral)
             }
         }
         .accessibilityIdentifier("work-order-summary")
+    }
+
+    private func activated(_ order: ConversationWorkOrder) -> ConversationWorkOrder {
+        guard acceptedIDs.contains(order.id) else { return order }
+        var copy = order
+        copy.status = "pending"
+        return copy
+    }
+
+    private func proposalCard(_ order: ConversationWorkOrder) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(order.title).font(.subheadline.weight(.semibold))
+            Text(order.description).font(.caption).foregroundStyle(CX.muted)
+            HStack(spacing: 10) {
+                Button("需要，创建") { accept(order) }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                    .disabled(acceptingID != nil)
+                Button("暂不需要") {
+                    _ = withAnimation(.snappy(duration: 0.24)) { declinedIDs.insert(order.id) }
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+            if acceptingID == order.id { ProgressView().controlSize(.small) }
+        }
+        .padding(13)
+        .background {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(CX.blue.opacity(0.055))
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    private func accept(_ order: ConversationWorkOrder) {
+        acceptingID = order.id
+        error = nil
+        Task { @MainActor in
+            do {
+                try await XuantongEventConversationService.configured().acceptTask(id: order.id)
+                _ = withAnimation(.spring(duration: 0.32, bounce: 0.16)) {
+                    acceptedIDs.insert(order.id)
+                }
+            } catch {
+                self.error = "暂时没能创建这项安排，请稍后重试。"
+            }
+            acceptingID = nil
+        }
     }
 }
 
 private struct ReferenceLibraryView: View {
     let references: [ConversationReference]
+
+    private var citedCount: Int { references.filter { $0.cited == true }.count }
 
     var body: some View {
         List {
@@ -654,6 +748,9 @@ private struct ReferenceLibraryView: View {
                                 .background(CX.blue.opacity(0.10), in: Circle())
                             VStack(alignment: .leading, spacing: 6) {
                                 Text(reference.title).font(.body.weight(.semibold))
+                                Text(reference.cited == true ? "回答已引用" : "相关资料")
+                                    .font(.caption2.weight(.medium))
+                                    .foregroundStyle(reference.cited == true ? CX.teal : CX.blue)
                                 Text(reference.excerpt)
                                     .font(.subheadline)
                                     .foregroundStyle(CX.muted)
@@ -664,7 +761,9 @@ private struct ReferenceLibraryView: View {
                     }
                 }
             } header: {
-                Text("本次回答实际使用的玄同知识库资料")
+                Text(citedCount > 0
+                     ? "正文已引用 \(citedCount) 篇，其余为相关资料"
+                     : "玄同为本次问题检索到的相关资料")
             } footer: {
                 Text("资料用于辅助说明，不替代医生面诊、诊断或处方。")
             }
@@ -721,7 +820,7 @@ private struct WorkOrderDetailView: View {
                 LabeledContent("状态", value: order.status == "pending" ? "待处理" : order.status)
                 LabeledContent("优先级", value: order.priority == "high" ? "较高" : "常规")
                 if let role = order.assigneeRole, !role.isEmpty {
-                    LabeledContent("负责角色", value: WorkflowNodeName.display(role))
+                    LabeledContent("负责角色", value: WorkflowNodeName.roleDisplay(role))
                 }
             }
             Card {

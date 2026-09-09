@@ -181,6 +181,7 @@ struct ConversationReference: Codable, Identifiable, Hashable, Sendable {
     var excerpt: String
     var evidenceScore: Double?
     var kind: String?
+    var cited: Bool? = nil
 }
 
 struct ConversationWorkOrder: Codable, Identifiable, Hashable, Sendable {
