@@ -489,7 +489,7 @@ struct RhythmView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline) {
-                Text("今日节律")
+                Text("今日计划进度")
                     .font(.headline)
                 Spacer()
                 Text("\(completed)/\(total)")

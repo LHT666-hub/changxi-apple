@@ -226,7 +226,7 @@ struct DoctorMessageView: View {
     @Environment(AppStore.self) private var store
     var body: some View {
         Page {
-            MoonPoolView(state: .doctorReply, character: false, compact: true)
+            MoonPoolView(state: .doctorReply, character: true, compact: true)
             Card {
                 RowLabel(title: "蒋医生", subtitle: "示例消息 · 今天 17:30", icon: "stethoscope", chevron: false)
                 Text("下次沟通时，可以带上最近一周的测量记录和完整体检报告，我们一起回顾变化。").lineSpacing(6)

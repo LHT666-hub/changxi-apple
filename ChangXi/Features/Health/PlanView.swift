@@ -31,7 +31,7 @@ struct PlanDetailView: View {
     var body: some View {
         Page {
             if let plan {
-                MoonPoolView(state: plan.completed ? .success : .idle, character: false, compact: true)
+                MoonPoolView(state: plan.completed ? .success : .idle, character: true, compact: true)
                 Card {
                     RowLabel(title: plan.title, subtitle: "今天 \(plan.time)", icon: plan.icon, chevron: false)
                     Text(plan.detail).foregroundStyle(CX.muted)
