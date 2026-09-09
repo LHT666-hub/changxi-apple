@@ -171,6 +171,35 @@ struct ConversationMessage: Codable, Identifiable {
     var isUser: Bool
     var text: String
     var date: Date = .now
+    var responseDetail: ConversationResponseDetail?
+}
+
+struct ConversationReference: Codable, Identifiable, Hashable, Sendable {
+    var id: String
+    var title: String
+    var source: String
+    var excerpt: String
+    var evidenceScore: Double?
+    var kind: String?
+}
+
+struct ConversationWorkOrder: Codable, Identifiable, Hashable, Sendable {
+    var id: String
+    var title: String
+    var description: String
+    var taskType: String
+    var status: String
+    var priority: String
+    var assigneeRole: String?
+    var deadline: String?
+}
+
+struct ConversationResponseDetail: Codable, Hashable, Sendable {
+    var clinicalRisk: String?
+    var actionSummary: String?
+    var workflowSteps: [String]
+    var references: [ConversationReference]
+    var workOrders: [ConversationWorkOrder]
 }
 
 struct ServiceBooking: Codable, Identifiable {

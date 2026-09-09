@@ -7,6 +7,10 @@ struct XuantongEventReply: Sendable {
 
     let text: String
     let clinicalRisk: ClinicalRisk?
+    let actionSummary: String?
+    let steps: [String]
+    let references: [ConversationReference]
+    let workOrders: [ConversationWorkOrder]
 }
 
 /// The conversation adapter for the contract currently exposed by `xuantong/main`.
@@ -39,16 +43,39 @@ struct XuantongEventConversationService: Sendable {
 
     private struct EventResponse: Decodable {
         let workflow: Workflow
+        let tasks: [Task]?
 
         struct Workflow: Decodable {
             let status: String
             let patientCommunication: String?
             let clinicalRisk: String?
+            let actionSummary: String?
+            let steps: [String]?
+            let references: [ConversationReference]?
 
             enum CodingKeys: String, CodingKey {
                 case status
                 case patientCommunication = "patient_communication"
                 case clinicalRisk = "clinical_risk"
+                case actionSummary = "action_summary"
+                case steps, references
+            }
+        }
+
+        struct Task: Decodable {
+            let id: String
+            let title: String
+            let description: String
+            let taskType: String
+            let status: String
+            let priority: String
+            let assigneeRole: String?
+            let deadline: String?
+
+            enum CodingKeys: String, CodingKey {
+                case id, title, description, status, priority, deadline
+                case taskType = "task_type"
+                case assigneeRole = "assignee_role"
             }
         }
     }
@@ -75,7 +102,7 @@ struct XuantongEventConversationService: Sendable {
                 metadata: .init()
             )
         )
-        request.timeoutInterval = 90
+        request.timeoutInterval = 180
 
         let (data, response) = try await session.data(for: request)
         guard let response = response as? HTTPURLResponse,
@@ -90,7 +117,22 @@ struct XuantongEventConversationService: Sendable {
         }
         return XuantongEventReply(
             text: reply,
-            clinicalRisk: event.workflow.clinicalRisk.flatMap(XuantongEventReply.ClinicalRisk.init(rawValue:))
+            clinicalRisk: event.workflow.clinicalRisk.flatMap(XuantongEventReply.ClinicalRisk.init(rawValue:)),
+            actionSummary: event.workflow.actionSummary,
+            steps: event.workflow.steps ?? [],
+            references: event.workflow.references ?? [],
+            workOrders: (event.tasks ?? []).map {
+                ConversationWorkOrder(
+                    id: $0.id,
+                    title: $0.title,
+                    description: $0.description,
+                    taskType: $0.taskType,
+                    status: $0.status,
+                    priority: $0.priority,
+                    assigneeRole: $0.assigneeRole,
+                    deadline: $0.deadline
+                )
+            }
         )
     }
 }

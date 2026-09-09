@@ -27,6 +27,7 @@ struct ChatView: View {
     @State private var isStreaming = false
     @State private var sessionID: String?
     @State private var lastMetadata: ChatMetadata?
+    @State private var isEnriching = false
     @State private var didRestoreHistory = false
     @FocusState private var keyboard: Bool
     private let demo = DemoConversationService()
@@ -72,40 +73,14 @@ struct ChatView: View {
                             .padding(.horizontal, 8)
                         }
                         ForEach(store.data.messages.suffix(40)) { message in
-                            HStack {
-                                if message.isUser { Spacer(minLength: 32) }
-                                VStack(alignment: .leading, spacing: 7) {
-                                    Text(message.isUser ? "我" : "常曦")
-                                        .font(.caption)
-                                        .foregroundStyle(CX.muted)
-                                        .accessibilityIdentifier(message.isUser ? "user-message-label" : "assistant-message-label")
-                                    Text(message.text).font(.body).lineSpacing(5).textSelection(.enabled)
-                                }
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 14)
-                                .background(
-                                    message.isUser ? CX.blue.opacity(0.13) : CX.surface,
-                                    in: .rect(cornerRadius: 20, style: .continuous)
-                                )
-                                .overlay {
-                                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                        .strokeBorder(CX.separator.opacity(0.14), lineWidth: 0.5)
-                                }
-                                .accessibilityElement(children: .combine)
-                                if !message.isUser { Spacer(minLength: 32) }
-                            }.id(message.id)
+                            ConversationTurnView(message: message).id(message.id)
                         }
                         if isStreaming && !streamingText.isEmpty {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 7) {
-                                    Text("常曦").font(.caption).foregroundStyle(CX.muted)
-                                    Text(streamingText).font(.body).lineSpacing(5)
-                                }.padding(16).background(.white, in: RoundedRectangle(cornerRadius: 22))
-                                Spacer(minLength: 32)
-                            }.id("streaming-bubble")
+                            AssistantAnswerCard(text: streamingText, detail: nil, isStreaming: true)
+                                .id("streaming-bubble")
                         }
                         if isBusy && streamingText.isEmpty {
-                            HStack { ProgressView(); Text("常曦正在整理…").foregroundStyle(CX.muted); Spacer(); Button("停止") { cancelRequest() } }.padding()
+                            ThinkingRibbon(isEnriching: isEnriching) { cancelRequest() }
                         }
                         if let badge = lastMetadata?.badge { metadataBanner(badge) }
                         if let error { Card { Text(error).foregroundStyle(CX.coral); Button("重试") { requestReply(pendingText) } } }
@@ -302,11 +277,12 @@ struct ChatView: View {
         lastMetadata = nil
         streamingText = ""
         isStreaming = false
+        isEnriching = false
         state = .thinking
         activeRequest = UUID()
     }
 
-    /// 玄同当前公开契约以 `POST /api/events` 驱动工作流；不可用时明确降级到本地演示。
+    /// 对话正文走 Novita 真流式；玄同完整工作流并行补充工单、风险和参考资料。
     @MainActor
     private func performReply(requestId: UUID) async {
         guard AppConfiguration.useRemoteAPI else {
@@ -315,16 +291,68 @@ struct ChatView: View {
         }
         do {
             let request = assistant.activeContext.map { "当前页面：\($0.title)。请只根据我提供的事实协助整理，不要编造数据。\n\(pendingText)" } ?? pendingText
-            let reply = try await eventService.reply(to: request, patientID: currentPatientId)
+            let remote = RemoteConversationService(patientId: currentPatientId)
+            isStreaming = true
+            let final: ChatFinal
+            do {
+                final = try await remote.streamReply(
+                    message: request,
+                    patientId: currentPatientId,
+                    sessionId: sessionID
+                ) { chunk in
+                    guard activeRequest == requestId else { return }
+                    streamingText += chunk
+                }
+            } catch {
+                throw error
+            }
             try Task.checkCancellation()
             guard activeRequest == requestId else { return }
-            state = switch reply.clinicalRisk {
-            case .red: .quietAlert
-            case .yellow: .notification
-            default: .responding
+            sessionID = final.sessionId ?? sessionID
+            lastMetadata = final.metadata
+            let assistantMessageID = UUID()
+            store.data.messages.append(
+                ConversationMessage(id: assistantMessageID, isUser: false, text: final.reply)
+            )
+            streamingText = ""
+            isStreaming = false
+            isEnriching = true
+            state = .responding
+
+            if let workflow = try? await eventService.reply(
+                to: request,
+                patientID: currentPatientId
+            ),
+               activeRequest == requestId {
+                state = switch workflow.clinicalRisk {
+                case .red: .quietAlert
+                case .yellow: .notification
+                default: .responding
+                }
+                var references = final.references
+                let known = Set(references.map(\.source))
+                references.append(contentsOf: workflow.references.filter { !known.contains($0.source) })
+                if let index = store.data.messages.firstIndex(where: { $0.id == assistantMessageID }) {
+                    store.data.messages[index].responseDetail = ConversationResponseDetail(
+                        clinicalRisk: workflow.clinicalRisk?.rawValue,
+                        actionSummary: workflow.actionSummary,
+                        workflowSteps: workflow.steps,
+                        references: references,
+                        workOrders: workflow.workOrders
+                    )
+                }
+            } else if let index = store.data.messages.firstIndex(where: { $0.id == assistantMessageID }),
+                      !final.references.isEmpty {
+                store.data.messages[index].responseDetail = ConversationResponseDetail(
+                    clinicalRisk: nil,
+                    actionSummary: nil,
+                    workflowSteps: [],
+                    references: final.references,
+                    workOrders: []
+                )
             }
-            store.data.messages.append(ConversationMessage(isUser: false, text: reply.text))
-            try await Task.sleep(for: .seconds(reduceMotion ? 0.3 : 1.2))
+            isEnriching = false
+            try await Task.sleep(for: .seconds(reduceMotion ? 0.2 : 0.65))
             guard activeRequest == requestId else { return }
             finishTurn()
         } catch is CancellationError {
@@ -361,6 +389,7 @@ struct ChatView: View {
     @MainActor
     private func finishTurn() {
         isStreaming = false
+        isEnriching = false
         streamingText = ""
         state = .idle
         activeRequest = nil
@@ -369,6 +398,7 @@ struct ChatView: View {
     private func cancelRequest() {
         activeRequest = nil
         isStreaming = false
+        isEnriching = false
         streamingText = ""
         state = .idle
     }
@@ -377,6 +407,333 @@ struct ChatView: View {
         withAnimation(reduceMotion ? nil : .easeOut(duration: 0.25)) { proxy.scrollTo("bottom", anchor: .bottom) }
     }
 
+}
+
+// MARK: - 回答、工单与参考资料
+
+private struct ConversationTurnView: View {
+    let message: ConversationMessage
+
+    var body: some View {
+        if message.isUser {
+            HStack {
+                Spacer(minLength: 44)
+                VStack(alignment: .leading, spacing: 7) {
+                    Text("我")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(CX.muted)
+                        .accessibilityIdentifier("user-message-label")
+                    Text(message.text)
+                        .font(.body)
+                        .lineSpacing(5)
+                        .textSelection(.enabled)
+                }
+                .padding(.horizontal, 17)
+                .padding(.vertical, 14)
+                .background(CX.blue.opacity(0.12), in: .rect(cornerRadius: 21, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 21, style: .continuous)
+                        .strokeBorder(CX.moonlight.opacity(0.20), lineWidth: 0.5)
+                }
+            }
+        } else {
+            AssistantAnswerCard(text: message.text, detail: message.responseDetail)
+        }
+    }
+}
+
+private struct AssistantAnswerCard: View {
+    let text: String
+    let detail: ConversationResponseDetail?
+    var isStreaming = false
+
+    var body: some View {
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 9) {
+                    ZStack {
+                        Circle().fill(CX.blue.opacity(0.11))
+                        Image(systemName: "moonphase.waning.crescent")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(CX.blue)
+                    }
+                    .frame(width: 28, height: 28)
+                    Text("常曦")
+                        .font(.subheadline.weight(.semibold))
+                        .accessibilityIdentifier("assistant-message-label")
+                    if isStreaming {
+                        Text("正在回答")
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(CX.blue)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(CX.blue.opacity(0.09), in: Capsule())
+                    }
+                    Spacer()
+                }
+
+                MarkdownBody(text: text)
+
+                if let detail {
+                    if !detail.workOrders.isEmpty {
+                        Divider().opacity(0.45)
+                        WorkOrderSummary(orders: detail.workOrders)
+                    }
+                    if !detail.references.isEmpty {
+                        Divider().opacity(0.45)
+                        NavigationLink {
+                            ReferenceLibraryView(references: detail.references)
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: "books.vertical.fill")
+                                    .foregroundStyle(CX.blue)
+                                Text("参考资料 \(detail.references.count) 篇")
+                                    .font(.subheadline.weight(.semibold))
+                                Spacer()
+                                HStack(spacing: 4) {
+                                    ForEach(Array(detail.references.prefix(3).enumerated()), id: \.element.id) { index, _ in
+                                        Text("\(index + 1)")
+                                            .font(.caption2.weight(.bold))
+                                            .frame(width: 22, height: 22)
+                                            .background(CX.blue.opacity(0.10), in: Circle())
+                                    }
+                                }
+                                Image(systemName: "chevron.right")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(CX.faint)
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("open-references")
+                    }
+                }
+            }
+            .padding(18)
+            .background(.regularMaterial, in: .rect(cornerRadius: 24, style: .continuous))
+            .overlay(alignment: .leading) {
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [CX.moonlight.opacity(0.75), CX.blue.opacity(0.18)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(width: 3)
+                    .padding(.vertical, 20)
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .strokeBorder(.white.opacity(0.30), lineWidth: 0.6)
+            }
+            .shadow(color: CX.blue.opacity(0.055), radius: 18, y: 8)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("assistant-response")
+            Spacer(minLength: 28)
+        }
+    }
+}
+
+private struct MarkdownBody: View {
+    let text: String
+
+    var body: some View {
+        if let attributed = try? AttributedString(
+            markdown: text,
+            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        ) {
+            Text(attributed)
+                .font(.body)
+                .lineSpacing(6)
+                .textSelection(.enabled)
+        } else {
+            Text(text).font(.body).lineSpacing(6).textSelection(.enabled)
+        }
+    }
+}
+
+private struct ThinkingRibbon: View {
+    let isEnriching: Bool
+    let stop: () -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle().fill(CX.blue.opacity(0.10))
+                Image(systemName: isEnriching ? "doc.text.magnifyingglass" : "sparkles")
+                    .foregroundStyle(CX.blue)
+                    .symbolEffect(.pulse, options: .repeating, isActive: !reduceMotion)
+            }
+            .frame(width: 34, height: 34)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(isEnriching ? "回答好了，正在生成照护工单" : "常曦正在理解")
+                    .font(.subheadline.weight(.semibold))
+                Text(isEnriching ? "核对风险、资料与下一步安排" : "连接家庭医生智能体")
+                    .font(.caption)
+                    .foregroundStyle(CX.muted)
+            }
+            Spacer()
+            Button("停止", action: stop)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(CX.muted)
+        }
+        .padding(14)
+        .background(.thinMaterial, in: .rect(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(CX.moonlight.opacity(0.16), lineWidth: 0.5)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+private struct WorkOrderSummary: View {
+    let orders: [ConversationWorkOrder]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 11) {
+            HStack {
+                Label("已生成照护工单", systemImage: "checklist.checked")
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                Text("\(orders.count) 项")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(CX.teal)
+            }
+            ForEach(orders.prefix(3)) { order in
+                NavigationLink {
+                    WorkOrderDetailView(order: order)
+                } label: {
+                    HStack(spacing: 11) {
+                        Circle()
+                            .fill(order.priority == "high" ? CX.coral.opacity(0.14) : CX.teal.opacity(0.12))
+                            .frame(width: 30, height: 30)
+                            .overlay {
+                                Image(systemName: order.priority == "high" ? "bell.badge.fill" : "checkmark")
+                                    .font(.caption.weight(.bold))
+                                    .foregroundStyle(order.priority == "high" ? CX.coral : CX.teal)
+                            }
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(order.title).font(.subheadline.weight(.medium))
+                            if !order.description.isEmpty {
+                                Text(order.description).font(.caption).foregroundStyle(CX.muted).lineLimit(1)
+                            }
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(CX.faint)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .accessibilityIdentifier("work-order-summary")
+    }
+}
+
+private struct ReferenceLibraryView: View {
+    let references: [ConversationReference]
+
+    var body: some View {
+        List {
+            Section {
+                ForEach(Array(references.enumerated()), id: \.element.id) { index, reference in
+                    NavigationLink {
+                        ReferenceDetailView(number: index + 1, reference: reference)
+                    } label: {
+                        HStack(alignment: .top, spacing: 13) {
+                            Text("\(index + 1)")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(CX.blue)
+                                .frame(width: 28, height: 28)
+                                .background(CX.blue.opacity(0.10), in: Circle())
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(reference.title).font(.body.weight(.semibold))
+                                Text(reference.excerpt)
+                                    .font(.subheadline)
+                                    .foregroundStyle(CX.muted)
+                                    .lineLimit(3)
+                            }
+                        }
+                        .padding(.vertical, 6)
+                    }
+                }
+            } header: {
+                Text("本次回答实际使用的玄同知识库资料")
+            } footer: {
+                Text("资料用于辅助说明，不替代医生面诊、诊断或处方。")
+            }
+        }
+        .navigationTitle("参考资料 · \(references.count)")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct ReferenceDetailView: View {
+    let number: Int
+    let reference: ConversationReference
+
+    var body: some View {
+        Page {
+            HStack(spacing: 12) {
+                Text("\(number)")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(CX.blue)
+                    .frame(width: 38, height: 38)
+                    .background(CX.blue.opacity(0.10), in: Circle())
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(reference.title).font(.title3.weight(.semibold))
+                    Text("玄同医学知识库").font(.caption).foregroundStyle(CX.muted)
+                }
+            }
+            Card {
+                Text("与本次回答相关的内容").font(.headline)
+                Text(reference.excerpt).font(.body).lineSpacing(6).textSelection(.enabled)
+            }
+            Card {
+                Label("资料边界", systemImage: "shield.lefthalf.filled")
+                    .font(.headline)
+                Text("这是知识库摘录，不是针对你的诊断。需要改变药物或治疗方案时，请由医生结合完整病史确认。")
+                    .font(.subheadline)
+                    .foregroundStyle(CX.muted)
+            }
+        }
+        .navigationTitle("资料 \(number)")
+    }
+}
+
+private struct WorkOrderDetailView: View {
+    let order: ConversationWorkOrder
+
+    var body: some View {
+        Page {
+            Card {
+                Label(order.title, systemImage: "checklist.checked")
+                    .font(.title3.weight(.semibold))
+                if !order.description.isEmpty {
+                    Text(order.description).font(.body).lineSpacing(5)
+                }
+                LabeledContent("状态", value: order.status == "pending" ? "待处理" : order.status)
+                LabeledContent("优先级", value: order.priority == "high" ? "较高" : "常规")
+                if let role = order.assigneeRole, !role.isEmpty {
+                    LabeledContent("负责角色", value: WorkflowNodeName.display(role))
+                }
+            }
+            Card {
+                Label("接下来", systemImage: "arrow.triangle.branch")
+                    .font(.headline)
+                Text("工单已由玄同记录。涉及医疗判断或处方调整的事项仍需医生确认，常曦不会自动替你提交不可逆操作。")
+                    .font(.subheadline)
+                    .foregroundStyle(CX.muted)
+            }
+        }
+        .navigationTitle("照护工单")
+    }
 }
 
 // MARK: - 对话历史

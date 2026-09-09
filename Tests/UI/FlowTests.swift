@@ -4,7 +4,7 @@ final class FlowTests: XCTestCase {
     func testLiveXuantongConversationWhenRequested() throws {
         let baseURL = ProcessInfo.processInfo.environment["XUANTONG_TEST_BASE_URL"]
             ?? "http://127.0.0.1:8000"
-        guard let healthURL = URL(string: baseURL + "/api/health/detail") else {
+        guard let healthURL = URL(string: baseURL + "/api/health") else {
             throw XCTSkip("Invalid Xuantong URL: \(baseURL).")
         }
         let probe = expectation(description: "Probe Xuantong")
@@ -22,24 +22,35 @@ final class FlowTests: XCTestCase {
         app.launchArguments = ["--integration-testing", "-apiBaseURL", baseURL]
         app.launch()
 
-        let openChat = app.buttons["open-chat"]
+        let openChat = app.buttons["open-chat"].firstMatch
         XCTAssertTrue(openChat.waitForExistence(timeout: 10))
         openChat.tap()
 
         let chatField = app.textFields["chat-input"]
         let chatTextView = app.textViews["chat-input"]
-        XCTAssertTrue(chatField.waitForExistence(timeout: 5) || chatTextView.waitForExistence(timeout: 5))
+        if !(chatField.waitForExistence(timeout: 5) || chatTextView.exists) {
+            openChat.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        }
+        guard chatField.waitForExistence(timeout: 5) || chatTextView.waitForExistence(timeout: 5) else {
+            return XCTFail("点击常曦入口后未打开聊天界面")
+        }
         let input = chatField.exists ? chatField : chatTextView
         input.tap()
-        input.typeText("你好，请确认常曦已经连接玄同")
+        if !app.keyboards.firstMatch.waitForExistence(timeout: 2) {
+            input.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        }
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 3))
+        input.typeText("请说明家庭血压记录的正确方法")
         app.buttons["send-chat"].tap()
 
-        let reply = app.staticTexts
-            .matching(identifier: "assistant-message-label")
-            .matching(NSPredicate(format: "label CONTAINS %@", "家庭医生团队"))
-            .firstMatch
+        let reply = app.descendants(matching: .any)["assistant-response"].firstMatch
         XCTAssertTrue(reply.waitForExistence(timeout: 45), "常曦未在界面收到玄同回复")
-        XCTAssertFalse((reply.label).trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        XCTAssertTrue(app.staticTexts["assistant-message-label"].exists)
+        let workOrder = app.descendants(matching: .any)["work-order-summary"].firstMatch
+        XCTAssertTrue(workOrder.waitForExistence(timeout: 150), "玄同回复后未生成照护工单")
+        if !workOrder.isHittable {
+            app.swipeUp()
+        }
         capture("15-live-xuantong-reply")
     }
 

@@ -46,6 +46,8 @@ struct ChatMetadata: Codable, Sendable, Equatable {
     var reason: String?
     /// LLM 降级标记（`true` 表示当前为简化兜底回复）。
     var degraded: Bool?
+    /// 本轮回答实际注入模型的玄同知识库资料。
+    var references: [ConversationReference]?
 
     /// 是否命中安全护栏（危机 / 阻断），UI 需醒目标注。
     var isGuarded: Bool { self.`guard` == "emergency" || self.`guard` == "block" }
@@ -77,6 +79,7 @@ struct ChatFinal: Sendable {
     let agentRole: String?
     let sessionId: String?
     let metadata: ChatMetadata?
+    let references: [ConversationReference]
 }
 
 // SSE data 载荷
@@ -89,6 +92,7 @@ private struct ChatStreamComplete: Decodable {
     let agentRole: String?
     let sessionId: String?
     let metadata: ChatMetadata?
+    let references: [ConversationReference]?
 }
 private struct ChatStreamErrorPayload: Decodable { let message: String }
 
@@ -241,7 +245,8 @@ struct RemoteConversationService: ConversationService {
                         reply: complete.reply,
                         agentRole: complete.agentRole,
                         sessionId: complete.sessionId,
-                        metadata: complete.metadata
+                        metadata: complete.metadata,
+                        references: complete.references ?? complete.metadata?.references ?? []
                     )
                 }
             case "error":
@@ -268,7 +273,13 @@ struct RemoteConversationService: ConversationService {
         guard !text.isEmpty else {
             throw APIError.http(status: 200, message: "未能获取回复，请重试。")
         }
-        return ChatFinal(reply: text, agentRole: "family_doctor", sessionId: sessionId, metadata: nil)
+        return ChatFinal(
+            reply: text,
+            agentRole: "family_doctor",
+            sessionId: sessionId,
+            metadata: nil,
+            references: []
+        )
     }
 
     // MARK: 会话管理

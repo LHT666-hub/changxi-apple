@@ -61,15 +61,16 @@ final class ConversationServiceTests: XCTestCase {
 
     func testStreamReplyPrefersCompleteEvent() async throws {
         let client = APIClient.makeMock()
-        let body = Data("event: message\ndata: {\"chunk\":\"部分\",\"done\":false}\n\nevent: complete\ndata: {\"reply\":\"最终全文\",\"agent_role\":\"family_doctor\",\"session_id\":\"s-2\"}\n\n".utf8)
+        let body = Data("event: message\ndata: {\"chunk\":\"部分\",\"done\":false}\n\nevent: complete\ndata: {\"reply\":\"最终全文[1]\",\"agent_role\":\"family_doctor\",\"session_id\":\"s-2\",\"references\":[{\"id\":\"ref-1\",\"title\":\"高血压健康管理指南\",\"source\":\"hypertension_guidelines.md\",\"excerpt\":\"家庭血压监测资料\",\"evidence_score\":0.8,\"kind\":\"local_knowledge_base\"}]}\n\n".utf8)
         MockURLProtocol.stub { _ in .init(statusCode: 200, chunks: [body]) }
         let service = RemoteConversationService(api: client, patientId: "test-pid")
         var chunks: [String] = []
         let final = try await service.streamReply(message: "hi") { chunks.append($0) }
-        XCTAssertEqual(final.reply, "最终全文", "complete 事件的全文应优先于累积文本")
+        XCTAssertEqual(final.reply, "最终全文[1]", "complete 事件的全文应优先于累积文本")
         XCTAssertEqual(final.agentRole, "family_doctor")
         XCTAssertEqual(final.sessionId, "s-2")
         XCTAssertEqual(chunks, ["部分"])
+        XCTAssertEqual(final.references.first?.title, "高血压健康管理指南")
     }
 
     func testStreamReplyThrowsOnErrorEvent() async {
