@@ -24,7 +24,9 @@ struct MoonBackground: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            CX.mist
+            (reduceTransparency ? CX.mist : backgroundTopColor)
+                .ignoresSafeArea()
+
             MeshGradient(
                 width: 3,
                 height: 3,
@@ -36,6 +38,7 @@ struct MoonBackground: View {
                 colors: meshColors
             )
             .opacity(reduceTransparency ? 0 : 0.72)
+            .ignoresSafeArea()
 
             if illustrated {
                 Image(decorative: "MoonGarden")
@@ -46,7 +49,12 @@ struct MoonBackground: View {
                     .opacity(colorScheme == .dark ? 0.10 : 0.12)
                     .mask(
                         LinearGradient(
-                            colors: [.white, .white.opacity(0.72), .clear],
+                            stops: [
+                                .init(color: .clear, location: 0),
+                                .init(color: .white, location: 0.10),
+                                .init(color: .white.opacity(0.72), location: 0.48),
+                                .init(color: .clear, location: 1)
+                            ],
                             startPoint: .top,
                             endPoint: .bottom
                         )
@@ -61,17 +69,20 @@ struct MoonBackground: View {
                 startRadius: 20,
                 endRadius: 420
             )
+            .mask(topEdgeFade)
+            .ignoresSafeArea()
         }
-        .ignoresSafeArea()
         .accessibilityHidden(true)
     }
 
     private var meshColors: [Color] {
+        // The mesh begins at the safe-area boundary. Matching its first row to
+        // the color extended behind the status bar removes the hard join.
         if colorScheme == .dark {
             return [
-                Color(.displayP3, red: 0.035, green: 0.055, blue: 0.10),
-                Color(.displayP3, red: 0.055, green: 0.09, blue: 0.17),
-                Color(.displayP3, red: 0.08, green: 0.12, blue: 0.21),
+                backgroundTopColor,
+                backgroundTopColor,
+                backgroundTopColor,
                 Color(.displayP3, red: 0.04, green: 0.07, blue: 0.13),
                 Color(.displayP3, red: 0.07, green: 0.12, blue: 0.21),
                 Color(.displayP3, red: 0.04, green: 0.08, blue: 0.15),
@@ -82,9 +93,9 @@ struct MoonBackground: View {
         }
 
         return [
-            Color(.displayP3, red: 0.91, green: 0.95, blue: 1.0),
-            Color(.displayP3, red: 0.95, green: 0.97, blue: 1.0),
-            Color(.displayP3, red: 0.86, green: 0.92, blue: 0.99),
+            backgroundTopColor,
+            backgroundTopColor,
+            backgroundTopColor,
             Color(.displayP3, red: 0.97, green: 0.98, blue: 1.0),
             Color(.displayP3, red: 0.91, green: 0.95, blue: 0.99),
             Color(.displayP3, red: 0.96, green: 0.97, blue: 1.0),
@@ -93,6 +104,24 @@ struct MoonBackground: View {
             Color(.displayP3, red: 0.98, green: 0.98, blue: 1.0)
         ]
     }
+
+    private var backgroundTopColor: Color {
+        colorScheme == .dark
+            ? Color(.displayP3, red: 0.035, green: 0.055, blue: 0.10)
+            : Color(.displayP3, red: 0.91, green: 0.95, blue: 1.0)
+    }
+
+    private var topEdgeFade: LinearGradient {
+        LinearGradient(
+            stops: [
+                .init(color: .clear, location: 0),
+                .init(color: .white, location: 0.12),
+                .init(color: .white, location: 1)
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+    }
 }
 
 struct Page<Content: View>: View {
@@ -100,16 +129,19 @@ struct Page<Content: View>: View {
     @ViewBuilder let content: Content
 
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 20) {
-                content
+        ZStack {
+            MoonBackground(illustrated: illustrated)
+
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 20) {
+                    content
+                }
+                .frame(maxWidth: 720)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 24)
+                .frame(maxWidth: .infinity)
             }
-            .frame(maxWidth: 720)
-            .padding(.horizontal, 20)
-            .padding(.vertical, 24)
-            .frame(maxWidth: .infinity)
         }
-        .background { MoonBackground(illustrated: illustrated) }
         .foregroundStyle(CX.ink)
         .navigationBarTitleDisplayMode(.inline)
     }

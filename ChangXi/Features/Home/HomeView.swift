@@ -17,52 +17,45 @@ struct HomeView: View {
     }
 
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 24) {
-                HomeHeader(name: store.data.name, greeting: greeting, hasUnreadMessage: !store.data.doctorMessageRead)
-                    .entrance(index: 0, appeared: appeared, reduceMotion: reduceMotion)
+        ZStack {
+            MoonBackground(illustrated: true)
 
-                moonPool
-                    .entrance(index: 1, appeared: appeared, reduceMotion: reduceMotion)
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 24) {
+                    HomeHeader(name: store.data.name, greeting: greeting, hasUnreadMessage: !store.data.doctorMessageRead)
+                        .entrance(index: 0, appeared: appeared, reduceMotion: reduceMotion)
 
-                talkButton
-                    .entrance(index: 2, appeared: appeared, reduceMotion: reduceMotion)
+                    moonPool
+                        .entrance(index: 1, appeared: appeared, reduceMotion: reduceMotion)
 
-                NavigationLink { MoonRhythmDetailView() } label: {
-                    MoonPhaseCard()
-                        .padding(16)
-                        .cxInteractiveGlass(cornerRadius: 20)
-                }
-                .buttonStyle(.plain)
-                .entrance(index: 3, appeared: appeared, reduceMotion: reduceMotion)
+                    talkButton
+                        .entrance(index: 2, appeared: appeared, reduceMotion: reduceMotion)
 
-                SectionEyebrow(title: "今天", action: Date.now.formatted(.dateTime.locale(Locale(identifier: "zh_CN")).month().day().weekday(.abbreviated)))
-                    .entrance(index: 4, appeared: appeared, reduceMotion: reduceMotion)
-
-                TodaySummaryCard(nextPlan: nextPlan)
-                    .entrance(index: 5, appeared: appeared, reduceMotion: reduceMotion)
-
-                NavigationLink {
-                    PlanView()
-                } label: {
-                    Card {
-                        RhythmView(completed: store.completed, total: store.data.plans.count)
+                    NavigationLink { MoonRhythmDetailView() } label: {
+                        MoonPhaseCard()
+                            .padding(16)
+                            .cxInteractiveGlass(cornerRadius: 20)
                     }
-                }
-                .buttonStyle(.plain)
-                .entrance(index: 6, appeared: appeared, reduceMotion: reduceMotion)
+                    .buttonStyle(.plain)
+                    .entrance(index: 3, appeared: appeared, reduceMotion: reduceMotion)
 
-                DemoLabel()
-                    .frame(maxWidth: .infinity)
-                    .entrance(index: 7, appeared: appeared, reduceMotion: reduceMotion)
+                    SectionEyebrow(title: "今天", action: Date.now.formatted(.dateTime.locale(Locale(identifier: "zh_CN")).month().day().weekday(.abbreviated)))
+                        .entrance(index: 4, appeared: appeared, reduceMotion: reduceMotion)
+
+                    TodaySummaryCard(nextPlan: nextPlan)
+                        .entrance(index: 5, appeared: appeared, reduceMotion: reduceMotion)
+
+                    DemoLabel()
+                        .frame(maxWidth: .infinity)
+                        .entrance(index: 6, appeared: appeared, reduceMotion: reduceMotion)
+                }
+                .frame(maxWidth: 680)
+                .padding(.horizontal, 20)
+                .padding(.top, 18)
+                .padding(.bottom, 32)
+                .frame(maxWidth: .infinity)
             }
-            .frame(maxWidth: 680)
-            .padding(.horizontal, 20)
-            .padding(.top, 18)
-            .padding(.bottom, 32)
-            .frame(maxWidth: .infinity)
         }
-        .background { MoonBackground(illustrated: true) }
         .foregroundStyle(CX.ink)
         .toolbarVisibility(.hidden, for: .navigationBar)
         .onAppear {
@@ -93,27 +86,22 @@ struct HomeView: View {
             showChat = true
         } label: {
             HStack(spacing: 14) {
-                Image(systemName: "moonphase.waxing.crescent")
-                    .font(.title2.weight(.light))
-                    .foregroundStyle(CX.blue)
+                Image(systemName: "waveform")
+                    .font(.title2.weight(.semibold))
                     .symbolRenderingMode(.hierarchical)
                 VStack(alignment: .leading, spacing: 3) {
                     Text("和常曦说说")
                         .font(.headline)
-                    Text("此刻的心事，慢慢说")
-                        .font(.caption).foregroundStyle(CX.muted)
+                    Text("语音或文字都可以")
+                        .font(.subheadline)
+                        .opacity(0.82)
                 }
                 Spacer()
-                Image(systemName: "waveform")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(CX.faint)
+                Image(systemName: "arrow.up.right")
+                    .font(.subheadline.weight(.semibold))
             }
-            .foregroundStyle(CX.ink)
-            .padding(.horizontal, 22)
-            .frame(minHeight: 68)
-            .cxInteractiveGlass(cornerRadius: 28)
         }
-        .buttonStyle(QuietPressButton())
+        .buttonStyle(PrimaryButton())
         .accessibilityIdentifier("open-chat")
     }
 }
