@@ -16,6 +16,8 @@ struct ChatView: View {
     @State private var showCamera = false
     @State private var showHistory = false
     @State private var showFiles = false
+    @State private var isVoiceMode = false
+    @State private var isHoldingVoice = false
     @State private var pendingAttachment: String?
     @State private var pendingAttachmentText: String?
     @State private var lastUserText = ""
@@ -102,7 +104,7 @@ struct ChatView: View {
         }
         .sheet(isPresented: $showCamera) { NavigationStack { ReportImportView(onAttach: { text = $0; keyboard = true }) } }
         .sheet(isPresented: $showHistory) { NavigationStack { ChatHistoryView() } }
-        .fileImporter(isPresented: $showFiles, allowedContentTypes: [.pdf, .plainText], allowsMultipleSelection: false) { result in
+        .fileImporter(isPresented: $showFiles, allowedContentTypes: [.pdf, .text], allowsMultipleSelection: false) { result in
             switch result {
             case .success(let urls):
                 guard let url = urls.first else { return }
@@ -149,7 +151,7 @@ struct ChatView: View {
                             Label("拍照或选择照片", systemImage: "camera")
                         }
                         Button { speech.stop(); showFiles = true } label: {
-                            Label("选择 PDF 或文本", systemImage: "doc.badge.plus")
+                            Label("选择 PDF 或文件", systemImage: "doc.badge.plus")
                         }
                     } label: {
                         Image(systemName: "plus")
@@ -158,24 +160,25 @@ struct ChatView: View {
                     }
                     .accessibilityLabel("添加照片或文件")
 
-                    TextField("输入想说的话…", text: $text, axis: .vertical)
-                        .lineLimit(1...5)
-                        .focused($keyboard)
-                        .padding(.horizontal, 12)
-                        .frame(minHeight: 44)
-                        .accessibilityIdentifier("chat-input")
+                    if isVoiceMode {
+                        voiceHoldControl
+                    } else {
+                        TextField("输入想说的话…", text: $text, axis: .vertical)
+                            .lineLimit(1...5)
+                            .focused($keyboard)
+                            .padding(.horizontal, 12)
+                            .frame(minHeight: 44)
+                            .accessibilityIdentifier("chat-input")
+                    }
 
-                    Button {
-                        if speech.isRecording || speech.isStarting { speech.stop() }
-                        else { keyboard = false; Task { await speech.start() } }
-                    } label: {
-                        Image(systemName: speech.isRecording ? "stop.fill" : "mic")
+                    Button(action: toggleInputMode) {
+                        Image(systemName: isVoiceMode ? "keyboard" : "mic")
                             .font(.headline.weight(.medium))
                             .frame(width: 44, height: 44)
-                            .foregroundStyle(speech.isRecording ? CX.coral : CX.ink)
+                            .foregroundStyle(isVoiceMode ? CX.blue : CX.ink)
                     }
                     .disabled(isBusy)
-                    .accessibilityLabel(speech.isRecording ? "停止录音" : "语音输入")
+                    .accessibilityLabel(isVoiceMode ? "切换到键盘输入" : "切换到语音输入")
 
                     Button(action: send) {
                         Image(systemName: isBusy ? "stop.fill" : "arrow.up")
@@ -184,7 +187,7 @@ struct ChatView: View {
                             .foregroundStyle(.white)
                             .cxProminentGlassCircle()
                     }
-                    .disabled((text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isBusy) || speech.isRecording)
+                    .disabled((text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isBusy) || speech.isRecording || isHoldingVoice)
                     .accessibilityLabel(isBusy ? "停止" : "发送")
                     .accessibilityIdentifier("send-chat")
                 }
@@ -197,6 +200,57 @@ struct ChatView: View {
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity)
         .cxComposerBackground()
+    }
+
+    private var voiceHoldControl: some View {
+        HStack(spacing: 8) {
+            Image(systemName: speech.isRecording ? "waveform" : "mic.fill")
+                .symbolEffect(.variableColor.iterative, isActive: speech.isRecording)
+            Text(speech.isStarting ? "正在准备麦克风…" : speech.isRecording ? "松开转成文字" : "长按发言")
+                .font(.body.weight(.medium))
+        }
+        .foregroundStyle(speech.isRecording ? CX.blue : CX.ink)
+        .frame(maxWidth: .infinity, minHeight: 44)
+        .background(speech.isRecording ? CX.blue.opacity(0.10) : .clear, in: Capsule())
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in beginVoiceHold() }
+                .onEnded { _ in endVoiceHold() }
+        )
+        .accessibilityElement()
+        .accessibilityLabel(speech.isRecording ? "正在录音，松开转成文字" : "长按发言")
+        .accessibilityHint("按住开始录音，松开后转成可编辑文字")
+        .accessibilityAction {
+            if speech.isRecording || speech.isStarting { endVoiceHold() }
+            else { beginVoiceHold() }
+        }
+    }
+
+    private func toggleInputMode() {
+        speech.stop()
+        isHoldingVoice = false
+        isVoiceMode.toggle()
+        keyboard = !isVoiceMode
+    }
+
+    private func beginVoiceHold() {
+        guard isVoiceMode, !isHoldingVoice, !isBusy else { return }
+        isHoldingVoice = true
+        keyboard = false
+        MoonHaptics.shared.play(enabled: store.data.haptics)
+        Task {
+            await speech.start()
+            if !speech.isRecording { isHoldingVoice = false }
+        }
+    }
+
+    private func endVoiceHold() {
+        guard isHoldingVoice || speech.isRecording || speech.isStarting else { return }
+        isHoldingVoice = false
+        speech.stop()
+        isVoiceMode = false
+        keyboard = false
     }
 
     // MARK: - 安全护栏 / 降级提示
@@ -268,7 +322,7 @@ struct ChatView: View {
             pendingAttachmentText = String(content.prefix(12000))
             if content.count > 12000 { pendingAttachmentText? += "\n（文件较长，本次附上前 12000 字）" }
             return true
-        } catch { self.error = "文件读取失败，请重新选择 PDF 或 UTF-8 文本。"; return false }
+        } catch { self.error = "文件读取失败，请重新选择 PDF 或 UTF-8 文件。"; return false }
     }
 
     private func requestReply(_ value: String) {

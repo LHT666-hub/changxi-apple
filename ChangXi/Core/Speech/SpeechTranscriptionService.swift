@@ -17,24 +17,61 @@ enum SpeechSettingsKeys {
 
 // MARK: - 方言 / 语言
 
-/// 后端 `speech/transcribe` 支持的方言 / 语言，映射到 `language_hints` 取值。
-///
-/// 后端契约取值：`zh`(普通话)、`yue`(粤语)、`sc`(四川话)、`mn`(闽南语)、`en`(英语)。
+/// 语音识别的地区口音偏好，映射到后端 `language_hints` 。
+/// 省市选项以江浙沪皖为核心向周边扩展；后端不可用时仍保留偏好，并回落到 Apple 本机识别。
 enum SpeechDialect: String, CaseIterable, Identifiable {
-    case zh, yue, sc, mn, en
+    case zh
+    case shanghai
+    case jiangsu
+    case zhejiang
+    case anhui
+    case jiangxi
+    case fujian
+    case hubei
+    case hunan
+    case guangdong
+    case sichuan
+
     var id: Self { self }
+
     /// 界面展示名称。
     var label: String {
         switch self {
-        case .zh: return "普通话"
-        case .yue: return "粤语"
-        case .sc: return "四川话"
-        case .mn: return "闽南语"
-        case .en: return "英语"
+        case .zh: "普通话"
+        case .shanghai: "上海·沪语"
+        case .jiangsu: "江苏·苏州话 / 江淮官话"
+        case .zhejiang: "浙江·吴语"
+        case .anhui: "安徽·江淮官话"
+        case .jiangxi: "江西·赣语"
+        case .fujian: "福建·闽南语"
+        case .hubei: "湖北·武汉话"
+        case .hunan: "湖南·湘语"
+        case .guangdong: "广东·粤语"
+        case .sichuan: "四川·西南官话"
         }
     }
-    /// 上传给后端的 `language_hints`（单元素数组）。
-    var hints: [String] { [rawValue] }
+
+    /// 上传给后端的语言与方言提示。
+    var hints: [String] {
+        switch self {
+        case .zh: ["zh"]
+        case .guangdong: ["yue", "zh"]
+        case .fujian: ["mn", "zh"]
+        case .sichuan: ["sc", "zh"]
+        case .shanghai, .jiangsu, .zhejiang, .anhui, .jiangxi, .hubei, .hunan: ["zh"]
+        }
+    }
+
+    /// 兼容旧版曾直接保存的方言代码。
+    static func fromStoredValue(_ value: String) -> SpeechDialect {
+        if let dialect = SpeechDialect(rawValue: value) { return dialect }
+        return switch value {
+        case "yue": .guangdong
+        case "sc": .sichuan
+        case "mn": .fujian
+        default: .zh
+        }
+    }
 }
 
 // MARK: - 转写结果模型

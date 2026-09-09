@@ -15,24 +15,21 @@ struct SpeechSettingsView: View {
         Form {
             Section("语音输入") {
                 Toggle("使用云端语音识别（支持方言）", isOn: $cloudEnabled)
-                    .disabled(!AppConfiguration.supportsExtendedAPI)
                 if !AppConfiguration.supportsExtendedAPI {
-                    Text("此版本尚未启用玄同云端转写，语音输入使用 Apple 语音识别。")
+                    Text("此版本尚未启用玄同云端转写。方言偏好会保留，语音暂时使用 Apple 本机识别。")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
-                Text(cloudEnabled
-                     ? "开启后，你主动录制的语音会上传到常曦后端识别，支持普通话与部分方言；识别失败时自动回落到 Apple 本机识别。"
-                     : "关闭时仅使用 Apple 本机语音识别，你的语音不会上传。")
+                Text(speechPrivacyDescription)
                     .font(.footnote).foregroundStyle(.secondary)
             }
-            if cloudEnabled && AppConfiguration.supportsExtendedAPI {
-                Section("识别语言 / 方言") {
+            if cloudEnabled {
+                Section("方言与地区口音") {
                     Picker("方言", selection: $dialectRawValue) {
                         ForEach(SpeechDialect.allCases) { dialect in
                             Text(dialect.label).tag(dialect.rawValue)
                         }
                     }.pickerStyle(.inline)
-                    Text("方言识别为可选增强，实际效果取决于后端模型；普通话识别通常最稳定。")
+                    Text("从江浙沪皖向周边省份扩展。方言识别为可选增强，实际效果取决于识别模型。")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
             }
@@ -42,6 +39,20 @@ struct SpeechSettingsView: View {
                         .font(.footnote).foregroundStyle(.secondary)
                 }
             }
-        }.navigationTitle("语音输入")
+        }
+        .navigationTitle("语音输入")
+        .onAppear {
+            dialectRawValue = SpeechDialect.fromStoredValue(dialectRawValue).rawValue
+        }
+    }
+
+    private var speechPrivacyDescription: String {
+        guard cloudEnabled else {
+            return "关闭时仅使用 Apple 本机语音识别，你的语音不会上传。"
+        }
+        guard AppConfiguration.supportsExtendedAPI else {
+            return "方言偏好已保存。云端转写接入前，录音仍只使用 Apple 本机识别，不会上传。"
+        }
+        return "开启后，你主动录制的语音会上传到常曦后端识别；识别失败时自动回落到 Apple 本机识别。"
     }
 }

@@ -109,7 +109,7 @@ final class SpeechController {
         guard UserDefaults.standard.bool(forKey: SpeechSettingsKeys.cloudEnabled) else { return }
         guard let audio, audio.count > 44 else { return }
         let storedDialect = UserDefaults.standard.string(forKey: SpeechSettingsKeys.dialect) ?? SpeechDialect.zh.rawValue
-        let dialect = SpeechDialect(rawValue: storedDialect) ?? .zh
+        let dialect = SpeechDialect.fromStoredValue(storedDialect)
         let fallback = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
         isTranscribing = true
         Task { @MainActor in
