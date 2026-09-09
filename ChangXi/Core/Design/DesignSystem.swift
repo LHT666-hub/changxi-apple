@@ -144,6 +144,7 @@ struct Page<Content: View>: View {
         }
         .foregroundStyle(CX.ink)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarVisibility(.visible, for: .navigationBar)
     }
 }
 
