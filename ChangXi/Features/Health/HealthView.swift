@@ -42,6 +42,19 @@ struct HealthView: View {
                     .foregroundStyle(CX.muted)
             }
 
+            NavigationLink { HealthPortraitView() } label: {
+                Card {
+                    RowLabel(
+                        title: "我的健康画像",
+                        subtitle: "整体较稳定 · 有 2 项值得关注",
+                        icon: "circle.hexagongrid.fill",
+                        tint: CX.blue
+                    )
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("open-health-portrait")
+
             CXGlassGroup(spacing: 12) {
                 LazyVGrid(
                     columns: typeSize.isAccessibilitySize
@@ -59,6 +72,19 @@ struct HealthView: View {
                     }
                 }
             }
+            SectionEyebrow(title: "身体感受", action: "本机记录")
+            NavigationLink { PainLocationView() } label: {
+                Card {
+                    RowLabel(
+                        title: "哪里疼，指给常曦看",
+                        subtitle: "先选身体部位，再用三维人体标出具体位置",
+                        icon: "figure.stand",
+                        tint: CX.coral
+                    )
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("open-pain-location")
             SectionEyebrow(title: "最近趋势", action: "7 天")
             Card {
                 NavigationLink { MetricDetailView(kind: .pressure) } label: { RowLabel(title: "血压趋势", subtitle: "最近 7 天 · mmHg", icon: "chart.xyaxis.line") }.buttonStyle(.plain)

@@ -327,6 +327,12 @@ private struct CXInteractiveGlassCircleModifier: ViewModifier {
 }
 
 extension View {
+    /// Places the moon artwork as a sibling behind the screen content so every
+    /// layer shares the same safe-area coordinate space.
+    func cxMoonScreenBackground(illustrated: Bool = false) -> some View {
+        modifier(CXMoonScreenBackgroundModifier(illustrated: illustrated))
+    }
+
     func cxInteractiveGlass(cornerRadius: CGFloat) -> some View {
         modifier(CXInteractiveGlassModifier(cornerRadius: cornerRadius))
     }
@@ -386,6 +392,17 @@ extension View {
             self.background(.clear)
         } else {
             self.background(.regularMaterial)
+        }
+    }
+}
+
+private struct CXMoonScreenBackgroundModifier: ViewModifier {
+    let illustrated: Bool
+
+    func body(content: Content) -> some View {
+        ZStack {
+            MoonBackground(illustrated: illustrated)
+            content
         }
     }
 }
