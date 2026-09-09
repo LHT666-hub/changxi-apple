@@ -23,6 +23,8 @@
 - `HealthPortraitView.swift`：六维居民健康画像、分层状态和行动入口。
 - `ConstitutionViews.swift`：九种体质总览、逐题初测、结果、单项科普、家医确认、调养计划。
 - `ConstitutionModel.swift`：九种类型、轻量问题、结果和本地状态。
-- `ConstitutionArtwork`：九套原生 SwiftUI 人物小画，分别组合人物姿态、月相、植物、随身物件和体质主题色；无需位图即可适配不同屏幕。体质名称与说明保持原生文本以支持大字体。
+- `ConstitutionAtlas.imageset`：一张原创 3×3 人物插画图集，九格分别对应平和、气虚、阳虚、阴虚、痰湿、湿热、血瘀、气郁和特禀；由 SwiftUI 按格裁切。`ConstitutionArtwork` 同时保留九套原生绘制作为资源缺失时的兜底。体质名称与说明保持原生文本以支持大字体。
+
+正式插画由内置图像生成工具生成。最终提示词要求：九宫格等分、九位中国老年人物、当代水彩与轻 2.5D、月白和低饱和体质主题色、无文字／标志／水印、不仿制 MBTI 构图、不使用中国红和刻板传统医疗符号。
 
 当前 Windows 环境不能运行 Xcode。合并前需在 Mac 上核对 iPhone／iPad 自适应布局、Dynamic Type、深色模式、VoiceOver 阅读顺序和插画裁切。

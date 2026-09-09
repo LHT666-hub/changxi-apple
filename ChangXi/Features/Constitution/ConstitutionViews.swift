@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct ConstitutionHomeView: View {
     @State private var store = ConstitutionStore()
@@ -66,7 +67,30 @@ private struct ConstitutionCard: View {
 
 struct ConstitutionArtwork: View {
     let constitution: TCMConstitution
+    @ViewBuilder
     var body: some View {
+        if let atlas = UIImage(named: "ConstitutionAtlas") {
+            GeometryReader { geometry in
+                let width = geometry.size.width
+                let height = geometry.size.height
+                let side = max(width, height)
+                let index = constitution.atlasIndex
+                Image(uiImage: atlas)
+                    .resizable()
+                    .frame(width: side * 3, height: side * 3)
+                    .offset(
+                        x: -CGFloat(index % 3) * side + (width - side) / 2,
+                        y: -CGFloat(index / 3) * side + (height - side) / 2
+                    )
+            }
+            .clipped()
+            .accessibilityHidden(true)
+        } else {
+            nativeArtwork
+        }
+    }
+
+    private var nativeArtwork: some View {
         GeometryReader { geometry in
             let width = geometry.size.width
             let height = geometry.size.height
