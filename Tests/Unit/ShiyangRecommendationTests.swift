@@ -27,9 +27,9 @@ final class ShiyangRecommendationTests: XCTestCase {
     }
 
     func testEveryBundledRecipeHasArtworkAndCookingSteps() {
-        XCTAssertGreaterThanOrEqual(ShiyangCatalog.ingredients.count, 60)
-        XCTAssertGreaterThanOrEqual(ShiyangCatalog.recipes.count, 30)
-        XCTAssertGreaterThanOrEqual(ShiyangCatalog.recipes.flatMap(\.steps).count, 134)
+        XCTAssertGreaterThanOrEqual(ShiyangCatalog.ingredients.count, 75)
+        XCTAssertGreaterThanOrEqual(ShiyangCatalog.recipes.count, 42)
+        XCTAssertGreaterThanOrEqual(ShiyangCatalog.recipes.flatMap(\.steps).count, 186)
         for recipe in ShiyangCatalog.recipes {
             XCTAssertFalse(recipe.imageName.isEmpty)
             XCTAssertGreaterThanOrEqual(recipe.steps.count, 4)

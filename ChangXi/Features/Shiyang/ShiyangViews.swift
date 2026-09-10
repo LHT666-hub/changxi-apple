@@ -1630,6 +1630,7 @@ private struct ShiyangCookingGuideView: View {
     @State private var timerRunning = false
     @State private var substitutions: [String: String] = [:]
     @State private var showSubstitutions = false
+    @State private var sceneReplay = 0
 
     let recipe: ShiyangRecipe
 
@@ -1752,37 +1753,28 @@ private struct ShiyangCookingGuideView: View {
             }
             .accessibilityLabel("已进行到第\(stepIndex + 1)步，共\(recipe.steps.count)步")
 
-            ZStack {
-                Image(recipe.imageName)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(height: 330)
-                    .frame(maxWidth: .infinity)
-                    .clipped()
-                    .clipShape(.rect(cornerRadius: 30, style: .continuous))
+            ZStack(alignment: .bottomTrailing) {
+                ShiyangCookingStoryboard(
+                    recipe: recipe,
+                    stepIndex: stepIndex,
+                    substitutions: substitutions
+                )
 
-                LinearGradient(colors: [.clear, .black.opacity(0.52)], startPoint: .center, endPoint: .bottom)
-                    .clipShape(.rect(cornerRadius: 30, style: .continuous))
-
-                VStack {
-                    Spacer()
-                    HStack(alignment: .bottom) {
-                        Image(systemName: step.symbol)
-                            .font(.system(size: 34, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .frame(width: 66, height: 66)
-                            .background(.ultraThinMaterial, in: Circle())
-                            .symbolEffect(.bounce, value: stepIndex)
-                        Spacer()
-                        if step.seconds > 0 {
-                            timerView
-                        }
-                    }
+                if step.seconds > 0 {
+                    timerView
+                        .padding(16)
                 }
-                .padding(18)
             }
-            .id(step.id)
-            .transition(.blurReplace)
+            .frame(height: 330)
+            .id("\(stepIndex)-\(sceneReplay)")
+            .transition(
+                reduceMotion
+                    ? .opacity
+                    : .asymmetric(
+                        insertion: .move(edge: .trailing).combined(with: .opacity),
+                        removal: .move(edge: .leading).combined(with: .opacity)
+                    )
+            )
 
             VStack(alignment: .leading, spacing: 9) {
                 Text(personalized(step.title))
@@ -1816,7 +1808,10 @@ private struct ShiyangCookingGuideView: View {
                     .disabled(stepIndex == 0)
 
                 Button("再看一遍", systemImage: "arrow.counterclockwise") {
-                    withAnimation(.spring(duration: 0.35)) { resetTimer() }
+                    withAnimation(.spring(duration: 0.42, bounce: 0.10)) {
+                        sceneReplay += 1
+                        resetTimer()
+                    }
                 }
                 .frame(maxWidth: .infinity, minHeight: 48)
                 .buttonStyle(.bordered)
@@ -1845,7 +1840,8 @@ private struct ShiyangCookingGuideView: View {
             timerRunning.toggle()
         } label: {
             ZStack {
-                Circle().fill(.ultraThinMaterial)
+                Circle().fill(SY.ink.opacity(0.78))
+                Circle().fill(.ultraThinMaterial).opacity(0.24)
                 Circle()
                     .trim(from: 0, to: timerProgress)
                     .stroke(SY.amber, style: StrokeStyle(lineWidth: 5, lineCap: .round))
@@ -1905,6 +1901,371 @@ private struct ShiyangCookingGuideView: View {
                 ingredientsArrived = false
             }
         }
+    }
+}
+
+private enum ShiyangCookingSceneKind {
+    case prepare
+    case mix
+    case pan
+    case pot
+    case plate
+
+    init(step: ShiyangCookingStep) {
+        let copy = step.title + step.detail
+        if copy.contains("出锅") || copy.contains("完成") || copy.contains("盛") || copy.contains("收口") || copy.contains("尝味") {
+            self = .plate
+        } else if copy.contains("煮") || copy.contains("炖") || copy.contains("焖") || copy.contains("蒸") || copy.contains("焯") || step.symbol == "timer" || step.symbol == "drop.fill" {
+            self = .pot
+        } else if copy.contains("炒") || copy.contains("煎") || copy.contains("滑") || step.symbol == "frying.pan.fill" || step.symbol == "flame.fill" {
+            self = .pan
+        } else if copy.contains("拌") || copy.contains("打散") || copy.contains("调成") || copy.contains("兑") || step.symbol == "arrow.triangle.2.circlepath" {
+            self = .mix
+        } else {
+            self = .prepare
+        }
+    }
+
+    var caption: String {
+        switch self {
+        case .prepare: "备菜时间"
+        case .mix: "拌一拌"
+        case .pan: "滋啦——"
+        case .pot: "咕嘟咕嘟"
+        case .plate: "完成啦"
+        }
+    }
+
+    var tint: Color {
+        switch self {
+        case .prepare: Color(.displayP3, red: 0.45, green: 0.64, blue: 0.38)
+        case .mix: Color(.displayP3, red: 0.88, green: 0.57, blue: 0.26)
+        case .pan: Color(.displayP3, red: 0.92, green: 0.35, blue: 0.20)
+        case .pot: Color(.displayP3, red: 0.33, green: 0.59, blue: 0.67)
+        case .plate: Color(.displayP3, red: 0.91, green: 0.57, blue: 0.22)
+        }
+    }
+}
+
+private struct ShiyangCookingStoryboard: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    let recipe: ShiyangRecipe
+    let stepIndex: Int
+    let substitutions: [String: String]
+
+    private var step: ShiyangCookingStep { recipe.steps[stepIndex] }
+    private var kind: ShiyangCookingSceneKind { .init(step: step) }
+
+    private var ingredientIDs: [String] {
+        var seen = Set<String>()
+        return recipe.steps[0...stepIndex]
+            .flatMap(\.ingredientIDs)
+            .map { substitutions[$0] ?? $0 }
+            .filter { seen.insert($0).inserted }
+    }
+
+    private var activeIngredientIDs: Set<String> {
+        Set(step.ingredientIDs.map { substitutions[$0] ?? $0 })
+    }
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion)) { context in
+            storyboardFrame(time: context.date.timeIntervalSinceReferenceDate)
+        }
+        .clipShape(.rect(cornerRadius: 30, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 30, style: .continuous)
+                .stroke(SY.ink.opacity(0.16), lineWidth: 2)
+        }
+        .shadow(color: kind.tint.opacity(0.16), radius: 18, y: 10)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("第\(stepIndex + 1)步动画，\(step.title)，\(kind.caption)")
+        .accessibilityIdentifier("cooking-storyboard-step-\(stepIndex + 1)")
+    }
+
+    private func storyboardFrame(time: TimeInterval) -> some View {
+        GeometryReader { proxy in
+            let size = proxy.size
+            let beat = reduceMotion ? CGFloat.zero : CGFloat(sin(time * 3.2))
+
+            ZStack {
+                LinearGradient(
+                    colors: [SY.cream, kind.tint.opacity(0.18), Color.white.opacity(0.72)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+
+                Circle()
+                    .fill(kind.tint.opacity(0.10))
+                    .frame(width: size.width * 0.72)
+                    .offset(x: size.width * 0.34, y: -size.height * 0.24)
+
+                comicSpeedLines(size: size, beat: beat)
+                vessel(size: size, beat: beat)
+                ingredientLayer(size: size, beat: beat)
+
+                VStack {
+                    HStack(alignment: .top) {
+                        Text(kind.caption)
+                            .font(.headline.weight(.black))
+                            .fontDesign(.rounded)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 15)
+                            .padding(.vertical, 9)
+                            .background(kind.tint, in: .capsule)
+                            .rotationEffect(.degrees(-2))
+                            .scaleEffect(1 + beat * 0.018)
+
+                        Spacer()
+
+                        Text("\(stepIndex + 1) / \(recipe.steps.count)")
+                            .font(.caption.monospacedDigit().weight(.bold))
+                            .foregroundStyle(SY.ink.opacity(0.62))
+                            .padding(.horizontal, 11)
+                            .padding(.vertical, 7)
+                            .background(.white.opacity(0.76), in: .capsule)
+                    }
+                    Spacer()
+                    HStack {
+                        Label(personalizedStepTitle, systemImage: step.symbol)
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(SY.ink)
+                            .lineLimit(2)
+                            .padding(.horizontal, 13)
+                            .padding(.vertical, 10)
+                            .background(.white.opacity(0.88), in: .rect(cornerRadius: 16, style: .continuous))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .stroke(SY.ink.opacity(0.12), lineWidth: 1.5)
+                            }
+                            .frame(maxWidth: size.width * 0.62, alignment: .leading)
+                            .rotationEffect(.degrees(1.2))
+                        Spacer()
+                    }
+                }
+                .padding(17)
+
+                comicFrame
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func vessel(size: CGSize, beat: CGFloat) -> some View {
+        switch kind {
+        case .prepare:
+            ZStack {
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .fill(Color(.displayP3, red: 0.82, green: 0.61, blue: 0.39))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 28, style: .continuous)
+                            .stroke(.white.opacity(0.58), lineWidth: 4)
+                            .padding(7)
+                    }
+                    .frame(width: size.width * 0.68, height: size.height * 0.48)
+                    .rotationEffect(.degrees(-3))
+
+                Capsule()
+                    .fill(SY.ink.opacity(0.72))
+                    .frame(width: size.width * 0.34, height: 13)
+                    .overlay(alignment: .trailing) {
+                        Capsule().fill(SY.apricot).frame(width: 70, height: 20).offset(x: 40)
+                    }
+                    .rotationEffect(.degrees(-24 + Double(beat) * 2))
+                    .offset(x: size.width * 0.20, y: -size.height * 0.12)
+            }
+            .offset(y: 35)
+
+        case .mix:
+            ZStack {
+                Ellipse()
+                    .fill(Color.white.opacity(0.90))
+                    .frame(width: size.width * 0.66, height: size.height * 0.42)
+                    .overlay { Ellipse().stroke(kind.tint.opacity(0.46), lineWidth: 9) }
+                    .shadow(color: SY.ink.opacity(0.12), radius: 10, y: 8)
+
+                Capsule()
+                    .fill(SY.ink.opacity(0.65))
+                    .frame(width: 150, height: 13)
+                    .rotationEffect(.degrees(-42 + Double(beat) * 5))
+                    .offset(x: 76, y: -58)
+            }
+            .offset(y: 48)
+
+        case .pan:
+            ZStack {
+                Capsule()
+                    .fill(SY.ink.opacity(0.76))
+                    .frame(width: size.width * 0.36, height: 28)
+                    .rotationEffect(.degrees(-10))
+                    .offset(x: size.width * 0.35, y: 42)
+
+                Ellipse()
+                    .fill(Color(.displayP3, red: 0.20, green: 0.20, blue: 0.19))
+                    .frame(width: size.width * 0.68, height: size.height * 0.38)
+                    .overlay {
+                        Ellipse()
+                            .stroke(LinearGradient(colors: [.white.opacity(0.62), .clear], startPoint: .top, endPoint: .bottom), lineWidth: 7)
+                            .padding(9)
+                    }
+                    .shadow(color: .black.opacity(0.20), radius: 12, y: 10)
+
+                HStack(spacing: 10) {
+                    ForEach(0..<3, id: \.self) { index in
+                        Image(systemName: "flame.fill")
+                            .foregroundStyle(index == 1 ? SY.amber : SY.apricot)
+                            .scaleEffect(1 + beat * CGFloat(index + 1) * 0.025)
+                    }
+                }
+                .font(.system(size: 34, weight: .bold))
+                .offset(y: size.height * 0.23)
+            }
+            .offset(y: 45)
+
+        case .pot:
+            ZStack {
+                RoundedRectangle(cornerRadius: 30, style: .continuous)
+                    .fill(Color(.displayP3, red: 0.91, green: 0.76, blue: 0.54))
+                    .frame(width: size.width * 0.64, height: size.height * 0.40)
+                    .overlay(alignment: .top) {
+                        Ellipse()
+                            .fill(kind.tint.opacity(0.42))
+                            .overlay { Ellipse().stroke(.white.opacity(0.68), lineWidth: 5) }
+                            .frame(height: 62)
+                            .offset(y: -18)
+                    }
+                    .shadow(color: SY.ink.opacity(0.16), radius: 12, y: 10)
+
+                HStack(spacing: 30) {
+                    steam(delay: 0, beat: beat)
+                    steam(delay: 0.7, beat: beat)
+                    steam(delay: 1.4, beat: beat)
+                }
+                .offset(y: -size.height * 0.21)
+            }
+            .offset(y: 60)
+
+        case .plate:
+            ZStack {
+                Ellipse()
+                    .fill(.white.opacity(0.94))
+                    .frame(width: size.width * 0.72, height: size.height * 0.43)
+                    .overlay { Ellipse().stroke(kind.tint.opacity(0.32), lineWidth: 11).padding(9) }
+                    .shadow(color: SY.ink.opacity(0.14), radius: 13, y: 9)
+
+                ForEach(0..<3, id: \.self) { index in
+                    Image(systemName: "sparkle")
+                        .font(.system(size: 22 + CGFloat(index * 5), weight: .bold))
+                        .foregroundStyle(index == 1 ? SY.apricot : SY.amber)
+                        .offset(x: CGFloat(index - 1) * 105, y: index == 1 ? -102 : -70)
+                        .scaleEffect(1 + beat * 0.08)
+                }
+            }
+            .offset(y: 52)
+        }
+    }
+
+    private func ingredientLayer(size: CGSize, beat: CGFloat) -> some View {
+        let positions = tokenPositions(for: kind)
+        return ZStack {
+            ForEach(Array(ingredientIDs.prefix(6).enumerated()), id: \.element) { index, id in
+                if let ingredient = ShiyangCatalog.ingredient(id) {
+                    let active = activeIngredientIDs.contains(id)
+                    ingredientToken(ingredient, active: active)
+                        .position(
+                            x: size.width * positions[index % positions.count].x,
+                            y: size.height * positions[index % positions.count].y
+                        )
+                        .offset(y: active ? beat * 5 : 0)
+                        .rotationEffect(.degrees(active && kind == .pan ? Double(beat) * Double(4 + index) : 0))
+                        .scaleEffect(active ? 1.04 + beat * 0.025 : 0.82)
+                        .opacity(active ? 1 : 0.64)
+                        .zIndex(active ? 2 : 1)
+                        .transition(.scale(scale: 0.2).combined(with: .opacity))
+                }
+            }
+        }
+        .animation(reduceMotion ? .easeOut(duration: 0.15) : .spring(duration: 0.55, bounce: 0.22), value: stepIndex)
+    }
+
+    private func ingredientToken(_ ingredient: ShiyangIngredient, active: Bool) -> some View {
+        VStack(spacing: 3) {
+            Image(systemName: ingredient.symbol)
+                .font(.system(size: 20, weight: .bold))
+            Text(ingredient.name)
+                .font(.caption2.weight(.bold))
+                .lineLimit(1)
+        }
+        .foregroundStyle(SY.ink)
+        .frame(width: 66, height: 58)
+        .background(ingredientColor(ingredient.category), in: .rect(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(active ? Color.white.opacity(0.9) : SY.ink.opacity(0.12), lineWidth: active ? 3 : 1.5)
+        }
+        .shadow(color: SY.ink.opacity(active ? 0.17 : 0.07), radius: active ? 7 : 3, y: 4)
+    }
+
+    private func ingredientColor(_ category: ShiyangIngredientCategory) -> Color {
+        switch category {
+        case .vegetable: Color(.displayP3, red: 0.73, green: 0.84, blue: 0.55)
+        case .protein: Color(.displayP3, red: 0.96, green: 0.68, blue: 0.54)
+        case .staple: Color(.displayP3, red: 0.94, green: 0.80, blue: 0.47)
+        case .pantry: Color(.displayP3, red: 0.81, green: 0.70, blue: 0.56)
+        case .fruitDairy: Color(.displayP3, red: 0.95, green: 0.72, blue: 0.64)
+        case .nutCondiment: Color(.displayP3, red: 0.84, green: 0.68, blue: 0.45)
+        }
+    }
+
+    private var personalizedStepTitle: String {
+        substitutions.reduce(step.title) { result, substitution in
+            guard let original = ShiyangCatalog.ingredient(substitution.key)?.name,
+                  let replacement = ShiyangCatalog.ingredient(substitution.value)?.name else { return result }
+            return result.replacingOccurrences(of: original, with: replacement)
+        }
+    }
+
+    private func tokenPositions(for kind: ShiyangCookingSceneKind) -> [CGPoint] {
+        switch kind {
+        case .prepare:
+            [CGPoint(x: 0.32, y: 0.50), CGPoint(x: 0.50, y: 0.61), CGPoint(x: 0.66, y: 0.48), CGPoint(x: 0.39, y: 0.72), CGPoint(x: 0.61, y: 0.70), CGPoint(x: 0.51, y: 0.43)]
+        case .mix, .plate:
+            [CGPoint(x: 0.36, y: 0.56), CGPoint(x: 0.51, y: 0.63), CGPoint(x: 0.65, y: 0.55), CGPoint(x: 0.43, y: 0.73), CGPoint(x: 0.60, y: 0.72), CGPoint(x: 0.50, y: 0.48)]
+        case .pan:
+            [CGPoint(x: 0.34, y: 0.55), CGPoint(x: 0.50, y: 0.62), CGPoint(x: 0.66, y: 0.54), CGPoint(x: 0.42, y: 0.71), CGPoint(x: 0.59, y: 0.70), CGPoint(x: 0.51, y: 0.47)]
+        case .pot:
+            [CGPoint(x: 0.35, y: 0.59), CGPoint(x: 0.50, y: 0.66), CGPoint(x: 0.65, y: 0.59), CGPoint(x: 0.42, y: 0.75), CGPoint(x: 0.59, y: 0.75), CGPoint(x: 0.51, y: 0.52)]
+        }
+    }
+
+    private func steam(delay: CGFloat, beat: CGFloat) -> some View {
+        Image(systemName: "water.waves")
+            .font(.system(size: 25, weight: .semibold))
+            .foregroundStyle(.white.opacity(0.82))
+            .offset(y: beat * 6 - delay * 2)
+            .opacity(0.66 + Double(beat) * 0.14)
+    }
+
+    private func comicSpeedLines(size: CGSize, beat: CGFloat) -> some View {
+        ZStack {
+            ForEach(0..<8, id: \.self) { index in
+                Capsule()
+                    .fill(kind.tint.opacity(0.18))
+                    .frame(width: 48 + CGFloat(index % 3) * 18, height: 3)
+                    .rotationEffect(.degrees(Double(index) * 45))
+                    .offset(x: cos(Double(index) * .pi / 4) * size.width * 0.40,
+                            y: sin(Double(index) * .pi / 4) * size.height * 0.34)
+                    .scaleEffect(1 + beat * 0.025)
+            }
+        }
+    }
+
+    private var comicFrame: some View {
+        RoundedRectangle(cornerRadius: 30, style: .continuous)
+            .stroke(SY.ink.opacity(0.11), style: StrokeStyle(lineWidth: 5, dash: [3, 8]))
+            .padding(8)
+            .allowsHitTesting(false)
     }
 }
 
