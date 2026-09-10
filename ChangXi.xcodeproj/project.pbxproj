@@ -69,6 +69,10 @@
 		EB6A9FCA3DDE3602712CBC09 /* ReportImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 232F1510C6D03D434451F7BE /* ReportImportView.swift */; };
 		ED0BDCC9CD154E2376B5D485 /* ReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D07478862A3BDF32AEBCDE7A /* ReportView.swift */; };
 		FAC19C63E588C688E13F8C40 /* XuantongConversationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7D2AADB24D75556F8902513 /* XuantongConversationServiceTests.swift */; };
+		B30000000000000000000001 /* ShiyangModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000001 /* ShiyangModels.swift */; };
+		B30000000000000000000002 /* ShiyangViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000002 /* ShiyangViews.swift */; };
+		B30000000000000000000003 /* ShiyangIngredientArtwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000003 /* ShiyangIngredientArtwork.swift */; };
+		B30000000000000000000004 /* ShiyangRecommendationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000004 /* ShiyangRecommendationTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -154,6 +158,10 @@
 		F0F330F6A0B8CF497797A99A /* AppConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfiguration.swift; sourceTree = "<group>"; };
 		F223D55D3B8A1C7783A88B04 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
 		FD26349BAD8A4AFB317A9573 /* PatientServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatientServiceTests.swift; sourceTree = "<group>"; };
+		B10000000000000000000001 /* ShiyangModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShiyangModels.swift; sourceTree = "<group>"; };
+		B10000000000000000000002 /* ShiyangViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShiyangViews.swift; sourceTree = "<group>"; };
+		B10000000000000000000003 /* ShiyangIngredientArtwork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShiyangIngredientArtwork.swift; sourceTree = "<group>"; };
+		B10000000000000000000004 /* ShiyangRecommendationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShiyangRecommendationTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -167,8 +175,19 @@
 				A20000000000000000000002 /* Pain */,
 				D638ECEB9E47553244372459 /* Profile */,
 				D09BADAF1A126AA04C2AB6C2 /* Services */,
+				B20000000000000000000001 /* Shiyang */,
 			);
 			path = Features;
+			sourceTree = "<group>";
+		};
+		B20000000000000000000001 /* Shiyang */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000001 /* ShiyangModels.swift */,
+				B10000000000000000000003 /* ShiyangIngredientArtwork.swift */,
+				B10000000000000000000002 /* ShiyangViews.swift */,
+			);
+			path = Shiyang;
 			sourceTree = "<group>";
 		};
 		2D3648E97F0A5EC44B40F21D /* Home */ = {
@@ -335,6 +354,7 @@
 				4DCC698B79BA3EF32B76C0B1 /* SSEClientTests.swift */,
 				DFA239E5BA681CF90427C1A6 /* TokenStoreTests.swift */,
 				A7D2AADB24D75556F8902513 /* XuantongConversationServiceTests.swift */,
+				B10000000000000000000004 /* ShiyangRecommendationTests.swift */,
 			);
 			name = Unit;
 			path = Tests/Unit;
@@ -582,6 +602,9 @@
 				592FB91C4F9554C3349F0A28 /* TokenStore.swift in Sources */,
 				1CDADF6B377E84B772E9410E /* WorkflowProgressView.swift in Sources */,
 				9B73F559BADB9DA0BC254D13 /* XuantongEventConversationService.swift in Sources */,
+				B30000000000000000000001 /* ShiyangModels.swift in Sources */,
+				B30000000000000000000002 /* ShiyangViews.swift in Sources */,
+				B30000000000000000000003 /* ShiyangIngredientArtwork.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -606,6 +629,7 @@
 				2589AF44797E8DA00A76D650 /* SSEClientTests.swift in Sources */,
 				AF3002FF126114E59B468672 /* TokenStoreTests.swift in Sources */,
 				FAC19C63E588C688E13F8C40 /* XuantongConversationServiceTests.swift in Sources */,
+				B30000000000000000000004 /* ShiyangRecommendationTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -31,23 +31,26 @@ struct HomeView: View {
                     talkButton
                         .entrance(index: 2, appeared: appeared, reduceMotion: reduceMotion)
 
+                    ShiyangEntryCard()
+                        .entrance(index: 3, appeared: appeared, reduceMotion: reduceMotion)
+
                     NavigationLink { MoonRhythmDetailView() } label: {
                         MoonPhaseCard()
                             .padding(16)
                             .cxInteractiveGlass(cornerRadius: 20)
                     }
                     .buttonStyle(.plain)
-                    .entrance(index: 3, appeared: appeared, reduceMotion: reduceMotion)
+                    .entrance(index: 4, appeared: appeared, reduceMotion: reduceMotion)
 
                     SectionEyebrow(title: "今天", action: Date.now.formatted(.dateTime.locale(Locale(identifier: "zh_CN")).month().day().weekday(.abbreviated)))
-                        .entrance(index: 4, appeared: appeared, reduceMotion: reduceMotion)
+                        .entrance(index: 5, appeared: appeared, reduceMotion: reduceMotion)
 
                     TodaySummaryCard(nextPlan: nextPlan)
-                        .entrance(index: 5, appeared: appeared, reduceMotion: reduceMotion)
+                        .entrance(index: 6, appeared: appeared, reduceMotion: reduceMotion)
 
                     DemoLabel()
                         .frame(maxWidth: .infinity)
-                        .entrance(index: 6, appeared: appeared, reduceMotion: reduceMotion)
+                        .entrance(index: 7, appeared: appeared, reduceMotion: reduceMotion)
                 }
                 .frame(maxWidth: 680)
                 .padding(.horizontal, 20)

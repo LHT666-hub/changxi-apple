@@ -28,6 +28,7 @@ struct RootView: View {
                     .safeAreaInset(edge: .bottom, spacing: 0) {
                         if !isKeyboardVisible {
                             PersistentTabBar(selection: $selectedTab)
+                                .padding(.bottom, -8)
                                 .transition(.move(edge: .bottom).combined(with: .opacity))
                         }
                     }
@@ -47,7 +48,7 @@ struct RootView: View {
                         .accessibilityLabel("召唤常曦")
                         .accessibilityIdentifier("global-assistant")
                         .padding(.trailing, 16)
-                        .padding(.bottom, 86)
+                        .padding(.bottom, 78)
                     }
                 }
                 .fullScreenCover(isPresented: $showGeneralChat) {
@@ -179,14 +180,12 @@ private struct PersistentTabBar: View {
         .frame(maxWidth: 520)
         .modifier(FrostedTabBarSurface(reduceTransparency: reduceTransparency))
         .background(alignment: .bottom) {
-            LinearGradient(
-                colors: [Color.clear, Color.white.opacity(0.76), Color.white.opacity(0.94)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: 118)
-            .padding(.horizontal, -8)
-            .allowsHitTesting(false)
+            BottomSafeAreaFrost(reduceTransparency: reduceTransparency)
+                .frame(height: 126)
+                .padding(.horizontal, -16)
+                .offset(y: 42)
+                .ignoresSafeArea(edges: .bottom)
+                .allowsHitTesting(false)
         }
         .padding(.horizontal, 8)
         .padding(.top, 6)
@@ -196,6 +195,36 @@ private struct PersistentTabBar: View {
             value: selection
         )
         .sensoryFeedback(.selection, trigger: selection)
+    }
+}
+
+private struct BottomSafeAreaFrost: View {
+    let reduceTransparency: Bool
+
+    var body: some View {
+        Rectangle()
+            .fill(reduceTransparency ? AnyShapeStyle(CX.surface.opacity(0.96)) : AnyShapeStyle(.regularMaterial))
+            .mask {
+                LinearGradient(
+                    stops: [
+                        .init(color: .clear, location: 0),
+                        .init(color: .white.opacity(0.68), location: 0.30),
+                        .init(color: .white, location: 0.58)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+            .overlay(alignment: .top) {
+                LinearGradient(
+                    colors: [.clear, Color.white.opacity(0.36), .clear],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                .frame(height: 0.7)
+                .padding(.horizontal, 28)
+                .padding(.top, 38)
+            }
     }
 }
 

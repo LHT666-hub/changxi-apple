@@ -295,6 +295,57 @@ final class FlowTests: XCTestCase {
         XCTAssertTrue(head.waitForExistence(timeout: 5))
     }
 
+    func testShiyangPantryToCookingJourney() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing"]
+        app.launch()
+
+        let entry = app.buttons["open-shiyang"]
+        XCTAssertTrue(entry.waitForExistence(timeout: 10))
+        entry.tap()
+
+        let start = app.buttons["start-shiyang"]
+        XCTAssertTrue(start.waitForExistence(timeout: 5))
+        start.tap()
+
+        let consent = app.buttons["continue-shiyang-consent"]
+        XCTAssertTrue(consent.waitForExistence(timeout: 5))
+        capture("15-shiyang-consent")
+        consent.tap()
+
+        let nextQuestion = app.buttons["next-shiyang-question"]
+        XCTAssertTrue(nextQuestion.waitForExistence(timeout: 5))
+        capture("16-shiyang-profile")
+        for _ in 0..<7 {
+            nextQuestion.tap()
+        }
+
+        let confirm = app.buttons["confirm-shiyang-profile"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        capture("17-shiyang-summary")
+        confirm.tap()
+        XCTAssertTrue(app.otherElements["shiyang-recommendation"].waitForExistence(timeout: 5))
+        capture("18-shiyang-home")
+
+        app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "看看家里有什么")).firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["家里现在有什么？"].waitForExistence(timeout: 5))
+        capture("19-shiyang-pantry")
+        app.buttons["generate-shiyang-recipe"].tap()
+
+        XCTAssertTrue(app.otherElements["shiyang-recommendation"].waitForExistence(timeout: 5))
+        app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "为什么这样推荐")).firstMatch.tap()
+        XCTAssertTrue(app.buttons["start-cooking"].waitForExistence(timeout: 5))
+        capture("20-shiyang-recipe")
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+
+        app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "开始做饭")).firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["先把食材请上桌"].waitForExistence(timeout: 5))
+        capture("21-shiyang-ingredients")
+        app.buttons["食材备好了"].tap()
+        XCTAssertTrue(app.buttons["next-cooking-step"].waitForExistence(timeout: 5))
+        capture("22-shiyang-cooking")
+    }
+
     private func capture(_ name: String) {
         // Accessibility updates precede the end of native tab/navigation transitions.
         Thread.sleep(forTimeInterval: 0.8)
