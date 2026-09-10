@@ -258,6 +258,25 @@ struct LocalState: Codable {
     var emergencyName = ""
     var emergencyPhone = ""
     var importedReports: [ImportedReport] = []
+    // 食养业务域保留自己的可撤回档案；旧版本地 JSON 缺少这些键时会由默认值补齐。
+    var shiyangOnboarded = false
+    var shiyangPantryIngredientIDs = ["tomato", "egg", "mushroom", "rice", "bokchoy"]
+    var shiyangExcludedIngredientIDs: [String] = []
+    var shiyangSelectedRecipeID = "tomato-scrambled-eggs"
+    var shiyangCity = "上海"
+    var shiyangMealContext = "经常外卖"
+    var shiyangStaplePreference = "都可以"
+    var shiyangGoal = "吃得均衡"
+    var shiyangAvoidanceNote = ""
+    var shiyangHealthNote = ""
+    var shiyangMedicationNote = ""
+    var shiyangUseLifestyleMemory = false
+    var shiyangUseHealthData = false
+    var shiyangUseMedicationData = false
+    var shiyangServings = 2
+    var shiyangAvailableMinutes = 30
+    var shiyangLowSalt = true
+    var shiyangLikesSpicy = true
     static var sampleReadings: [HealthReading] {
         (0..<30).flatMap { day -> [HealthReading] in
             let date = Calendar.current.date(byAdding: .day, value: day - 29, to: .now)!

@@ -21,6 +21,7 @@ open ChangXi.xcodeproj
 ## 当前体验
 
 - 四个主 Tab：首页、健康、服务、我的；iPhone / iPad 始终保留底部导航。
+- 首页新增「常曦食养」入口：分层授权与生活化建档、本地食材盘点、动态菜谱排序、食材替换和分步动画做饭；内置 60 种食材、30 道预生成菜图与菜谱、134 个步骤，核心流程离线可用。
 - 全屏文字/语音对话；输入区集中提供附件、文字、麦克风和发送入口。
 - 八种月池状态、实时音量水纹、相机与照片选择、本地报告保存。
 - 农历日期、月相节律详情和月亮进度；月池人物、水纹与光效使用原生 SwiftUI 动画。
@@ -65,6 +66,7 @@ xcodebuild test -project ChangXi.xcodeproj -scheme ChangXi \
 - `Core/Services`：`PatientService` / `HealthRecordService` / `HealthSyncService` / `EventWorkflowService` / `TaskService` / `DocumentService`，桥接后端业务端点。
 - `Core/Speech` / `Core/Camera`：系统输入能力与云端语音转写、报告识别。
 - `Features`：首页、对话、健康、服务、个人与隐私。
+- `Features/Shiyang`：食材目录、菜谱规则、本地推荐、食养首页与动画做饭流程。
 - `Tests`：单元测试与 UI 流程测试。
 
 详细范围和剩余项见 [交付记录](docs/DELIVERY.md)，完整网络层说明见 [后端对接说明](docs/BACKEND_INTEGRATION.md)，当前玄同事件契约见 [常曦 × 玄同对接约定](docs/XUANTONG_INTEGRATION.md)，素材生成提示见 [素材说明](docs/ASSET_PROMPTS.md)。

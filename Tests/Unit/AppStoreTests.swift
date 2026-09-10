@@ -59,6 +59,26 @@ import XCTest
         XCTAssertTrue(reload.data.medications.isEmpty)
         XCTAssertTrue(reload.data.bookings[0].cancelled)
     }
+
+    func testShiyangProfileAndLayeredConsentPersist() {
+        let store = AppStore(fileURL: file)
+        store.data.shiyangOnboarded = true
+        store.data.shiyangCity = "成都"
+        store.data.shiyangGoal = "管理体重"
+        store.data.shiyangAvoidanceNote = "花生过敏"
+        store.data.shiyangUseLifestyleMemory = true
+        store.data.shiyangUseHealthData = true
+        store.data.shiyangUseMedicationData = false
+
+        let reload = AppStore(fileURL: file)
+        XCTAssertTrue(reload.data.shiyangOnboarded)
+        XCTAssertEqual(reload.data.shiyangCity, "成都")
+        XCTAssertEqual(reload.data.shiyangGoal, "管理体重")
+        XCTAssertEqual(reload.data.shiyangAvoidanceNote, "花生过敏")
+        XCTAssertTrue(reload.data.shiyangUseLifestyleMemory)
+        XCTAssertTrue(reload.data.shiyangUseHealthData)
+        XCTAssertFalse(reload.data.shiyangUseMedicationData)
+    }
     func testReportFileAndMetadataLifecycle() throws {
         let store = AppStore(fileURL: file)
         try store.saveReport(imageData: Data([1, 2, 3]), title: "测试报告", note: "本机")
