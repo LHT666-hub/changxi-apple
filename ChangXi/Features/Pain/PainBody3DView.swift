@@ -81,7 +81,7 @@ private struct PainScene: UIViewRepresentable {
 
     func makeUIView(context: Context) -> SCNView {
         let view = SCNView()
-        view.backgroundColor = UIColor(red: 0.89, green: 0.94, blue: 0.97, alpha: 1)
+        view.backgroundColor = UIColor(red: 0.95, green: 0.96, blue: 0.96, alpha: 1)
         view.antialiasingMode = .multisampling4X
         context.coordinator.build(view)
         return view
@@ -139,12 +139,12 @@ private struct PainScene: UIViewRepresentable {
                 camera.camera?.zFar = 30
                 camera.camera?.fieldOfView = 38
                 scene.rootNode.addChildNode(camera)
-                for (position, intensity, color) in [(SCNVector3(-2, 3, 4), 260.0, UIColor.white), (SCNVector3(2, 2, -3), 150.0, UIColor(red: 0.58, green: 0.76, blue: 0.94, alpha: 1))] {
+                for (position, intensity, color) in [(SCNVector3(-2, 3, 4), 180.0, UIColor.white), (SCNVector3(2, 2, -3), 105.0, UIColor(red: 0.78, green: 0.84, blue: 0.88, alpha: 1))] {
                     let light = SCNNode(); light.light = SCNLight(); light.light?.type = .omni
                     light.light?.intensity = intensity; light.light?.color = color; light.position = position
                     scene.rootNode.addChildNode(light)
                 }
-                let ambient = SCNNode(); ambient.light = SCNLight(); ambient.light?.type = .ambient; ambient.light?.intensity = 55
+                let ambient = SCNNode(); ambient.light = SCNLight(); ambient.light?.type = .ambient; ambient.light?.intensity = 82
                 scene.rootNode.addChildNode(ambient)
                 view.scene = scene; view.pointOfView = camera
                 view.addGestureRecognizer(UIPanGestureRecognizer(target: self, action: #selector(rotate(_:))))
@@ -197,7 +197,7 @@ private struct PainScene: UIViewRepresentable {
                 node.isHidden = nodeLayer != layer && !isContextShell
                 // A quiet outer silhouette keeps deeper anatomy spatially
                 // understandable without covering the muscle or bone detail.
-                node.opacity = isContextShell ? 0.12 : 1
+                node.opacity = isContextShell ? 0.10 : 1
             }
         }
         private func styleAnatomyGeometry() {
@@ -205,12 +205,12 @@ private struct PainScene: UIViewRepresentable {
                 guard let self, let layer = self.anatomyLayer(containing: node), let geometry = node.geometry else { return }
                 let material = SCNMaterial()
                 material.diffuse.contents = switch layer {
-                case .surface: UIColor(red: 0.40, green: 0.58, blue: 0.66, alpha: 1)
-                case .muscle: UIColor(red: 0.66, green: 0.27, blue: 0.23, alpha: 1)
-                case .skeleton: UIColor(red: 0.82, green: 0.77, blue: 0.64, alpha: 1)
+                case .surface: UIColor(red: 0.77, green: 0.68, blue: 0.60, alpha: 1)
+                case .muscle: UIColor(red: 0.72, green: 0.51, blue: 0.47, alpha: 1)
+                case .skeleton: UIColor(red: 0.94, green: 0.93, blue: 0.89, alpha: 1)
                 }
-                material.specular.contents = UIColor(white: 0.16, alpha: 1)
-                material.roughness.contents = 0.82
+                material.specular.contents = UIColor(white: 0.10, alpha: 1)
+                material.roughness.contents = 0.88
                 material.metalness.contents = 0
                 material.lightingModel = .physicallyBased
                 material.isDoubleSided = true
@@ -252,7 +252,7 @@ private struct PainScene: UIViewRepresentable {
             body.geometry = SCNGeometry(sources: [vertexSource, normalSource], elements: [SCNGeometryElement(indices: faces, primitiveType: .triangles)])
             body.name = "surface__fallback"
             let material = SCNMaterial()
-            material.diffuse.contents = UIColor(red: 0.53, green: 0.65, blue: 0.74, alpha: 1)
+            material.diffuse.contents = UIColor(red: 0.77, green: 0.68, blue: 0.60, alpha: 1)
             material.specular.contents = UIColor(white: 0.88, alpha: 1)
             material.lightingModel = .blinn
             material.shininess = 0.18

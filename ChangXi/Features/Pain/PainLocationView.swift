@@ -145,7 +145,7 @@ struct PainLocationView: View {
                     advance(1)
                 } label: {
                     VStack(spacing: 12) {
-                        PainArtwork(region: region, angle: region == .back ? .back : .front)
+                        PainRegionThumbnail(region: region)
                             .frame(height: 135).clipShape(.rect(cornerRadius: 24))
                         HStack {
                             Text(region.rawValue).font(.headline)
@@ -155,6 +155,7 @@ struct PainLocationView: View {
                     }
                     .padding(14)
                     .cxInteractiveGlass(cornerRadius: 28)
+                    .contentShape(.rect(cornerRadius: 28))
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("pain-region-\(region.anatomyAssetName)")
@@ -443,6 +444,50 @@ struct PainLocationView: View {
 
     private func advance(_ value: Int) {
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) { step = value }
+    }
+}
+
+/// Warm clay-style editorial art for the six region entry cards. Each region
+/// is a separate asset so its scale remains consistent and cannot reveal an
+/// adjacent atlas cell while the card animates.
+private struct PainRegionThumbnail: View {
+    let region: PainRegion
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isFloating = false
+
+    private var assetName: String {
+        switch region {
+        case .head: "PainRegionHead"
+        case .neck: "PainRegionNeck"
+        case .torso: "PainRegionTorso"
+        case .back: "PainRegionBack"
+        case .arms: "PainRegionArms"
+        case .legs: "PainRegionLegs"
+        }
+    }
+
+    var body: some View {
+        Image(assetName)
+            .resizable()
+            .scaledToFill()
+            .scaleEffect(isFloating ? 1.012 : 0.995)
+            .offset(y: isFloating ? -1.5 : 1.5)
+            .clipped()
+            .overlay {
+                LinearGradient(
+                    colors: [.white.opacity(0.16), .clear, CX.moonlight.opacity(0.05)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .allowsHitTesting(false)
+            }
+            .onAppear {
+                guard !reduceMotion else { return }
+                withAnimation(.easeInOut(duration: 3.6).repeatForever(autoreverses: true)) {
+                    isFloating = true
+                }
+            }
+            .accessibilityHidden(true)
     }
 }
 

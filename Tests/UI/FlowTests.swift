@@ -193,6 +193,7 @@ final class FlowTests: XCTestCase {
             }
         }
         XCTAssertTrue(head.waitForExistence(timeout: 5))
+        capture("15-pain-region-grid")
         head.tap()
         let model = app.otherElements["pain-anatomy-model"]
         XCTAssertTrue(model.waitForExistence(timeout: 12))
