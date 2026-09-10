@@ -16,6 +16,12 @@
 		A30000000000000000000007 /* PainRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000007 /* PainRecord.swift */; };
 		A30000000000000000000008 /* PainVoiceLocationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000008 /* PainVoiceLocationView.swift */; };
 		A30000000000000000000009 /* pain-body-v1.json in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000009 /* pain-body-v1.json */; };
+		A3000000000000000000000A /* head.usdc in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000A /* head.usdc */; };
+		A3000000000000000000000B /* neck.usdc in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000B /* neck.usdc */; };
+		A3000000000000000000000C /* torso.usdc in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000C /* torso.usdc */; };
+		A3000000000000000000000D /* back.usdc in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000D /* back.usdc */; };
+		A3000000000000000000000E /* arms.usdc in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000E /* arms.usdc */; };
+		A3000000000000000000000F /* legs.usdc in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000F /* legs.usdc */; };
 		11330683600D1562326A08A8 /* PlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AB26D831FCAA9E434EF446 /* PlanView.swift */; };
 		1471976122373B0F6E8ED156 /* MoonPoolView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20764D798340D2EDC23A4C3C /* MoonPoolView.swift */; };
 		151859FADF94ED715FF06E24 /* HealthRecordService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAC1F4037C13943824D07CDA /* HealthRecordService.swift */; };
@@ -92,6 +98,12 @@
 		A10000000000000000000007 /* PainRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PainRecord.swift; sourceTree = "<group>"; };
 		A10000000000000000000008 /* PainVoiceLocationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PainVoiceLocationView.swift; sourceTree = "<group>"; };
 		A10000000000000000000009 /* pain-body-v1.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "pain-body-v1.json"; sourceTree = "<group>"; };
+		A1000000000000000000000A /* head.usdc */ = {isa = PBXFileReference; lastKnownFileType = file.usd; path = head.usdc; sourceTree = "<group>"; };
+		A1000000000000000000000B /* neck.usdc */ = {isa = PBXFileReference; lastKnownFileType = file.usd; path = neck.usdc; sourceTree = "<group>"; };
+		A1000000000000000000000C /* torso.usdc */ = {isa = PBXFileReference; lastKnownFileType = file.usd; path = torso.usdc; sourceTree = "<group>"; };
+		A1000000000000000000000D /* back.usdc */ = {isa = PBXFileReference; lastKnownFileType = file.usd; path = back.usdc; sourceTree = "<group>"; };
+		A1000000000000000000000E /* arms.usdc */ = {isa = PBXFileReference; lastKnownFileType = file.usd; path = arms.usdc; sourceTree = "<group>"; };
+		A1000000000000000000000F /* legs.usdc */ = {isa = PBXFileReference; lastKnownFileType = file.usd; path = legs.usdc; sourceTree = "<group>"; };
 		01FD0C821F671B0408AA4853 /* ChangXiUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = ChangXiUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		08E5FA717A26759A16C71F0D /* HealthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthView.swift; sourceTree = "<group>"; };
 		0BA2633B9AB5BAD1DCA87C91 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
@@ -292,9 +304,23 @@
 		A20000000000000000000003 /* PainModels */ = {
 			isa = PBXGroup;
 			children = (
+				A20000000000000000000004 /* Anatomy */,
 				A10000000000000000000009 /* pain-body-v1.json */,
 			);
 			path = PainModels;
+			sourceTree = "<group>";
+		};
+		A20000000000000000000004 /* Anatomy */ = {
+			isa = PBXGroup;
+			children = (
+				A1000000000000000000000A /* head.usdc */,
+				A1000000000000000000000B /* neck.usdc */,
+				A1000000000000000000000C /* torso.usdc */,
+				A1000000000000000000000D /* back.usdc */,
+				A1000000000000000000000E /* arms.usdc */,
+				A1000000000000000000000F /* legs.usdc */,
+			);
+			path = Anatomy;
 			sourceTree = "<group>";
 		};
 		A95EBE324650F2F05A53D730 /* Unit */ = {
@@ -496,6 +522,12 @@
 			files = (
 				99204DF8610195E2BAF03D52 /* Assets.xcassets in Resources */,
 				A30000000000000000000009 /* pain-body-v1.json in Resources */,
+				A3000000000000000000000A /* head.usdc in Resources */,
+				A3000000000000000000000B /* neck.usdc in Resources */,
+				A3000000000000000000000C /* torso.usdc in Resources */,
+				A3000000000000000000000D /* back.usdc in Resources */,
+				A3000000000000000000000E /* arms.usdc in Resources */,
+				A3000000000000000000000F /* legs.usdc in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -4,6 +4,16 @@ import Observation
 enum PainRegion: String, CaseIterable, Codable, Identifiable {
     case head = "头部", neck = "肩颈", torso = "胸腹", back = "背腰", arms = "手臂", legs = "腿脚"
     var id: Self { self }
+    var anatomyAssetName: String {
+        switch self {
+        case .head: "head"
+        case .neck: "neck"
+        case .torso: "torso"
+        case .back: "back"
+        case .arms: "arms"
+        case .legs: "legs"
+        }
+    }
     var crop: CGRect {
         switch self {
         case .head: CGRect(x: 0, y: 0, width: 1, height: 1)
@@ -13,6 +23,15 @@ enum PainRegion: String, CaseIterable, Codable, Identifiable {
         case .legs: CGRect(x: 0.22, y: 0.40, width: 0.56, height: 0.56)
         }
     }
+}
+
+enum PainAnatomyLayer: String, CaseIterable, Identifiable {
+    case surface = "体表"
+    case muscle = "肌肉"
+    case skeleton = "骨骼"
+
+    var id: Self { self }
+    var nodePrefix: String { rawValue == "体表" ? "surface__" : rawValue == "肌肉" ? "muscle__" : "skeleton__" }
 }
 
 enum PainAngle: String, CaseIterable, Codable, Identifiable {
@@ -31,9 +50,65 @@ enum PainAngle: String, CaseIterable, Codable, Identifiable {
 }
 
 enum PainMarkKind: String, CaseIterable, Codable, Identifiable {
-    case point = "一个点", area = "一片", line = "一条"
+    // Keep the first three raw values stable so records saved by earlier builds remain readable.
+    case point = "一个点", area = "一片", line = "一条", radiating = "放射"
     var id: Self { self }
-    var symbol: String { self == .point ? "smallcircle.filled.circle" : self == .area ? "circle.dashed" : "scribble.variable" }
+    var label: String {
+        switch self {
+        case .point: "点状"
+        case .area: "片状"
+        case .line: "走向"
+        case .radiating: "放射"
+        }
+    }
+    var symbol: String {
+        switch self {
+        case .point: "smallcircle.filled.circle"
+        case .area: "circle.dashed"
+        case .line: "scribble.variable"
+        case .radiating: "dot.radiowaves.left.and.right"
+        }
+    }
+
+    var instruction: String {
+        switch self {
+        case .point: "点一下最疼的位置"
+        case .area: "沿疼痛范围画一圈"
+        case .line: "顺着疼痛走向划线"
+        case .radiating: "从起点向扩散方向划线"
+        }
+    }
+}
+
+enum PainIntensityBand: String, Codable {
+    case none = "不痛", mild = "轻度", moderate = "中度", severe = "重度"
+}
+
+struct PainIntensityScale {
+    static func band(for score: Int) -> PainIntensityBand {
+        switch score {
+        case ...0: .none
+        case 1...4: .mild
+        case 5...6: .moderate
+        default: .severe
+        }
+    }
+
+    static func explanation(for score: Int) -> String {
+        switch min(10, max(0, score)) {
+        case 0: "没有疼痛"
+        case 1: "几乎注意不到"
+        case 2: "能感觉到，但不影响活动"
+        case 3: "偶尔会分散注意"
+        case 4: "会分心，但仍能完成日常活动"
+        case 5: "开始打断部分日常活动"
+        case 6: "很难忽略，会避开一些活动"
+        case 7: "持续占据注意，明显影响活动"
+        case 8: "很难再做其他事情"
+        case 9: "难以承受，几乎无法活动"
+        default: "能想象到的最严重疼痛"
+        }
+    }
 }
 
 struct PainCoordinate: Codable {

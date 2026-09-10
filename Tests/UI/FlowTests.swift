@@ -173,10 +173,65 @@ final class FlowTests: XCTestCase {
         XCTAssertEqual(app.textFields["reading-primary"].value as? String, "123")
         XCTAssertEqual(app.textFields["reading-secondary"].value as? String, "77")
     }
+
+    func testPainAnatomyLayers() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing"]
+        app.launch()
+
+        XCTAssertTrue(app.buttons["健康"].firstMatch.waitForExistence(timeout: 10))
+        app.buttons["健康"].firstMatch.tap()
+        let painEntry = app.buttons["open-pain-location"]
+        let head = app.buttons["pain-region-head"]
+        if painEntry.waitForExistence(timeout: 3) {
+            if painEntry.isHittable {
+                painEntry.tap()
+            } else {
+                // The persistent glass tab bar can make XCTest report the visible
+                // card as non-hittable even though its centre is unobscured.
+                painEntry.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.42)).tap()
+            }
+        }
+        XCTAssertTrue(head.waitForExistence(timeout: 5))
+        head.tap()
+        let model = app.otherElements["pain-anatomy-model"]
+        XCTAssertTrue(model.waitForExistence(timeout: 12))
+        capture("16-pain-head-surface")
+        capture("16-pain-head-surface-model", element: model)
+        app.segmentedControls.buttons["肌肉"].tap()
+        capture("17-pain-head-muscle")
+        capture("17-pain-head-muscle-model", element: model)
+        app.segmentedControls.buttons["骨骼"].tap()
+        capture("18-pain-head-skeleton")
+        capture("18-pain-head-skeleton-model", element: model)
+
+        // A region drill-down must load the actual local body part, not return
+        // to a generic full-body mesh. Exercise the arm model in all layers.
+        app.buttons["上一步"].tap()
+        let arms = app.buttons["pain-region-arms"]
+        XCTAssertTrue(arms.waitForExistence(timeout: 5))
+        arms.tap()
+        XCTAssertTrue(model.waitForExistence(timeout: 12))
+        app.segmentedControls.buttons["体表"].tap()
+        capture("19-pain-arms-surface-model", element: model)
+        app.segmentedControls.buttons["肌肉"].tap()
+        capture("20-pain-arms-muscle-model", element: model)
+        app.segmentedControls.buttons["骨骼"].tap()
+        capture("21-pain-arms-skeleton-model", element: model)
+    }
+
     private func capture(_ name: String) {
         // Accessibility updates precede the end of native tab/navigation transitions.
         Thread.sleep(forTimeInterval: 0.8)
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
+    private func capture(_ name: String, element: XCUIElement) {
+        Thread.sleep(forTimeInterval: 0.4)
+        let attachment = XCTAttachment(screenshot: element.screenshot())
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)

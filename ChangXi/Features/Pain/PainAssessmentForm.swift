@@ -5,21 +5,18 @@ struct PainAssessmentForm: View {
     @Binding var assessment: PainAssessment
     var body: some View {
         Card {
-            Text("再记一点，方便以后对照").font(.title3.weight(.semibold))
-            Text("这些都可以跳过，不确定就留空或选说不清。")
+            Text("疼痛经过与影响").font(.title3.weight(.semibold))
+            Text("按“发生—变化—影响”补充；这些都可以跳过。")
                 .font(.footnote).foregroundStyle(CX.muted)
             Picker("谁在描述", selection: $assessment.reporter) {
                 Text("本人描述").tag("本人描述")
                 Text("家人协助转述").tag("家人协助转述")
             }
-            Picker("用自己的话说程度", selection: $assessment.intensityWords) {
-                ForEach(["还没选", "不疼", "轻微", "中等", "很疼", "非常疼", "说不清"], id: \.self) { Text($0) }
-            }
             Picker("一直疼，还是一阵一阵", selection: $assessment.pattern) {
                 ForEach(["还没选", "一直疼", "一阵一阵", "偶尔一下", "说不清"], id: \.self) { Text($0) }
             }
             TextField("每次大约疼多久？", text: $assessment.duration, axis: .vertical)
-            TextField("会牵扯到别处吗？例如从腰到腿", text: $assessment.radiation, axis: .vertical)
+            TextField("还会扩散到哪里？例如从腰窜到腿", text: $assessment.radiation, axis: .vertical)
             TextField("什么情况下更疼？例如走路、转头", text: $assessment.aggravating, axis: .vertical)
             TextField("怎样会好一些？例如休息", text: $assessment.relieving, axis: .vertical)
             Picker("对日常活动的影响", selection: $assessment.dailyImpact) {
@@ -51,8 +48,7 @@ struct PainAssessmentSummary: View {
         }.font(.subheadline).foregroundStyle(CX.muted)
     }
     private var fields: [(String, String)] {
-        [("程度描述", assessment.intensityWords), ("疼痛规律", assessment.pattern),
-         ("每次持续", assessment.duration), ("牵扯位置", assessment.radiation),
+        [("疼痛规律", assessment.pattern), ("每次持续", assessment.duration), ("放射位置", assessment.radiation),
          ("加重情况", assessment.aggravating), ("缓解情况", assessment.relieving),
          ("日常活动", assessment.dailyImpact), ("睡眠", assessment.sleepImpact)]
     }
