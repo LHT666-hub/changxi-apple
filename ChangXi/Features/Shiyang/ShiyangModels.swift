@@ -125,7 +125,22 @@ enum ShiyangCatalog {
         .init(id: "blueberry", name: "蓝莓", category: .fruitDairy, symbol: "circle.grid.3x3.fill", aliases: []),
         .init(id: "soymilk", name: "豆浆", category: .fruitDairy, symbol: "cup.and.saucer.fill", aliases: ["无糖豆浆"]),
         .init(id: "lamb", name: "羊肉", category: .protein, symbol: "flame.fill", aliases: ["羊肉片"]),
-        .init(id: "duck", name: "鸭肉", category: .protein, symbol: "bird.fill", aliases: ["鸭腿", "鸭胸"])
+        .init(id: "duck", name: "鸭肉", category: .protein, symbol: "bird.fill", aliases: ["鸭腿", "鸭胸"]),
+        .init(id: "flour", name: "面粉", category: .staple, symbol: "circle.grid.3x3.fill", aliases: ["小麦粉", "全麦粉"]),
+        .init(id: "daikon", name: "白萝卜", category: .vegetable, symbol: "carrot.fill", aliases: ["萝卜"]),
+        .init(id: "chive", name: "韭菜", category: .vegetable, symbol: "line.3.horizontal", aliases: []),
+        .init(id: "romaine", name: "油麦菜", category: .vegetable, symbol: "leaf.fill", aliases: ["莴苣叶"]),
+        .init(id: "enoki", name: "金针菇", category: .pantry, symbol: "umbrella.fill", aliases: []),
+        .init(id: "snowpea", name: "荷兰豆", category: .vegetable, symbol: "capsule.fill", aliases: ["豌豆荚"]),
+        .init(id: "waterbamboo", name: "茭白", category: .vegetable, symbol: "capsule.fill", aliases: ["茭笋"]),
+        .init(id: "luffa", name: "丝瓜", category: .vegetable, symbol: "capsule.fill", aliases: []),
+        .init(id: "redbean", name: "红豆", category: .pantry, symbol: "circle.grid.3x3.fill", aliases: ["赤小豆"]),
+        .init(id: "clam", name: "蛤蜊", category: .protein, symbol: "shell.fill", aliases: ["花蛤", "蚬子"]),
+        .init(id: "walnut", name: "核桃", category: .nutCondiment, symbol: "brain.fill", aliases: ["核桃仁"]),
+        .init(id: "almond", name: "杏仁", category: .nutCondiment, symbol: "oval.fill", aliases: ["杏仁片"]),
+        .init(id: "jujube", name: "红枣", category: .fruitDairy, symbol: "oval.fill", aliases: ["大枣", "枣"]),
+        .init(id: "cilantro", name: "香菜", category: .nutCondiment, symbol: "leaf.fill", aliases: ["芫荽"]),
+        .init(id: "lotusseed", name: "莲子", category: .pantry, symbol: "circle.fill", aliases: ["干莲子"])
     ]
 
     static let recipes: [ShiyangRecipe] = [
@@ -806,6 +821,270 @@ enum ShiyangCatalog {
             ],
             seasonalNote: "番茄和土豆全年常见，是容易复用的一锅组合。",
             personalizationNote: "用番茄自然汤汁承接味道，鸡肉也可按库存替换。"
+        ),
+        .init(
+            id: "chive-scrambled-eggs",
+            title: "韭菜炒鸡蛋",
+            subtitle: "十分钟就能上桌的鲜香家常菜",
+            imageName: "ShiyangChiveEgg",
+            minutes: 12,
+            tags: ["快手", "家常", "高蛋白"],
+            ingredients: [
+                .init(ingredientID: "chive", amountForTwo: "220克", required: true, alternatives: ["scallion", "romaine"]),
+                .init(ingredientID: "egg", amountForTwo: "3个", required: true, alternatives: ["tofu"]),
+                .init(ingredientID: "scallion", amountForTwo: "少许", required: false, alternatives: [])
+            ],
+            steps: [
+                .init(id: 0, title: "韭菜切段", detail: "韭菜洗净后充分沥水，切成约四厘米长的小段。", seconds: 0, ingredientIDs: ["chive"], symbol: "square.grid.2x2"),
+                .init(id: 1, title: "蛋液炒嫩", detail: "鸡蛋打散，锅热少油，蛋液刚凝固就盛出。", seconds: 60, ingredientIDs: ["egg"], symbol: "frying.pan.fill"),
+                .init(id: 2, title: "韭菜快炒", detail: "原锅放韭菜，大火快速翻炒到颜色变深。", seconds: 45, ingredientIDs: ["chive"], symbol: "flame.fill"),
+                .init(id: 3, title: "合炒出锅", detail: "鸡蛋回锅翻匀，薄薄调味后立即离火。", seconds: 30, ingredientIDs: ["egg", "chive"], symbol: "checkmark.circle.fill")
+            ],
+            seasonalNote: "春季韭菜香气清新，其他季节也可选嫩叶、减少久炒。",
+            personalizationNote: "默认少油快炒；不吃韭菜时可换成葱花蛋或嫩油麦菜。"
+        ),
+        .init(
+            id: "daikon-duck-stew",
+            title: "白萝卜炖鸭",
+            subtitle: "清润耐炖的一锅暖汤菜",
+            imageName: "ShiyangDaikonDuck",
+            minutes: 55,
+            tags: ["炖汤", "家庭餐", "清淡"],
+            ingredients: [
+                .init(ingredientID: "duck", amountForTwo: "420克", required: true, alternatives: ["chicken", "porkribs"]),
+                .init(ingredientID: "daikon", amountForTwo: "500克", required: true, alternatives: ["wintermelon", "yam"]),
+                .init(ingredientID: "ginger", amountForTwo: "4片", required: false, alternatives: []),
+                .init(ingredientID: "scallion", amountForTwo: "少许", required: false, alternatives: ["cilantro"])
+            ],
+            steps: [
+                .init(id: 0, title: "切块备料", detail: "鸭肉切块，白萝卜去皮切滚刀块，姜切片。", seconds: 0, ingredientIDs: ["duck", "daikon", "ginger"], symbol: "square.grid.2x2"),
+                .init(id: 1, title: "鸭肉冷水焯", detail: "鸭肉与两片姜冷水下锅，煮开后撇净浮沫。", seconds: 300, ingredientIDs: ["duck", "ginger"], symbol: "drop.fill"),
+                .init(id: 2, title: "先炖鸭肉", detail: "换热水没过鸭肉，加入余下姜片，小火盖盖炖二十五分钟。", seconds: 1500, ingredientIDs: ["duck", "ginger"], symbol: "timer"),
+                .init(id: 3, title: "萝卜入锅", detail: "加入白萝卜继续炖十八分钟，直到萝卜透明柔软。", seconds: 1080, ingredientIDs: ["daikon"], symbol: "timer"),
+                .init(id: 4, title: "撇油尝味", detail: "撇去表面多余油脂，少量调味，撒葱花后出锅。", seconds: 0, ingredientIDs: ["scallion"], symbol: "checkmark.circle.fill")
+            ],
+            seasonalNote: "白萝卜在秋冬更清甜，适合用清炖方式保留本味。",
+            personalizationNote: "系统会把这道慢炖菜安排在时间充裕的晚餐或周末。"
+        ),
+        .init(
+            id: "tomato-enoki-tofu-soup",
+            title: "番茄金针菇豆腐汤",
+            subtitle: "酸鲜柔软的快手汤菜",
+            imageName: "ShiyangTomatoEnokiTofu",
+            minutes: 18,
+            tags: ["快手", "清淡", "素食"],
+            ingredients: [
+                .init(ingredientID: "tomato", amountForTwo: "2个", required: true, alternatives: ["pumpkin"]),
+                .init(ingredientID: "enoki", amountForTwo: "150克", required: true, alternatives: ["mushroom"]),
+                .init(ingredientID: "tofu", amountForTwo: "250克", required: true, alternatives: ["egg"]),
+                .init(ingredientID: "scallion", amountForTwo: "少许", required: false, alternatives: ["cilantro"])
+            ],
+            steps: [
+                .init(id: 0, title: "整理食材", detail: "番茄切块，金针菇切去根部后撕散，豆腐切厚块。", seconds: 0, ingredientIDs: ["tomato", "enoki", "tofu"], symbol: "square.grid.2x2"),
+                .init(id: 1, title: "番茄炒出汁", detail: "锅中少油炒番茄，压一压让自然汁水析出。", seconds: 180, ingredientIDs: ["tomato"], symbol: "drop.fill"),
+                .init(id: 2, title: "煮透菌菇豆腐", detail: "加热水、豆腐和金针菇，煮开后保持微沸五分钟。", seconds: 300, ingredientIDs: ["enoki", "tofu"], symbol: "timer"),
+                .init(id: 3, title: "轻轻收口", detail: "少量调味后撒葱花，沿锅边轻推避免豆腐碎裂。", seconds: 30, ingredientIDs: ["scallion"], symbol: "checkmark.circle.fill")
+            ],
+            seasonalNote: "番茄成熟时酸甜更足，冬季也可用菌菇增加鲜味。",
+            personalizationNote: "想增加蛋白质时可淋入蛋液，主食份量由当餐计划另配。"
+        ),
+        .init(
+            id: "snowpea-chicken",
+            title: "荷兰豆炒鸡片",
+            subtitle: "脆嫩清亮的工作日晚餐",
+            imageName: "ShiyangSnowPeaChicken",
+            minutes: 18,
+            tags: ["快手", "高蛋白", "清爽"],
+            ingredients: [
+                .init(ingredientID: "snowpea", amountForTwo: "240克", required: true, alternatives: ["asparagus", "broccoli"]),
+                .init(ingredientID: "chicken", amountForTwo: "200克", required: true, alternatives: ["shrimp", "pork"]),
+                .init(ingredientID: "carrot", amountForTwo: "半根", required: false, alternatives: ["greenpepper"]),
+                .init(ingredientID: "garlic", amountForTwo: "1瓣", required: false, alternatives: ["ginger"])
+            ],
+            steps: [
+                .init(id: 0, title: "去筋切片", detail: "荷兰豆撕去老筋，鸡肉切薄片，胡萝卜切菱形片。", seconds: 0, ingredientIDs: ["snowpea", "chicken", "carrot"], symbol: "square.grid.2x2"),
+                .init(id: 1, title: "荷兰豆焯水", detail: "沸水中焯一分钟，捞出沥干，保持脆绿色。", seconds: 60, ingredientIDs: ["snowpea"], symbol: "drop.fill"),
+                .init(id: 2, title: "鸡片炒熟", detail: "少油炒香蒜末，放鸡片炒到中心完全变白。", seconds: 180, ingredientIDs: ["garlic", "chicken"], symbol: "frying.pan.fill"),
+                .init(id: 3, title: "蔬菜回锅", detail: "荷兰豆和胡萝卜回锅，大火翻匀后薄薄调味。", seconds: 60, ingredientIDs: ["snowpea", "carrot"], symbol: "checkmark.circle.fill")
+            ],
+            seasonalNote: "春季荷兰豆脆甜，短时间焯炒能保留口感。",
+            personalizationNote: "鸡肉可按库存换成虾仁或瘦肉，蔬菜比例保持不变。"
+        ),
+        .init(
+            id: "waterbamboo-pork",
+            title: "茭白肉丝",
+            subtitle: "江南口感的清脆家常小炒",
+            imageName: "ShiyangWaterBambooPork",
+            minutes: 20,
+            tags: ["家常", "快手", "时令"],
+            ingredients: [
+                .init(ingredientID: "waterbamboo", amountForTwo: "3根", required: true, alternatives: ["celtuce", "daikon"]),
+                .init(ingredientID: "pork", amountForTwo: "180克", required: true, alternatives: ["chicken", "driedtofu"]),
+                .init(ingredientID: "greenpepper", amountForTwo: "半个", required: false, alternatives: ["carrot"]),
+                .init(ingredientID: "garlic", amountForTwo: "1瓣", required: false, alternatives: ["ginger"])
+            ],
+            steps: [
+                .init(id: 0, title: "全部切丝", detail: "茭白去老皮切细丝，猪肉和青椒顺纹切丝。", seconds: 0, ingredientIDs: ["waterbamboo", "pork", "greenpepper"], symbol: "square.grid.2x2"),
+                .init(id: 1, title: "肉丝滑散", detail: "锅热少油，放肉丝快速滑散至完全变色后盛出。", seconds: 120, ingredientIDs: ["pork"], symbol: "frying.pan.fill"),
+                .init(id: 2, title: "茭白炒透", detail: "炒香蒜末，加入茭白丝和少量水炒到微透明。", seconds: 180, ingredientIDs: ["garlic", "waterbamboo"], symbol: "flame.fill"),
+                .init(id: 3, title: "合炒收口", detail: "肉丝和青椒回锅，翻匀、尝味后出锅。", seconds: 60, ingredientIDs: ["pork", "greenpepper"], symbol: "checkmark.circle.fill")
+            ],
+            seasonalNote: "初夏茭白细嫩水分足，老皮需要削净再切。",
+            personalizationNote: "想做素版时可把肉丝等量换成香干，仍保留脆嫩口感。"
+        ),
+        .init(
+            id: "luffa-scrambled-eggs",
+            title: "丝瓜炒鸡蛋",
+            subtitle: "柔润清香的一盘时令菜",
+            imageName: "ShiyangLuffaEgg",
+            minutes: 15,
+            tags: ["快手", "家常", "清淡"],
+            ingredients: [
+                .init(ingredientID: "luffa", amountForTwo: "2根", required: true, alternatives: ["zucchini", "cucumber"]),
+                .init(ingredientID: "egg", amountForTwo: "3个", required: true, alternatives: ["tofu"]),
+                .init(ingredientID: "scallion", amountForTwo: "少许", required: false, alternatives: [])
+            ],
+            steps: [
+                .init(id: 0, title: "丝瓜切滚刀", detail: "丝瓜削去硬棱后切滚刀块，鸡蛋打散。", seconds: 0, ingredientIDs: ["luffa", "egg"], symbol: "square.grid.2x2"),
+                .init(id: 1, title: "鸡蛋炒嫩", detail: "锅热少油，蛋液刚凝固时盛出。", seconds: 60, ingredientIDs: ["egg"], symbol: "frying.pan.fill"),
+                .init(id: 2, title: "丝瓜焖软", detail: "原锅放丝瓜翻炒，加两勺水盖盖焖两分钟。", seconds: 150, ingredientIDs: ["luffa"], symbol: "timer"),
+                .init(id: 3, title: "鸡蛋回锅", detail: "鸡蛋回锅轻轻翻匀，撒葱花并少量调味。", seconds: 30, ingredientIDs: ["egg", "scallion"], symbol: "checkmark.circle.fill")
+            ],
+            seasonalNote: "夏季丝瓜水润，切开后宜尽快烹饪以免氧化变色。",
+            personalizationNote: "口感柔软，适合希望少油、少咀嚼负担的一餐。"
+        ),
+        .init(
+            id: "romaine-mushroom",
+            title: "油麦菜炒香菇",
+            subtitle: "一盘补足绿叶菜的蒜香快炒",
+            imageName: "ShiyangRomaineMushroom",
+            minutes: 12,
+            tags: ["快手", "蔬菜多", "素食"],
+            ingredients: [
+                .init(ingredientID: "romaine", amountForTwo: "350克", required: true, alternatives: ["bokchoy", "lettuce"]),
+                .init(ingredientID: "mushroom", amountForTwo: "120克", required: true, alternatives: ["enoki"]),
+                .init(ingredientID: "garlic", amountForTwo: "2瓣", required: false, alternatives: ["scallion"])
+            ],
+            steps: [
+                .init(id: 0, title: "菜梗叶分开", detail: "油麦菜洗净沥水，梗与叶分开放；香菇切片。", seconds: 0, ingredientIDs: ["romaine", "mushroom"], symbol: "square.grid.2x2"),
+                .init(id: 1, title: "香菇先炒", detail: "少油炒香蒜片，放香菇炒到边缘微黄。", seconds: 150, ingredientIDs: ["garlic", "mushroom"], symbol: "frying.pan.fill"),
+                .init(id: 2, title: "先梗后叶", detail: "先放菜梗炒半分钟，再放菜叶大火翻炒。", seconds: 75, ingredientIDs: ["romaine"], symbol: "flame.fill"),
+                .init(id: 3, title: "断生即出锅", detail: "菜叶刚塌软便薄薄调味，立即盛出。", seconds: 20, ingredientIDs: ["romaine"], symbol: "checkmark.circle.fill")
+            ],
+            seasonalNote: "绿叶菜全年可轮换，按当地主产和新鲜程度替换。",
+            personalizationNote: "系统可把它作为任意主菜旁的补菜，不固定绑定某套菜单。"
+        ),
+        .init(
+            id: "redbean-millet-congee",
+            title: "红豆小米粥",
+            subtitle: "提前一泡就能煮好的温暖杂粮粥",
+            imageName: "ShiyangRedBeanMillet",
+            minutes: 50,
+            tags: ["早餐", "杂粮", "可预约"],
+            ingredients: [
+                .init(ingredientID: "redbean", amountForTwo: "60克", required: true, alternatives: ["lotusseed"]),
+                .init(ingredientID: "millet", amountForTwo: "80克", required: true, alternatives: ["oats"]),
+                .init(ingredientID: "jujube", amountForTwo: "3颗", required: false, alternatives: ["walnut"])
+            ],
+            steps: [
+                .init(id: 0, title: "红豆提前浸泡", detail: "红豆洗净后冷藏浸泡至少四小时，隔夜更省时间。", seconds: 0, ingredientIDs: ["redbean"], symbol: "snowflake"),
+                .init(id: 1, title: "红豆先煮", detail: "浸泡水倒掉，红豆加新水煮开后转小火二十分钟。", seconds: 1200, ingredientIDs: ["redbean"], symbol: "timer"),
+                .init(id: 2, title: "加入小米", detail: "小米淘洗一次后入锅，搅动锅底避免粘连。", seconds: 0, ingredientIDs: ["millet"], symbol: "drop.fill"),
+                .init(id: 3, title: "小火煮稠", detail: "保持微沸继续煮二十五分钟，中途轻搅两次。", seconds: 1500, ingredientIDs: ["millet", "redbean"], symbol: "timer"),
+                .init(id: 4, title: "红枣最后入锅", detail: "去核红枣最后五分钟加入，关火后焖片刻。", seconds: 300, ingredientIDs: ["jujube"], symbol: "checkmark.circle.fill")
+            ],
+            seasonalNote: "秋冬适合温热食用，天气炎热时可减少稠度、放温后吃。",
+            personalizationNote: "不默认额外加糖；早餐还可按需要搭配鸡蛋或无糖酸奶。"
+        ),
+        .init(
+            id: "banana-oats-yogurt",
+            title: "黑芝麻香蕉燕麦杯",
+            subtitle: "不用开火的八分钟早餐",
+            imageName: "ShiyangBananaOats",
+            minutes: 8,
+            tags: ["早餐", "免开火", "快手"],
+            ingredients: [
+                .init(ingredientID: "banana", amountForTwo: "2根", required: true, alternatives: ["apple", "pear"]),
+                .init(ingredientID: "oats", amountForTwo: "80克", required: true, alternatives: ["millet"]),
+                .init(ingredientID: "yogurt", amountForTwo: "300克", required: true, alternatives: ["milk", "soymilk"]),
+                .init(ingredientID: "sesame", amountForTwo: "2茶匙", required: false, alternatives: ["walnut", "almond"])
+            ],
+            steps: [
+                .init(id: 0, title: "燕麦泡软", detail: "即食燕麦与一半酸奶拌匀，静置五分钟。", seconds: 300, ingredientIDs: ["oats", "yogurt"], symbol: "timer"),
+                .init(id: 1, title: "香蕉切片", detail: "香蕉去皮切片，留几片完整的放在表面。", seconds: 0, ingredientIDs: ["banana"], symbol: "square.grid.2x2"),
+                .init(id: 2, title: "分层装杯", detail: "依次放燕麦、香蕉和余下酸奶，不需额外加糖。", seconds: 0, ingredientIDs: ["oats", "banana", "yogurt"], symbol: "square.stack.3d.up.fill"),
+                .init(id: 3, title: "撒芝麻完成", detail: "表面撒黑芝麻；坚果过敏时直接省略。", seconds: 0, ingredientIDs: ["sesame"], symbol: "checkmark.circle.fill")
+            ],
+            seasonalNote: "水果可以跟随季节替换，优先选择成熟度合适的本地水果。",
+            personalizationNote: "乳糖不耐受可换无糖豆浆；坚果与芝麻会经过过敏档案过滤。"
+        ),
+        .init(
+            id: "clam-wintermelon-soup",
+            title: "蛤蜊冬瓜汤",
+            subtitle: "靠食材本味提鲜的清汤",
+            imageName: "ShiyangClamWinterMelon",
+            minutes: 20,
+            tags: ["清鲜", "快手", "汤菜"],
+            ingredients: [
+                .init(ingredientID: "clam", amountForTwo: "400克", required: true, alternatives: ["shrimp", "fish"]),
+                .init(ingredientID: "wintermelon", amountForTwo: "350克", required: true, alternatives: ["daikon", "luffa"]),
+                .init(ingredientID: "ginger", amountForTwo: "3片", required: false, alternatives: []),
+                .init(ingredientID: "cilantro", amountForTwo: "少许", required: false, alternatives: ["scallion"])
+            ],
+            steps: [
+                .init(id: 0, title: "蛤蜊吐沙清洗", detail: "按购买渠道建议完成吐沙，流水下逐个搓洗外壳。", seconds: 0, ingredientIDs: ["clam"], symbol: "drop.fill"),
+                .init(id: 1, title: "冬瓜切片", detail: "冬瓜去皮去瓤切厚片，姜切片，香菜切段。", seconds: 0, ingredientIDs: ["wintermelon", "ginger", "cilantro"], symbol: "square.grid.2x2"),
+                .init(id: 2, title: "冬瓜先煮", detail: "清水与姜片煮开，放冬瓜煮到边缘微透明。", seconds: 360, ingredientIDs: ["wintermelon", "ginger"], symbol: "timer"),
+                .init(id: 3, title: "蛤蜊煮开口", detail: "放入蛤蜊，盖盖煮到开口后立即关火。", seconds: 180, ingredientIDs: ["clam"], symbol: "flame.fill"),
+                .init(id: 4, title: "检查再盛汤", detail: "丢弃加热后仍未开口的蛤蜊，尝味后撒香菜。", seconds: 0, ingredientIDs: ["clam", "cilantro"], symbol: "checkmark.shield.fill")
+            ],
+            seasonalNote: "冬瓜在夏季水分足，搭配蛤蜊适合做短时间清汤。",
+            personalizationNote: "蛤蜊本身有咸鲜味，系统默认先尝后加盐；贝类过敏会排除。"
+        ),
+        .init(
+            id: "vegetable-egg-pancake",
+            title: "全麦蔬菜鸡蛋饼",
+            subtitle: "冰箱边角菜也能变成的一餐",
+            imageName: "ShiyangVegetablePancake",
+            minutes: 20,
+            tags: ["早餐", "库存友好", "可替换"],
+            ingredients: [
+                .init(ingredientID: "flour", amountForTwo: "120克", required: true, alternatives: ["oats"]),
+                .init(ingredientID: "egg", amountForTwo: "2个", required: true, alternatives: []),
+                .init(ingredientID: "carrot", amountForTwo: "半根", required: false, alternatives: ["zucchini", "cabbage"]),
+                .init(ingredientID: "chive", amountForTwo: "一小把", required: false, alternatives: ["scallion", "romaine"])
+            ],
+            steps: [
+                .init(id: 0, title: "蔬菜切细", detail: "胡萝卜擦细丝，韭菜切碎；含水多的蔬菜先轻挤水。", seconds: 0, ingredientIDs: ["carrot", "chive"], symbol: "square.grid.2x2"),
+                .init(id: 1, title: "调成稠糊", detail: "面粉、鸡蛋与约一百毫升水搅匀至能缓慢流动。", seconds: 0, ingredientIDs: ["flour", "egg"], symbol: "arrow.triangle.2.circlepath"),
+                .init(id: 2, title: "拌入蔬菜", detail: "蔬菜拌入面糊，静置两分钟后再判断稀稠。", seconds: 120, ingredientIDs: ["carrot", "chive"], symbol: "timer"),
+                .init(id: 3, title: "小火摊饼", detail: "平底锅薄薄刷油，倒入面糊摊平，小火煎三分钟。", seconds: 180, ingredientIDs: ["flour"], symbol: "frying.pan.fill"),
+                .init(id: 4, title: "翻面煎熟", detail: "底面定型后翻面，再煎两分钟，确认中心熟透。", seconds: 120, ingredientIDs: ["egg"], symbol: "checkmark.circle.fill")
+            ],
+            seasonalNote: "蔬菜不固定，可随着时令和家中库存替换。",
+            personalizationNote: "这是一张组合模板，推荐引擎会用现有蔬菜动态替换配料。"
+        ),
+        .init(
+            id: "onion-greenpepper-lamb",
+            title: "洋葱青椒炒羊肉",
+            subtitle: "保留香气又不过重的快手肉菜",
+            imageName: "ShiyangOnionLamb",
+            minutes: 18,
+            tags: ["快手", "高蛋白", "可微辣"],
+            ingredients: [
+                .init(ingredientID: "lamb", amountForTwo: "220克", required: true, alternatives: ["beef", "chicken"]),
+                .init(ingredientID: "onion", amountForTwo: "1个", required: true, alternatives: ["scallion"]),
+                .init(ingredientID: "greenpepper", amountForTwo: "1个", required: true, alternatives: ["celery"]),
+                .init(ingredientID: "scallion", amountForTwo: "少许", required: false, alternatives: ["cilantro"])
+            ],
+            steps: [
+                .init(id: 0, title: "切片分装", detail: "羊肉逆纹切薄片，洋葱与青椒切宽条。", seconds: 0, ingredientIDs: ["lamb", "onion", "greenpepper"], symbol: "square.grid.2x2"),
+                .init(id: 1, title: "羊肉快炒", detail: "锅烧热后少油下羊肉，快速铺开炒至完全变色后盛出。", seconds: 150, ingredientIDs: ["lamb"], symbol: "frying.pan.fill"),
+                .init(id: 2, title: "炒香蔬菜", detail: "原锅放洋葱和青椒，大火炒到边缘微焦仍有脆度。", seconds: 150, ingredientIDs: ["onion", "greenpepper"], symbol: "flame.fill"),
+                .init(id: 3, title: "回锅调味", detail: "羊肉回锅翻匀，撒葱花，薄薄调味后立即出锅。", seconds: 45, ingredientIDs: ["lamb", "scallion"], symbol: "checkmark.circle.fill")
+            ],
+            seasonalNote: "洋葱和青椒全年易得，也可按当地鲜蔬替换其中一种。",
+            personalizationNote: "喜辣用户可换成微辣青椒；控油时保持热锅短炒，避免反复加油。"
         )
     ]
 

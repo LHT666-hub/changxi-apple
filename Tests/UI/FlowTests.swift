@@ -169,6 +169,9 @@ final class FlowTests: XCTestCase {
         capture("21-shiyang-ingredients")
         app.buttons["食材备好了"].tap()
         XCTAssertTrue(app.buttons["next-cooking-step"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.otherElements["cooking-storyboard-step-1"].waitForExistence(timeout: 5))
+        app.buttons["next-cooking-step"].tap()
+        XCTAssertTrue(app.otherElements["cooking-storyboard-step-2"].waitForExistence(timeout: 5))
         capture("22-shiyang-cooking")
     }
 

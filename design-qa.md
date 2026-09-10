@@ -33,7 +33,7 @@ Blocked for the same reason. The hero crop, Dynamic Type wrapping, Liquid Glass 
 - Fonts and typography: source uses a strong Chinese serif display hierarchy; implementation maps display headings to SwiftUI serif, but wrapping and optical weight are unverified.
 - Spacing and layout rhythm: 20-point page margins, 22-point section spacing and 18–30-point radii are implemented; rendered density is unverified.
 - Colors and visual tokens: warm ivory/apricot/amber/tea-green tokens retain moonlight blue accents; actual Liquid Glass contrast is unverified.
-- Image quality and asset fidelity: thirty 1254 × 1254 bundled recipe images exist and match the warm cookbook direction; in-app crops are unverified.
+- Image quality and asset fidelity: forty-two 1254 × 1254 bundled recipe images exist and match the warm cookbook direction; in-app crops are unverified.
 - Copy and content: the introduction, three-layer consent, seven-question profile, editable confirmation, personalized recommendation, pantry prompt, substitutions and step-by-step cooking copy are implemented; Dynamic Type wrapping is unverified.
 
 ## Implementation checklist
