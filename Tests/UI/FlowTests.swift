@@ -179,26 +179,33 @@ final class FlowTests: XCTestCase {
         app.launchArguments = ["--ui-testing"]
         app.launch()
 
-        XCTAssertTrue(app.buttons["健康"].firstMatch.waitForExistence(timeout: 10))
-        app.buttons["健康"].firstMatch.tap()
+        let healthTab = app.buttons["root-tab-健康"]
+        XCTAssertTrue(healthTab.waitForExistence(timeout: 10))
+        healthTab.tap()
         let painEntry = app.buttons["open-pain-location"]
         let head = app.buttons["pain-region-head"]
-        if painEntry.waitForExistence(timeout: 3) {
-            if painEntry.isHittable {
-                painEntry.tap()
-            } else {
-                // The persistent glass tab bar can make XCTest report the visible
-                // card as non-hittable even though its centre is unobscured.
-                painEntry.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.42)).tap()
-            }
-        }
+        openPainLocation(in: app, entry: painEntry, head: head)
         XCTAssertTrue(head.waitForExistence(timeout: 5))
         capture("15-pain-region-grid")
-        head.tap()
+        // The card artwork breathes subtly; its lower label area remains a
+        // stable tap target while the decorative image is moving.
+        head.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.88)).tap()
         let model = app.otherElements["pain-anatomy-model"]
         XCTAssertTrue(model.waitForExistence(timeout: 12))
         capture("16-pain-head-surface")
         capture("16-pain-head-surface-model", element: model)
+        app.segmentedControls.buttons["标记疼处"].tap()
+        model.coordinate(withNormalizedOffset: CGVector(dx: 0.50, dy: 0.32)).tap()
+        let markedStatus = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH '已标记 '")).firstMatch
+        XCTAssertTrue(markedStatus.waitForExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["位置选好了"].isEnabled)
+        capture("16-pain-head-marked")
+        app.segmentedControls.buttons["转动查看"].tap()
+        app.segmentedControls.buttons["插画标记"].tap()
+        capture("16-pain-head-illustration-front")
+        app.segmentedControls.buttons["右侧"].tap()
+        capture("16-pain-head-illustration-right")
+        app.segmentedControls.buttons["局部三维"].tap()
         app.segmentedControls.buttons["肌肉"].tap()
         capture("17-pain-head-muscle")
         capture("17-pain-head-muscle-model", element: model)
@@ -219,6 +226,55 @@ final class FlowTests: XCTestCase {
         capture("20-pain-arms-muscle-model", element: model)
         app.segmentedControls.buttons["骨骼"].tap()
         capture("21-pain-arms-skeleton-model", element: model)
+    }
+
+    func testPainNaturalLanguageIntensity() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing"]
+        app.launch()
+
+        let healthTab = app.buttons["root-tab-健康"]
+        XCTAssertTrue(healthTab.waitForExistence(timeout: 10))
+        healthTab.tap()
+        let painEntry = app.buttons["open-pain-location"]
+        let head = app.buttons["pain-region-head"]
+        openPainLocation(in: app, entry: painEntry, head: head)
+        XCTAssertTrue(head.waitForExistence(timeout: 5))
+        head.tap()
+        let model = app.otherElements["pain-anatomy-model"]
+        XCTAssertTrue(model.waitForExistence(timeout: 12))
+        capture("22-pain-head-refined-eyes")
+        app.segmentedControls.buttons["标记疼处"].tap()
+        model.coordinate(withNormalizedOffset: CGVector(dx: 0.50, dy: 0.32)).tap()
+        let next = app.buttons["位置选好了"]
+        XCTAssertTrue(next.isEnabled)
+        capture("22-pain-head-selection-confirmed")
+        next.tap()
+        let naturalChoice = app.buttons["pain-intensity-5"]
+        XCTAssertTrue(naturalChoice.waitForExistence(timeout: 5))
+        naturalChoice.tap()
+        capture("22-pain-natural-language-intensity")
+    }
+
+    private func openPainLocation(in app: XCUIApplication, entry: XCUIElement, head: XCUIElement) {
+        XCTAssertTrue(entry.waitForExistence(timeout: 5))
+        for _ in 0..<4 where !entry.isHittable {
+            app.swipeUp()
+        }
+        for _ in 0..<3 where !head.exists {
+            if entry.isHittable {
+                entry.tap()
+            } else {
+                // The persistent glass bar can make XCTest report the lower
+                // card as occluded although its leading half is visible.
+                let frame = entry.frame
+                app.coordinate(withNormalizedOffset: .zero)
+                    .withOffset(CGVector(dx: frame.minX + min(100, frame.width * 0.3), dy: frame.midY))
+                    .tap()
+            }
+            _ = head.waitForExistence(timeout: 2)
+        }
+        XCTAssertTrue(head.waitForExistence(timeout: 5))
     }
 
     private func capture(_ name: String) {

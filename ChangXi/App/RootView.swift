@@ -130,11 +130,11 @@ private struct PersistentTabBar: View {
                 Button { selection = tab } label: {
                     VStack(spacing: 3) {
                         Image(systemName: "\(tab.symbol).fill")
-                            .font(.system(size: 17, weight: .medium))
+                            .font(.system(size: 19, weight: .medium))
                         Text(tab.rawValue).font(.caption2.weight(.semibold))
                     }
                     .foregroundStyle(selection == tab ? CX.blue : CX.ink)
-                    .frame(maxWidth: .infinity, minHeight: 48)
+                    .frame(maxWidth: .infinity, minHeight: 52)
                     .background {
                         if selection == tab {
                             Capsule()
@@ -152,14 +152,15 @@ private struct PersistentTabBar: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(tab.rawValue)
+                .accessibilityIdentifier("root-tab-\(tab.rawValue)")
                 .accessibilityAddTraits(selection == tab ? .isSelected : [])
             }
         }
-        .padding(6)
-        .frame(maxWidth: 460)
+        .padding(7)
+        .frame(maxWidth: 520)
         .modifier(FrostedTabBarSurface(reduceTransparency: reduceTransparency))
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 8)
+        .padding(.top, 6)
         .frame(maxWidth: .infinity)
         .sensoryFeedback(.selection, trigger: selection)
     }

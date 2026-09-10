@@ -57,8 +57,9 @@ struct PainLocationView: View {
             }
             .frame(maxWidth: 680)
             .padding(20)
-            .padding(.bottom, step > 0 && !saved ? 156 : 0)
+            .padding(.bottom, 24)
             .frame(maxWidth: .infinity)
+            .id(step)
         }
         .cxMoonScreenBackground(illustrated: true)
         .navigationTitle("身体感受")
@@ -69,12 +70,9 @@ struct PainLocationView: View {
                     .accessibilityLabel("查看疼痛记录")
             }
         }
-        // This screen lives inside the app's persistent custom tab bar. A
-        // local overlay keeps the step controls visibly above that bar;
-        // nested safe-area insets can otherwise place them off-screen.
-        .overlay(alignment: .bottom) {
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             if step > 0 && !saved {
-                footer.padding(.bottom, 84)
+                footer
             }
         }
         .sheet(isPresented: $history) { NavigationStack { PainHistoryView(journal: journal) } }
@@ -175,7 +173,7 @@ struct PainLocationView: View {
                 Image("ChangXiCharacter").resizable().scaledToFit().frame(width: 42, height: 42)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title).font(.title2.weight(.semibold)).fontDesign(.serif)
-                    Text("先选解剖层，再转动局部模型标记。")
+                    Text("先转到看得清的位置，再切到“标记疼处”。")
                         .font(.caption).foregroundStyle(CX.muted)
                 }
                 Spacer()
@@ -193,20 +191,20 @@ struct PainLocationView: View {
                 Text("插画标记").tag(false)
             }.pickerStyle(.segmented)
             if use3D {
-                HStack {
-                    Label("局部模型 · \(draft.region.rawValue)", systemImage: "view.3d")
-                        .font(.subheadline.weight(.semibold))
-                    Spacer()
-                    Text("可切换解剖层").font(.caption.weight(.medium)).foregroundStyle(CX.blue)
-                        .padding(.horizontal, 10).padding(.vertical, 6)
-                        .background(CX.blue.opacity(0.10), in: Capsule())
-                }
+                Label("\(draft.region.rawValue)局部模型", systemImage: "view.3d")
+                    .font(.subheadline.weight(.semibold))
                 PainBody3DView(region: draft.region, marks: $draft.marks)
-                Button { voiceLocation = true } label: {
-                    Label("说给常曦听，再在模型上确认", systemImage: "waveform.badge.mic")
-                        .frame(maxWidth: .infinity, minHeight: 48)
+                if draft.marks.isEmpty {
+                    Button { voiceLocation = true } label: {
+                        Label("不方便点？说给常曦听", systemImage: "waveform.badge.mic")
+                            .frame(maxWidth: .infinity, minHeight: 48)
+                    }
+                    .buttonStyle(.bordered)
+                } else {
+                    Label("位置已在模型上确认", systemImage: "checkmark.circle.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(CX.teal)
                 }
-                .buttonStyle(.bordered)
                 if let voiceHint {
                     Card {
                         Label("常曦听到：\(voiceHint)", systemImage: "waveform.badge.mic")
@@ -218,23 +216,23 @@ struct PainLocationView: View {
                             .disabled(surfaceIndexForDetail == nil)
                     }
                 }
-                preciseAreaPicker
+                if surfaceIndexForDetail != nil { preciseAreaPicker }
             } else {
-            Text("点一下、圈一片，或沿着疼的位置划一条。")
-                .font(.body).foregroundStyle(CX.muted)
-            anglePicker
-            PainMarkingSurface(region: draft.region, angle: angle, kind: kind, marks: $draft.marks)
-                .id(angle)
-                .transition(.opacity)
-                .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: angle)
-            HStack {
-                Label("已标记 \(draft.marks.count) 处", systemImage: "smallcircle.filled.circle")
-                    .foregroundStyle(CX.coral)
-                Spacer()
-                Button { enlarged = true } label: { Label("放大", systemImage: "arrow.up.left.and.arrow.down.right") }
-            }.font(.subheadline)
-            markTools
-            if draft.region == .head { landmarks }
+                Text("选择视角后，点一下、圈一片，或沿疼痛方向划线。")
+                    .font(.body).foregroundStyle(CX.muted)
+                anglePicker
+                PainMarkingSurface(region: draft.region, angle: angle, kind: kind, marks: $draft.marks)
+                    .id(angle)
+                    .transition(.opacity)
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: angle)
+                HStack {
+                    Label("已标记 \(draft.marks.count) 处", systemImage: "smallcircle.filled.circle")
+                        .foregroundStyle(CX.coral)
+                    Spacer()
+                    Button { enlarged = true } label: { Label("放大", systemImage: "arrow.up.left.and.arrow.down.right") }
+                }.font(.subheadline)
+                markTools
+                if draft.region == .head { landmarks }
             }
             Text("以你自己的身体左右为准。标记只表达你感到疼的位置。")
                 .font(.footnote).foregroundStyle(CX.muted)
@@ -310,6 +308,48 @@ struct PainLocationView: View {
                         Text("/ 10").font(.subheadline).foregroundStyle(CX.muted)
                     } else { Text("尚未确认").foregroundStyle(CX.muted) }
                 }
+                Text("先选一句最接近你现在的感受")
+                    .font(.subheadline)
+                    .foregroundStyle(CX.muted)
+                VStack(spacing: 8) {
+                    ForEach(intensityChoices, id: \.score) { choice in
+                        Button {
+                            draft.intensity = choice.score
+                            draft.intensityConfirmed = true
+                        } label: {
+                            HStack(spacing: 12) {
+                                Text("\(choice.score)")
+                                    .font(.headline.monospacedDigit())
+                                    .foregroundStyle(draft.intensity == choice.score && draft.intensityConfirmed == true ? .white : CX.blue)
+                                    .frame(width: 34, height: 34)
+                                    .background(
+                                        draft.intensity == choice.score && draft.intensityConfirmed == true ? CX.blue : CX.blue.opacity(0.10),
+                                        in: Circle()
+                                    )
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(choice.title).font(.subheadline.weight(.semibold))
+                                    Text(choice.detail).font(.caption).foregroundStyle(CX.muted)
+                                }
+                                Spacer()
+                                if draft.intensity == choice.score && draft.intensityConfirmed == true {
+                                    Image(systemName: "checkmark.circle.fill").foregroundStyle(CX.blue)
+                                }
+                            }
+                            .padding(12)
+                            .background(
+                                draft.intensity == choice.score && draft.intensityConfirmed == true ? CX.blue.opacity(0.10) : CX.mist.opacity(0.72),
+                                in: .rect(cornerRadius: 16)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(choice.score)分，\(choice.title)，\(choice.detail)")
+                        .accessibilityAddTraits(draft.intensity == choice.score && draft.intensityConfirmed == true ? .isSelected : [])
+                        .accessibilityIdentifier("pain-intensity-\(choice.score)")
+                    }
+                }
+                Text("想记得更精确，可以再微调")
+                    .font(.caption)
+                    .foregroundStyle(CX.muted)
                 Slider(value: Binding(get: { Double(draft.intensity) }, set: { draft.intensity = Int($0); draft.intensityConfirmed = true }), in: 0...10, step: 1)
                     .accessibilityLabel("疼痛程度").accessibilityValue("\(draft.intensity)分")
                 HStack { Text("0 · 不疼"); Spacer(); Text("10 · 能想象的最疼") }.font(.footnote).foregroundStyle(CX.muted)
@@ -421,6 +461,16 @@ struct PainLocationView: View {
          ("麻痛", "麻木伴痛"), ("说不清", "之后可补充")]
     }
 
+    private var intensityChoices: [(score: Int, title: String, detail: String)] {
+        [
+            (1, "微微疼", "不留意时几乎感觉不到"),
+            (3, "有点疼", "能感觉到，但基本不影响做事"),
+            (5, "明显疼", "会分心，需要停下来缓一缓"),
+            (7, "很疼", "明显影响走动、做事或睡觉"),
+            (9, "难以忍受", "几乎无法正常活动或休息")
+        ]
+    }
+
     private func finishVoice3DCheck() {
         guard let hint = voiceHint,
               let surfaceIndex = surfaceIndexForDetail else { return }
@@ -499,52 +549,9 @@ struct PainArtwork: View {
     var body: some View {
         ZStack {
             LinearGradient(colors: [Color.white.opacity(0.92), CX.moonlight.opacity(0.12)], startPoint: .topLeading, endPoint: .bottomTrailing)
-            PainRegionDiagram(region: region, angle: angle)
-                .padding(18)
+            PainAnatomyIllustrationView(region: region, angle: angle)
+                .padding(8)
         }.aspectRatio(1, contentMode: .fit).accessibilityHidden(true)
-    }
-}
-
-private struct PainRegionDiagram: View {
-    let region: PainRegion
-    let angle: PainAngle
-    var body: some View {
-        GeometryReader { proxy in
-            Canvas { context, size in
-                let w = size.width, h = size.height
-                let line = StrokeStyle(lineWidth: max(2, w * 0.018), lineCap: .round, lineJoin: .round)
-                let ink = Color(red: 0.20, green: 0.31, blue: 0.43)
-                let wash = CX.blue.opacity(0.13)
-                var path = Path()
-                switch region {
-                case .head:
-                    path.addEllipse(in: CGRect(x: w * 0.27, y: h * 0.10, width: w * 0.46, height: h * 0.58))
-                    path.move(to: CGPoint(x: w * 0.39, y: h * 0.68)); path.addLine(to: CGPoint(x: w * 0.39, y: h * 0.84))
-                    path.move(to: CGPoint(x: w * 0.61, y: h * 0.68)); path.addLine(to: CGPoint(x: w * 0.61, y: h * 0.84))
-                    path.move(to: CGPoint(x: w * 0.20, y: h * 0.91)); path.addQuadCurve(to: CGPoint(x: w * 0.80, y: h * 0.91), control: CGPoint(x: w * 0.50, y: h * 0.76))
-                case .neck:
-                    path.addEllipse(in: CGRect(x: w * 0.36, y: h * 0.05, width: w * 0.28, height: h * 0.32))
-                    path.move(to: CGPoint(x: w * 0.42, y: h * 0.36)); path.addLine(to: CGPoint(x: w * 0.40, y: h * 0.58))
-                    path.move(to: CGPoint(x: w * 0.58, y: h * 0.36)); path.addLine(to: CGPoint(x: w * 0.60, y: h * 0.58))
-                    path.move(to: CGPoint(x: w * 0.08, y: h * 0.73)); path.addQuadCurve(to: CGPoint(x: w * 0.92, y: h * 0.73), control: CGPoint(x: w * 0.50, y: h * 0.48))
-                    context.fill(Path(roundedRect: CGRect(x: w * 0.35, y: h * 0.34, width: w * 0.30, height: h * 0.34), cornerRadius: w * 0.10), with: .color(wash))
-                case .torso, .back:
-                    path.move(to: CGPoint(x: w * 0.17, y: h * 0.16)); path.addQuadCurve(to: CGPoint(x: w * 0.83, y: h * 0.16), control: CGPoint(x: w * 0.50, y: h * 0.04))
-                    path.addLine(to: CGPoint(x: w * 0.70, y: h * 0.86)); path.addQuadCurve(to: CGPoint(x: w * 0.30, y: h * 0.86), control: CGPoint(x: w * 0.50, y: h * 0.94)); path.closeSubpath()
-                    context.fill(path, with: .color(wash))
-                    if region == .back { var spine = Path(); spine.move(to: CGPoint(x: w * 0.5, y: h * 0.2)); spine.addLine(to: CGPoint(x: w * 0.5, y: h * 0.82)); context.stroke(spine, with: .color(CX.blue.opacity(0.35)), style: StrokeStyle(lineWidth: 2, dash: [5, 5])) }
-                case .arms:
-                    path.move(to: CGPoint(x: w * 0.44, y: h * 0.12)); path.addCurve(to: CGPoint(x: w * 0.12, y: h * 0.86), control1: CGPoint(x: w * 0.30, y: h * 0.22), control2: CGPoint(x: w * 0.22, y: h * 0.62))
-                    path.move(to: CGPoint(x: w * 0.56, y: h * 0.12)); path.addCurve(to: CGPoint(x: w * 0.88, y: h * 0.86), control1: CGPoint(x: w * 0.70, y: h * 0.22), control2: CGPoint(x: w * 0.78, y: h * 0.62))
-                    for p in [CGPoint(x:w*0.28,y:h*0.50), CGPoint(x:w*0.72,y:h*0.50)] { context.fill(Path(ellipseIn: CGRect(x:p.x-w*0.07,y:p.y-w*0.07,width:w*0.14,height:w*0.14)), with:.color(wash)) }
-                case .legs:
-                    path.move(to: CGPoint(x: w * 0.28, y: h * 0.08)); path.addCurve(to: CGPoint(x: w * 0.22, y: h * 0.91), control1: CGPoint(x: w * 0.31, y: h * 0.42), control2: CGPoint(x: w * 0.18, y: h * 0.65))
-                    path.move(to: CGPoint(x: w * 0.72, y: h * 0.08)); path.addCurve(to: CGPoint(x: w * 0.78, y: h * 0.91), control1: CGPoint(x: w * 0.69, y: h * 0.42), control2: CGPoint(x: w * 0.82, y: h * 0.65))
-                    for p in [CGPoint(x:w*0.27,y:h*0.53), CGPoint(x:w*0.73,y:h*0.53)] { context.fill(Path(ellipseIn: CGRect(x:p.x-w*0.07,y:p.y-w*0.07,width:w*0.14,height:w*0.14)), with:.color(wash)) }
-                }
-                context.stroke(path, with: .color(ink), style: line)
-            }
-        }
     }
 }
 

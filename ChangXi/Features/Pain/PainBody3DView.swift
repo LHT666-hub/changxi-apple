@@ -21,10 +21,16 @@ struct PainBody3DView: View {
             .onChange(of: layer) { _, newValue in
                 if newValue != .surface { marking = false }
             }
+            Text(layer == .surface
+                 ? "体表用于标记疼痛位置"
+                 : "(layer.rawValue)只帮助理解位置；标记时请切回体表")
+                .font(.caption)
+                .foregroundStyle(layer == .surface ? CX.muted : CX.blue)
+                .frame(maxWidth: .infinity, alignment: .leading)
             if editable {
                 Picker("操作方式", selection: $marking) {
-                    Text("转一转").tag(false)
-                    Text("点出疼处").tag(true)
+                    Text("转动查看").tag(false)
+                    Text("标记疼处").tag(true)
                 }
                 .pickerStyle(.segmented)
                 .disabled(layer != .surface)
@@ -34,28 +40,37 @@ struct PainBody3DView: View {
                     }.pickerStyle(.segmented)
                 }
             }
-            PainScene(region: region, layer: layer, marking: marking && editable, kind: kind, reset: reset, turn: turn, marks: $marks, failure: $failure)
-                .frame(height: 390)
+            PainScene(region: region, layer: layer, marking: marking && editable, kind: kind, reset: reset, turn: turn, allowsInteraction: editable, marks: $marks, failure: $failure)
+                .frame(height: 370)
                 .clipShape(.rect(cornerRadius: 28))
                 .overlay { RoundedRectangle(cornerRadius: 28).strokeBorder(Color.white.opacity(0.72), lineWidth: 1) }
                 .accessibilityLabel("\(region.rawValue)局部三维模型；转动模式拖动旋转，标记模式点选表面")
                 .accessibilityIdentifier("pain-anatomy-model")
             if let failure { Text(failure).font(.footnote).foregroundStyle(CX.coral) }
             HStack {
-                Text(marking && editable ? kind.instruction : "拖动旋转 · 双指缩放")
-                    .font(.caption).foregroundStyle(CX.muted)
+                Label(
+                    marking && editable ? kind.instruction : "拖动旋转 · 双指缩放",
+                    systemImage: marking && editable ? "hand.tap.fill" : "rotate.3d"
+                )
+                .font(.caption.weight(marking && editable ? .semibold : .regular))
+                .foregroundStyle(marking && editable ? CX.blue : CX.muted)
                 Spacer()
                 Button("回正") { reset += 1 }.frame(minHeight: 44)
             }
-            HStack {
-                Button { turn -= 1 } label: { Label("向左转", systemImage: "arrow.turn.up.left") }
-                Spacer()
-                Button { turn += 1 } label: { Label("向右转", systemImage: "arrow.turn.up.right") }
-            }.frame(minHeight: 44)
             if editable {
-                Button("撤销上一处三维标记") {
-                    if let i = marks.lastIndex(where: \.hasSurfaceLocation) { marks.remove(at: i) }
-                }.disabled(!marks.contains(where: \.hasSurfaceLocation)).frame(minHeight: 44)
+                HStack {
+                    if marks.contains(where: \.hasSurfaceLocation) {
+                        Label("已标记 \(marks.filter(\.hasSurfaceLocation).count) 处", systemImage: "checkmark.circle.fill")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(CX.teal)
+                    }
+                    Spacer()
+                    Button("撤销上一处") {
+                        if let i = marks.lastIndex(where: \.hasSurfaceLocation) { marks.remove(at: i) }
+                    }
+                    .disabled(!marks.contains(where: \.hasSurfaceLocation))
+                    .frame(minHeight: 44)
+                }
             }
             Text(layer == .surface
                  ? "在\(region.rawValue)体表标记位置；位置记录不等于判断痛源。"
@@ -65,6 +80,33 @@ struct PainBody3DView: View {
                 .font(.caption2)
                 .foregroundStyle(CX.muted)
         }
+        .sensoryFeedback(.selection, trigger: marking)
+    }
+}
+
+/// A fixed, non-interactive render used as the four-view illustration beneath
+/// the 2D marking canvas. It keeps the professional anatomy asset and removes
+/// the controls and gestures of the interactive model.
+struct PainAnatomyIllustrationView: View {
+    let region: PainRegion
+    let angle: PainAngle
+    @State private var marks: [PainMark] = []
+    @State private var failure: String?
+
+    var body: some View {
+        PainScene(
+            region: region,
+            layer: .surface,
+            marking: false,
+            kind: .point,
+            reset: 0,
+            turn: 0,
+            fixedAngle: angle,
+            allowsInteraction: false,
+            marks: $marks,
+            failure: $failure
+        )
+        .accessibilityHidden(true)
     }
 }
 
@@ -75,6 +117,8 @@ private struct PainScene: UIViewRepresentable {
     let kind: PainMarkKind
     let reset: Int
     let turn: Int
+    var fixedAngle: PainAngle? = nil
+    var allowsInteraction = true
     @Binding var marks: [PainMark]
     @Binding var failure: String?
     func makeCoordinator() -> Coordinator { Coordinator(self) }
@@ -113,6 +157,7 @@ private struct PainScene: UIViewRepresentable {
         let camera = SCNNode()
         let markerRoot = SCNNode()
         let drawingRoot = SCNNode()
+        let eyeRoot = SCNNode()
         var lastReset = 0
         var lastTurn = 0
         var lastRegion: PainRegion?
@@ -131,6 +176,7 @@ private struct PainScene: UIViewRepresentable {
                 body.addChildNode(anatomyRoot)
                 body.addChildNode(markerRoot)
                 body.addChildNode(drawingRoot)
+                body.addChildNode(eyeRoot)
                 pivot.addChildNode(body)
                 let scene = SCNScene()
                 scene.rootNode.addChildNode(pivot)
@@ -147,9 +193,11 @@ private struct PainScene: UIViewRepresentable {
                 let ambient = SCNNode(); ambient.light = SCNLight(); ambient.light?.type = .ambient; ambient.light?.intensity = 82
                 scene.rootNode.addChildNode(ambient)
                 view.scene = scene; view.pointOfView = camera
-                view.addGestureRecognizer(UIPanGestureRecognizer(target: self, action: #selector(rotate(_:))))
-                view.addGestureRecognizer(UIPinchGestureRecognizer(target: self, action: #selector(zoom(_:))))
-                view.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(mark(_:))))
+                if parent.allowsInteraction {
+                    view.addGestureRecognizer(UIPanGestureRecognizer(target: self, action: #selector(rotate(_:))))
+                    view.addGestureRecognizer(UIPinchGestureRecognizer(target: self, action: #selector(zoom(_:))))
+                    view.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(mark(_:))))
+                }
                 reloadAnatomy(for: parent.region)
                 applyLayer(parent.layer)
                 lastLayer = parent.layer
@@ -172,6 +220,7 @@ private struct PainScene: UIViewRepresentable {
         func reloadAnatomy(for region: PainRegion) {
             body.geometry = nil
             anatomyRoot.childNodes.forEach { $0.removeFromParentNode() }
+            eyeRoot.childNodes.forEach { $0.removeFromParentNode() }
             anatomyRoot.eulerAngles = SCNVector3Zero
             usesAnatomyAsset = false
             if let url = Bundle.main.url(forResource: region.anatomyAssetName, withExtension: "usdc"),
@@ -181,6 +230,7 @@ private struct PainScene: UIViewRepresentable {
                 anatomyRoot.eulerAngles.x = -.pi / 2
                 usesAnatomyAsset = true
                 styleAnatomyGeometry()
+                configureEyesIfNeeded()
             } else {
                 applyRegion(region)
             }
@@ -190,6 +240,7 @@ private struct PainScene: UIViewRepresentable {
         }
         func applyLayer(_ layer: PainAnatomyLayer) {
             guard usesAnatomyAsset else { return }
+            eyeRoot.isHidden = layer != .surface || parent.region != .head
             body.enumerateChildNodes { node, _ in
                 guard let name = node.name else { return }
                 guard let nodeLayer = PainAnatomyLayer.allCases.first(where: { name.hasPrefix($0.nodePrefix) }) else { return }
@@ -198,6 +249,51 @@ private struct PainScene: UIViewRepresentable {
                 // A quiet outer silhouette keeps deeper anatomy spatially
                 // understandable without covering the muscle or bone detail.
                 node.opacity = isContextShell ? 0.10 : 1
+            }
+        }
+        private func configureEyesIfNeeded() {
+            guard parent.region == .head,
+                  parent.fixedAngle == nil || parent.fixedAngle == .front,
+                  let bounds = visibleBounds(for: .surface) else { return }
+            let width = bounds.max.x - bounds.min.x
+            let height = bounds.max.y - bounds.min.y
+            let depth = bounds.max.z - bounds.min.z
+            let centerX = (bounds.min.x + bounds.max.x) / 2
+            let eyeY = bounds.min.y + height * 0.60
+            // Sink the eye into the open socket instead of placing a sphere in
+            // front of the face. The mesh then supplies the eyelid silhouette.
+            let faceZ = bounds.min.z + depth * 0.072
+            let eyeSpacing = width * 0.105
+            let eyeRadius = CGFloat(width * 0.019)
+
+            for direction: Float in [-1, 1] {
+                let socket = SCNNode()
+                socket.position = SCNVector3(centerX + direction * eyeSpacing, eyeY, faceZ)
+
+                let sclera = SCNSphere(radius: eyeRadius)
+                sclera.segmentCount = 32
+                sclera.firstMaterial?.diffuse.contents = UIColor(red: 0.98, green: 0.96, blue: 0.91, alpha: 1)
+                sclera.firstMaterial?.roughness.contents = 0.42
+                let scleraNode = SCNNode(geometry: sclera)
+                scleraNode.scale = SCNVector3(1.34, 0.66, 0.46)
+                socket.addChildNode(scleraNode)
+
+                let iris = SCNSphere(radius: eyeRadius * 0.30)
+                iris.segmentCount = 28
+                iris.firstMaterial?.diffuse.contents = UIColor(red: 0.25, green: 0.18, blue: 0.14, alpha: 1)
+                iris.firstMaterial?.roughness.contents = 0.30
+                let irisNode = SCNNode(geometry: iris)
+                irisNode.position.z = -Float(eyeRadius) * 0.43
+                irisNode.scale = SCNVector3(1, 1, 0.45)
+                socket.addChildNode(irisNode)
+
+                let pupil = SCNSphere(radius: eyeRadius * 0.12)
+                pupil.segmentCount = 24
+                pupil.firstMaterial?.diffuse.contents = UIColor(white: 0.04, alpha: 1)
+                let pupilNode = SCNNode(geometry: pupil)
+                pupilNode.position.z = -Float(eyeRadius) * 0.58
+                socket.addChildNode(pupilNode)
+                eyeRoot.addChildNode(socket)
             }
         }
         private func styleAnatomyGeometry() {
@@ -227,6 +323,14 @@ private struct PainScene: UIViewRepresentable {
                 candidate = current.parent
             }
             return nil
+        }
+        private func isDescendant(_ node: SCNNode, of ancestor: SCNNode) -> Bool {
+            var candidate: SCNNode? = node
+            while let current = candidate {
+                if current === ancestor { return true }
+                candidate = current.parent
+            }
+            return false
         }
         func applyRegion(_ region: PainRegion) {
             guard let mesh else { return }
@@ -286,7 +390,14 @@ private struct PainScene: UIViewRepresentable {
             camera.position = SCNVector3(0, 0, distance)
             // BodyParts3D's packaged +Z side is posterior. Face the anterior
             // surface by default and reserve the opposite view for back/waist.
-            pivot.eulerAngles = SCNVector3(0, parent.region == .back ? 0 : Float.pi, 0)
+            let yaw: Float = switch parent.fixedAngle {
+            case .front: .pi
+            case .left: .pi / 2
+            case .right: -.pi / 2
+            case .back: 0
+            case nil: parent.region == .back ? 0 : .pi
+            }
+            pivot.eulerAngles = SCNVector3(0, yaw, 0)
             SCNTransaction.commit()
         }
         private func visibleBounds(for layer: PainAnatomyLayer) -> (min: SCNVector3, max: SCNVector3)? {
@@ -360,9 +471,26 @@ private struct PainScene: UIViewRepresentable {
             }
         }
         private func surfaceHit(at location: CGPoint, in view: SCNView) -> PainSurfacePoint? {
-            guard let hit = view.hitTest(location, options: [.searchMode: SCNHitTestSearchMode.all.rawValue]).first(where: {
-                $0.node === body || $0.node.name?.hasPrefix(PainAnatomyLayer.surface.nodePrefix) == true
-            }) else { return nil }
+            guard parent.layer == .surface else { return nil }
+            let options: [SCNHitTestOption: Any] = [
+                .searchMode: SCNHitTestSearchMode.all.rawValue,
+                .ignoreHiddenNodes: true,
+                .backFaceCulling: false
+            ]
+            let hits = view.hitTest(location, options: options)
+            // Some BodyParts3D files put the layer name on a sibling grouping
+            // node rather than a geometry ancestor. In surface mode, any visible
+            // geometry under anatomyRoot is therefore a valid fallback target.
+            var surfaceResult: SCNHitTestResult?
+            for result in hits {
+                let isNamedSurface = result.node === body || anatomyLayer(containing: result.node) == .surface
+                let isVisibleAnatomy = isDescendant(result.node, of: anatomyRoot) && !isDescendant(result.node, of: eyeRoot)
+                if isNamedSurface || isVisibleAnatomy {
+                    surfaceResult = result
+                    break
+                }
+            }
+            guard let hit = surfaceResult else { return nil }
             let p = body.convertPosition(hit.worldCoordinates, from: nil)
             let worldEndpoint = SCNVector3(
                 hit.worldCoordinates.x + hit.worldNormal.x,
@@ -385,7 +513,7 @@ private struct PainScene: UIViewRepresentable {
             for mark in marks {
                 let points = mark.allSurfacePoints
                 guard !points.isEmpty else { continue }
-                if mark.kind == .point { markerRoot.addChildNode(dot(at: points[0], radius: 0.014)) }
+                if mark.kind == .point { markerRoot.addChildNode(dot(at: points[0], radius: 0.009)) }
                 else {
                     let sampled = sample(points, maximum: 72)
                     for pair in zip(sampled, sampled.dropFirst()) { markerRoot.addChildNode(segment(from: pair.0, to: pair.1, kind: mark.kind)) }
@@ -403,10 +531,11 @@ private struct PainScene: UIViewRepresentable {
             let normal = SIMD3(p.nx ?? 0, p.ny ?? 0, p.nz ?? 0)
             return SIMD3(p.x, p.y, p.z) + normal * amount
         }
-        private let markerColor = UIColor(red: 0.82, green: 0.25, blue: 0.22, alpha: 1)
+        private let markerColor = UIColor(red: 0.91, green: 0.25, blue: 0.32, alpha: 0.92)
         private func dot(at point: PainSurfacePoint, radius: CGFloat, color: UIColor? = nil) -> SCNNode {
             let sphere = SCNSphere(radius: radius)
             sphere.firstMaterial?.diffuse.contents = color ?? markerColor
+            sphere.firstMaterial?.roughness.contents = 0.72
             let node = SCNNode(geometry: sphere); node.simdPosition = raised(point)
             return node
         }
