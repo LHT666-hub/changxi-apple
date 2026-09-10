@@ -23,7 +23,7 @@ struct PainLocationView: View {
         switch step {
         case 0: "哪里不舒服？"
         case 1: "\(draft.region.rawValue)，指给我看"
-        case 2: "是什么样的疼？"
+        case 2: "疼痛感觉和强度"
         default: "这样记，对吗？"
         }
     }
@@ -53,11 +53,14 @@ struct PainLocationView: View {
                     case 2: descriptionForm
                     default: review
                     }
+                    if step > 1 {
+                        footer.padding(.top, 4)
+                    }
                 }
             }
             .frame(maxWidth: 680)
             .padding(20)
-            .padding(.bottom, 24)
+            .padding(.bottom, step == 1 && !saved ? 172 : 24)
             .frame(maxWidth: .infinity)
             .id(step)
         }
@@ -70,9 +73,11 @@ struct PainLocationView: View {
                     .accessibilityLabel("查看疼痛记录")
             }
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            if step > 0 && !saved {
+        .overlay(alignment: .bottom) {
+            if step == 1 && !saved {
                 footer
+                    .padding(.horizontal, 14)
+                    .padding(.bottom, 82)
             }
         }
         .sheet(isPresented: $history) { NavigationStack { PainHistoryView(journal: journal) } }
@@ -282,24 +287,6 @@ struct PainLocationView: View {
     private var descriptionForm: some View {
         VStack(spacing: 20) {
             Card {
-                Text("疼起来像什么").font(.title3.weight(.semibold))
-                Text("选择最接近的一种感觉；它和疼痛强度是两回事。")
-                    .font(.footnote).foregroundStyle(CX.muted)
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 128))]) {
-                    ForEach(painQualities, id: \.title) { item in
-                        Button { draft.sensation = item.title } label: {
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(item.title).font(.subheadline.weight(.semibold))
-                                Text(item.detail).font(.caption).foregroundStyle(CX.muted)
-                            }
-                            .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
-                            .padding(.horizontal, 12)
-                            .background(draft.sensation == item.title ? CX.blue.opacity(0.15) : CX.mist, in: .rect(cornerRadius: 16))
-                        }.buttonStyle(.plain).accessibilityAddTraits(draft.sensation == item.title ? .isSelected : [])
-                    }
-                }
-            }
-            Card {
                 HStack(alignment: .firstTextBaseline) {
                     Text("有多疼").font(.title3.weight(.semibold))
                     Spacer()
@@ -367,6 +354,24 @@ struct PainLocationView: View {
                     .font(.footnote).foregroundStyle(CX.muted)
             }
             Card {
+                Text("疼起来像什么").font(.title3.weight(.semibold))
+                Text("选择最接近的一种感觉；它和疼痛强度是两回事。")
+                    .font(.footnote).foregroundStyle(CX.muted)
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 128))]) {
+                    ForEach(painQualities, id: \.title) { item in
+                        Button { draft.sensation = item.title } label: {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(item.title).font(.subheadline.weight(.semibold))
+                                Text(item.detail).font(.caption).foregroundStyle(CX.muted)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
+                            .padding(.horizontal, 12)
+                            .background(draft.sensation == item.title ? CX.blue.opacity(0.15) : CX.mist, in: .rect(cornerRadius: 16))
+                        }.buttonStyle(.plain).accessibilityAddTraits(draft.sensation == item.title ? .isSelected : [])
+                    }
+                }
+            }
+            Card {
                 Text("什么时候开始").font(.title3.weight(.semibold))
                 Picker("开始时间", selection: $draft.onset) {
                     ForEach(["开始时间未填写", "刚刚开始", "今天开始", "已经几天", "更久了", "记不清"], id: \.self) { Text($0) }
@@ -404,14 +409,25 @@ struct PainLocationView: View {
     private var footer: some View {
         HStack(spacing: 12) {
             Button("上一步") { advance(step - 1) }.frame(minWidth: 80, minHeight: 48)
-            Button(step == 3 ? "保存这次记录" : step == 1 ? "位置选好了" : "看看记录") {
+            Button(step == 3 ? "保存这次记录" : step == 1 ? "下一步：选感觉和强度" : "看看记录") {
                 if step < 3 { advance(step + 1) }
                 else {
                     do { draft.date = .now; try journal.save(draft); saved = true }
                     catch { self.error = journal.readError ?? "记录没有保存成功，请保留当前内容后重试。" }
                 }
-            }.buttonStyle(PrimaryButton()).disabled(step == 1 && draft.marks.isEmpty)
-        }.padding(.horizontal, 20).padding(.vertical, 12).background(.regularMaterial)
+            }
+            .buttonStyle(PrimaryButton())
+            .disabled(step == 1 && draft.marks.isEmpty)
+            .accessibilityHint(step == 1 ? "进入疼痛感觉和强度选择" : "")
+            .accessibilityIdentifier("pain-primary-step")
+        }
+        .padding(10)
+        .background(.regularMaterial, in: .rect(cornerRadius: 24, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.66), lineWidth: 0.8)
+        }
+        .shadow(color: .black.opacity(0.10), radius: 18, y: 8)
     }
 
     private var success: some View {

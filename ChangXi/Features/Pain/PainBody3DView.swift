@@ -81,6 +81,7 @@ struct PainBody3DView: View {
                 .foregroundStyle(CX.muted)
         }
         .sensoryFeedback(.selection, trigger: marking)
+        .sensoryFeedback(.impact(weight: .light), trigger: marks.count)
     }
 }
 
@@ -194,7 +195,9 @@ private struct PainScene: UIViewRepresentable {
                 scene.rootNode.addChildNode(ambient)
                 view.scene = scene; view.pointOfView = camera
                 if parent.allowsInteraction {
-                    view.addGestureRecognizer(UIPanGestureRecognizer(target: self, action: #selector(rotate(_:))))
+                    let pan = UIPanGestureRecognizer(target: self, action: #selector(rotate(_:)))
+                    pan.maximumNumberOfTouches = 1
+                    view.addGestureRecognizer(pan)
                     view.addGestureRecognizer(UIPinchGestureRecognizer(target: self, action: #selector(zoom(_:))))
                     view.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(mark(_:))))
                 }
@@ -264,35 +267,32 @@ private struct PainScene: UIViewRepresentable {
             // front of the face. The mesh then supplies the eyelid silhouette.
             let faceZ = bounds.min.z + depth * 0.072
             let eyeSpacing = width * 0.105
-            let eyeRadius = CGFloat(width * 0.019)
+            let eyeWidth = CGFloat(width * 0.050)
+            let eyeHeight = CGFloat(width * 0.020)
 
             for direction: Float in [-1, 1] {
                 let socket = SCNNode()
                 socket.position = SCNVector3(centerX + direction * eyeSpacing, eyeY, faceZ)
 
-                let sclera = SCNSphere(radius: eyeRadius)
-                sclera.segmentCount = 32
+                // Flat inset planes read as eyes from the front but have no
+                // volume that can poke through the cheek when the head turns.
+                let sclera = SCNPlane(width: eyeWidth, height: eyeHeight)
+                sclera.cornerRadius = eyeHeight * 0.48
                 sclera.firstMaterial?.diffuse.contents = UIColor(red: 0.98, green: 0.96, blue: 0.91, alpha: 1)
                 sclera.firstMaterial?.roughness.contents = 0.42
+                sclera.firstMaterial?.isDoubleSided = true
                 let scleraNode = SCNNode(geometry: sclera)
-                scleraNode.scale = SCNVector3(1.34, 0.66, 0.46)
                 socket.addChildNode(scleraNode)
 
-                let iris = SCNSphere(radius: eyeRadius * 0.30)
-                iris.segmentCount = 28
+                let irisSize = eyeHeight * 0.68
+                let iris = SCNPlane(width: irisSize, height: irisSize)
+                iris.cornerRadius = irisSize / 2
                 iris.firstMaterial?.diffuse.contents = UIColor(red: 0.25, green: 0.18, blue: 0.14, alpha: 1)
                 iris.firstMaterial?.roughness.contents = 0.30
+                iris.firstMaterial?.isDoubleSided = true
                 let irisNode = SCNNode(geometry: iris)
-                irisNode.position.z = -Float(eyeRadius) * 0.43
-                irisNode.scale = SCNVector3(1, 1, 0.45)
+                irisNode.position.z = -0.0008
                 socket.addChildNode(irisNode)
-
-                let pupil = SCNSphere(radius: eyeRadius * 0.12)
-                pupil.segmentCount = 24
-                pupil.firstMaterial?.diffuse.contents = UIColor(white: 0.04, alpha: 1)
-                let pupilNode = SCNNode(geometry: pupil)
-                pupilNode.position.z = -Float(eyeRadius) * 0.58
-                socket.addChildNode(pupilNode)
                 eyeRoot.addChildNode(socket)
             }
         }
@@ -398,7 +398,18 @@ private struct PainScene: UIViewRepresentable {
             case nil: parent.region == .back ? 0 : .pi
             }
             pivot.eulerAngles = SCNVector3(0, yaw, 0)
+            updateEyeVisibility()
             SCNTransaction.commit()
+        }
+        private func updateEyeVisibility() {
+            guard parent.region == .head, parent.layer == .surface else {
+                eyeRoot.opacity = 0
+                return
+            }
+            // Fade the flat eye inserts before profile view so they never
+            // detach visually from the sockets.
+            let facing = max(0, -cos(pivot.eulerAngles.y))
+            eyeRoot.opacity = CGFloat(min(1, max(0, (facing - 0.88) / 0.10)))
         }
         private func visibleBounds(for layer: PainAnatomyLayer) -> (min: SCNVector3, max: SCNVector3)? {
             guard usesAnatomyAsset else { return nil }
@@ -434,6 +445,7 @@ private struct PainScene: UIViewRepresentable {
             let delta = gesture.translation(in: view)
             pivot.eulerAngles.y += Float(delta.x) * 0.008
             pivot.eulerAngles.x = min(1.1, max(-1.1, pivot.eulerAngles.x + Float(delta.y) * 0.006))
+            updateEyeVisibility()
             gesture.setTranslation(.zero, in: view)
         }
         @objc func zoom(_ gesture: UIPinchGestureRecognizer) {
@@ -453,9 +465,14 @@ private struct PainScene: UIViewRepresentable {
             }
             if let point = surfaceHit(at: gesture.location(in: view), in: view), drawingPoints.count < 180 {
                 let gap = drawingPoints.last.map { distance($0, point) }
-                let shouldAppend = gap.map { $0 > 0.006 && $0 < 0.12 } ?? true
+                let shouldAppend = gap.map { $0 > 0.0025 && $0 < 0.20 } ?? true
                 if shouldAppend {
-                    if let previous = drawingPoints.last { drawingRoot.addChildNode(segment(from: previous, to: point, kind: parent.kind)) }
+                    if let previous = drawingPoints.last {
+                        SCNTransaction.begin()
+                        SCNTransaction.disableActions = true
+                        drawingRoot.addChildNode(segment(from: previous, to: point, kind: parent.kind))
+                        SCNTransaction.commit()
+                    }
                     else { drawingRoot.addChildNode(dot(at: point, radius: 0.009, color: parent.kind == .radiating ? .systemOrange : markerColor)) }
                     drawingPoints.append(point)
                 }
@@ -465,9 +482,17 @@ private struct PainScene: UIViewRepresentable {
                 if drawingPoints.count >= required {
                     let name = parent.kind == .area ? "三维表面圈选范围" : parent.kind == .radiating ? "三维表面放射路径" : "三维表面疼痛走向"
                     parent.marks.append(PainMark(angle: .front, kind: parent.kind, points: [], name: name, surfacePoint: nil, surfacePoints: drawingPoints))
+                } else if parent.kind == .area, let center = drawingPoints.dropFirst(drawingPoints.count / 2).first ?? drawingPoints.first {
+                    // A short circular gesture still means “this area”. Keep
+                    // that intent as a soft patch instead of degrading it to
+                    // an unrelated point marker.
+                    parent.marks.append(PainMark(angle: .front, kind: .area, points: [], name: "三维表面圈选范围", surfacePoint: nil, surfacePoints: [center]))
+                } else if let first = drawingPoints.first {
+                    // A short stroke must still acknowledge the touch rather
+                    // than silently disappearing.
+                    parent.marks.append(PainMark(angle: .front, kind: .point, points: [], name: "三维表面自选位置", surfacePoint: first))
                 }
                 drawingPoints = []
-                drawingRoot.childNodes.forEach { $0.removeFromParentNode() }
             }
         }
         private func surfaceHit(at location: CGPoint, in view: SCNView) -> PainSurfacePoint? {
@@ -513,7 +538,11 @@ private struct PainScene: UIViewRepresentable {
             for mark in marks {
                 let points = mark.allSurfacePoints
                 guard !points.isEmpty else { continue }
-                if mark.kind == .point { markerRoot.addChildNode(dot(at: points[0], radius: 0.009)) }
+                if mark.kind == .point {
+                    markerRoot.addChildNode(dot(at: points[0], radius: 0.005))
+                } else if mark.kind == .area, points.count < 3 {
+                    markerRoot.addChildNode(areaPatch(at: points[0]))
+                }
                 else {
                     let sampled = sample(points, maximum: 72)
                     for pair in zip(sampled, sampled.dropFirst()) { markerRoot.addChildNode(segment(from: pair.0, to: pair.1, kind: mark.kind)) }
@@ -522,10 +551,15 @@ private struct PainScene: UIViewRepresentable {
                         if sampled.count >= 3 { markerRoot.addChildNode(areaFill(sampled)) }
                     }
                     if mark.kind == .radiating, let last = sampled.last {
-                        markerRoot.addChildNode(dot(at: last, radius: 0.018, color: .systemOrange))
+                        markerRoot.addChildNode(dot(
+                            at: last,
+                            radius: 0.006,
+                            color: UIColor(red: 0.98, green: 0.43, blue: 0.20, alpha: 0.96)
+                        ))
                     }
                 }
             }
+            drawingRoot.childNodes.forEach { $0.removeFromParentNode() }
         }
         private func raised(_ p: PainSurfacePoint, amount: Float = 0.004) -> SIMD3<Float> {
             let normal = SIMD3(p.nx ?? 0, p.ny ?? 0, p.nz ?? 0)
@@ -536,16 +570,37 @@ private struct PainScene: UIViewRepresentable {
             let sphere = SCNSphere(radius: radius)
             sphere.firstMaterial?.diffuse.contents = color ?? markerColor
             sphere.firstMaterial?.roughness.contents = 0.72
+            sphere.firstMaterial?.lightingModel = .constant
             let node = SCNNode(geometry: sphere); node.simdPosition = raised(point)
             return node
         }
         private func segment(from a: PainSurfacePoint, to b: PainSurfacePoint, kind: PainMarkKind = .line) -> SCNNode {
-            let start = raised(a), end = raised(b), delta = end - start
-            let cylinder = SCNCylinder(radius: 0.006, height: CGFloat(simd_length(delta)))
-            cylinder.firstMaterial?.diffuse.contents = kind == .radiating ? UIColor.systemOrange : markerColor
+            let start = raised(a, amount: 0.007), end = raised(b, amount: 0.007), delta = end - start
+            let radius: CGFloat = kind == .area ? 0.004 : kind == .radiating ? 0.0042 : 0.0034
+            let cylinder = SCNCylinder(radius: radius, height: CGFloat(simd_length(delta)))
+            let color = kind == .radiating ? UIColor(red: 0.98, green: 0.49, blue: 0.22, alpha: 0.96) : markerColor
+            cylinder.firstMaterial?.diffuse.contents = color
+            cylinder.firstMaterial?.emission.contents = color.withAlphaComponent(0.10)
+            cylinder.firstMaterial?.roughness.contents = 0.68
+            cylinder.firstMaterial?.lightingModel = .constant
             let node = SCNNode(geometry: cylinder)
             node.simdPosition = (start + end) / 2
             if simd_length(delta) > 0.0001 { node.simdOrientation = simd_quatf(from: SIMD3<Float>(0, 1, 0), to: simd_normalize(delta)) }
+            return node
+        }
+        private func areaPatch(at point: PainSurfacePoint) -> SCNNode {
+            let patch = SCNSphere(radius: 0.019)
+            let color = UIColor(red: 0.91, green: 0.25, blue: 0.32, alpha: 0.28)
+            patch.firstMaterial?.diffuse.contents = color
+            patch.firstMaterial?.emission.contents = color.withAlphaComponent(0.08)
+            patch.firstMaterial?.roughness.contents = 0.82
+            patch.firstMaterial?.lightingModel = .constant
+            let node = SCNNode(geometry: patch)
+            let normal = SIMD3(point.nx ?? 0, point.ny ?? 0, point.nz ?? 1)
+            let direction = simd_length(normal) > 0.0001 ? simd_normalize(normal) : SIMD3<Float>(0, 0, 1)
+            node.simdPosition = raised(point, amount: 0.002)
+            node.simdOrientation = simd_quatf(from: SIMD3<Float>(0, 0, 1), to: direction)
+            node.simdScale = SIMD3<Float>(1, 1, 0.14)
             return node
         }
         private func areaFill(_ points: [PainSurfacePoint]) -> SCNNode {

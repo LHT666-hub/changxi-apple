@@ -138,14 +138,14 @@ private struct PersistentTabBar: View {
                     .background {
                         if selection == tab {
                             Capsule()
-                                .fill(CX.moonlight.opacity(0.16))
+                                .fill(Color.white.opacity(0.20))
                                 .overlay {
                                     Capsule().strokeBorder(
-                                        Color.white.opacity(0.52),
+                                        Color.white.opacity(0.70),
                                         lineWidth: 0.75
                                     )
                                 }
-                                .shadow(color: CX.blue.opacity(0.10), radius: 8, y: 3)
+                                .shadow(color: .black.opacity(0.05), radius: 8, y: 3)
                         }
                     }
                     .contentShape(Rectangle())
@@ -159,6 +159,16 @@ private struct PersistentTabBar: View {
         .padding(7)
         .frame(maxWidth: 520)
         .modifier(FrostedTabBarSurface(reduceTransparency: reduceTransparency))
+        .background(alignment: .bottom) {
+            LinearGradient(
+                colors: [Color.clear, Color.white.opacity(0.76), Color.white.opacity(0.94)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 118)
+            .padding(.horizontal, -8)
+            .allowsHitTesting(false)
+        }
         .padding(.horizontal, 8)
         .padding(.top, 6)
         .frame(maxWidth: .infinity)
@@ -179,12 +189,12 @@ private struct FrostedTabBarSurface: ViewModifier {
         } else if #available(iOS 26, *) {
             content
                 .glassEffect(
-                    .regular.tint(CX.moonlight.opacity(0.20)),
+                    .regular.tint(Color.white.opacity(0.10)),
                     in: .capsule
                 )
                 .overlay { border }
                 .overlay { highlight }
-                .shadow(color: CX.blue.opacity(0.12), radius: 24, y: 12)
+                .shadow(color: .black.opacity(0.09), radius: 24, y: 12)
                 .shadow(color: .black.opacity(0.08), radius: 8, y: 3)
         } else {
             content
@@ -196,7 +206,7 @@ private struct FrostedTabBarSurface: ViewModifier {
     }
 
     private var border: some View {
-        Capsule().strokeBorder(CX.separator.opacity(0.28), lineWidth: 0.6)
+        Capsule().strokeBorder(Color.white.opacity(0.64), lineWidth: 0.7)
     }
 
     private var highlight: some View {

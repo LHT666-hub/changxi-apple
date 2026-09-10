@@ -198,7 +198,7 @@ final class FlowTests: XCTestCase {
         model.coordinate(withNormalizedOffset: CGVector(dx: 0.50, dy: 0.32)).tap()
         let markedStatus = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH '已标记 '")).firstMatch
         XCTAssertTrue(markedStatus.waitForExistence(timeout: 3))
-        XCTAssertTrue(app.buttons["位置选好了"].isEnabled)
+        XCTAssertTrue(app.buttons["pain-primary-step"].isEnabled)
         capture("16-pain-head-marked")
         app.segmentedControls.buttons["转动查看"].tap()
         app.segmentedControls.buttons["插画标记"].tap()
@@ -244,11 +244,29 @@ final class FlowTests: XCTestCase {
         let model = app.otherElements["pain-anatomy-model"]
         XCTAssertTrue(model.waitForExistence(timeout: 12))
         capture("22-pain-head-refined-eyes")
+        model.swipeLeft()
+        capture("22-pain-head-profile-eyes-contained")
+        app.buttons["回正"].tap()
         app.segmentedControls.buttons["标记疼处"].tap()
         model.coordinate(withNormalizedOffset: CGVector(dx: 0.50, dy: 0.32)).tap()
-        let next = app.buttons["位置选好了"]
+        let next = app.buttons["pain-primary-step"]
         XCTAssertTrue(next.isEnabled)
         capture("22-pain-head-selection-confirmed")
+        app.segmentedControls.buttons["片状"].tap()
+        model.coordinate(withNormalizedOffset: CGVector(dx: 0.43, dy: 0.30))
+            .press(
+                forDuration: 0.12,
+                thenDragTo: model.coordinate(withNormalizedOffset: CGVector(dx: 0.56, dy: 0.39))
+            )
+        XCTAssertTrue(app.staticTexts["已标记 2 处"].waitForExistence(timeout: 3))
+        app.segmentedControls.buttons["放射"].tap()
+        model.coordinate(withNormalizedOffset: CGVector(dx: 0.44, dy: 0.36))
+            .press(
+                forDuration: 0.12,
+                thenDragTo: model.coordinate(withNormalizedOffset: CGVector(dx: 0.62, dy: 0.48))
+            )
+        XCTAssertTrue(app.staticTexts["已标记 3 处"].waitForExistence(timeout: 3))
+        capture("22-pain-area-and-radiating-marks")
         next.tap()
         let naturalChoice = app.buttons["pain-intensity-5"]
         XCTAssertTrue(naturalChoice.waitForExistence(timeout: 5))
