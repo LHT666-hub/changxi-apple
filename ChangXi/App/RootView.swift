@@ -123,6 +123,8 @@ private enum RootTab: String, CaseIterable, Identifiable {
 private struct PersistentTabBar: View {
     @Binding var selection: RootTab
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Namespace private var selectionHighlight
 
     var body: some View {
         HStack(spacing: 4) {
@@ -138,14 +140,31 @@ private struct PersistentTabBar: View {
                     .background {
                         if selection == tab {
                             Capsule()
-                                .fill(Color.white.opacity(0.20))
+                                .fill(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.white.opacity(0.72),
+                                            Color(red: 0.82, green: 0.85, blue: 0.89).opacity(0.82)
+                                        ],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                )
                                 .overlay {
                                     Capsule().strokeBorder(
-                                        Color.white.opacity(0.70),
-                                        lineWidth: 0.75
+                                        LinearGradient(
+                                            colors: [
+                                                Color.white.opacity(0.94),
+                                                CX.blue.opacity(0.10)
+                                            ],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        ),
+                                        lineWidth: 0.8
                                     )
                                 }
-                                .shadow(color: .black.opacity(0.05), radius: 8, y: 3)
+                                .shadow(color: .black.opacity(0.08), radius: 9, y: 4)
+                                .matchedGeometryEffect(id: "selected-tab", in: selectionHighlight)
                         }
                     }
                     .contentShape(Rectangle())
@@ -172,6 +191,10 @@ private struct PersistentTabBar: View {
         .padding(.horizontal, 8)
         .padding(.top, 6)
         .frame(maxWidth: .infinity)
+        .animation(
+            reduceMotion ? nil : .spring(response: 0.34, dampingFraction: 0.86),
+            value: selection
+        )
         .sensoryFeedback(.selection, trigger: selection)
     }
 }
