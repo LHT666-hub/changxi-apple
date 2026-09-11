@@ -64,9 +64,6 @@ struct ShiyangEntryCard: View {
 
 struct ShiyangRootView: View {
     @Environment(AppStore.self) private var store
-    @Environment(AssistantCoordinator.self) private var assistant
-    @State private var showChat = false
-    @State private var assistantContextID = UUID()
 
     var body: some View {
         Group {
@@ -78,27 +75,6 @@ struct ShiyangRootView: View {
         }
         .tint(SY.apricot)
         .toolbarVisibility(.visible, for: .navigationBar)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    if assistant.activateRegistered() { showChat = true }
-                } label: {
-                    Image(systemName: "moonphase.waxing.crescent")
-                }
-                .accessibilityLabel("询问常曦食养问题")
-            }
-        }
-        .fullScreenCover(isPresented: $showChat) {
-            NavigationStack { ChatView(initialPrompt: assistant.initialPrompt) }
-        }
-        .onAppear {
-            assistant.register(
-                id: assistantContextID,
-                title: "这顿饭的食养安排",
-                draft: "请结合我的食材、饮食偏好与已授权的健康信息给出稳妥建议"
-            ) { _ in false }
-        }
-        .onDisappear { assistant.unregister(id: assistantContextID) }
     }
 }
 
