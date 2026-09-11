@@ -127,14 +127,25 @@ private struct PersistentTabBar: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var selectionHighlight
 
+    @ViewBuilder
     var body: some View {
+        if #available(iOS 26, *) {
+            GlassEffectContainer(spacing: 4) {
+                tabBar
+            }
+        } else {
+            tabBar
+        }
+    }
+
+    private var tabBar: some View {
         HStack(spacing: 4) {
             ForEach(RootTab.allCases) { tab in
                 let isSelected = selection == tab
 
                 Button {
                     guard !isSelected else { return }
-                    withAnimation(reduceMotion ? nil : .smooth(duration: 0.30)) {
+                    withAnimation(reduceMotion ? nil : .smooth(duration: 0.36)) {
                         selection = tab
                     }
                 } label: {
@@ -147,34 +158,7 @@ private struct PersistentTabBar: View {
                     .foregroundStyle(isSelected ? CX.blue : CX.ink.opacity(0.70))
                     .frame(maxWidth: .infinity, minHeight: 52)
                     .background {
-                        if isSelected {
-                            Capsule()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [
-                                            Color.white.opacity(0.72),
-                                            Color(red: 0.82, green: 0.85, blue: 0.89).opacity(0.82)
-                                        ],
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    )
-                                )
-                                .overlay {
-                                    Capsule().strokeBorder(
-                                        LinearGradient(
-                                            colors: [
-                                                Color.white.opacity(0.94),
-                                                CX.blue.opacity(0.10)
-                                            ],
-                                            startPoint: .top,
-                                            endPoint: .bottom
-                                        ),
-                                        lineWidth: 0.8
-                                    )
-                                }
-                                .shadow(color: .black.opacity(0.08), radius: 9, y: 4)
-                                .matchedGeometryEffect(id: "selected-tab", in: selectionHighlight)
-                        }
+                        selectionSurface(isSelected: isSelected)
                     }
                     .contentShape(Rectangle())
                 }
@@ -199,6 +183,50 @@ private struct PersistentTabBar: View {
         .padding(.horizontal, 8)
         .padding(.top, 6)
         .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
+    private func selectionSurface(isSelected: Bool) -> some View {
+        if isSelected {
+            if #available(iOS 26, *) {
+                Capsule()
+                    .fill(.clear)
+                    .glassEffect(
+                        .regular.tint(CX.blue.opacity(0.10)),
+                        in: .capsule
+                    )
+                    .glassEffectID("selected-tab", in: selectionHighlight)
+                    .allowsHitTesting(false)
+            } else {
+                legacySelectionSurface
+                    .matchedGeometryEffect(id: "selected-tab", in: selectionHighlight)
+            }
+        }
+    }
+
+    private var legacySelectionSurface: some View {
+        Capsule()
+            .fill(
+                LinearGradient(
+                    colors: [
+                        Color.white.opacity(0.72),
+                        Color(.displayP3, red: 0.82, green: 0.85, blue: 0.89).opacity(0.82)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .overlay {
+                Capsule().strokeBorder(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.94), CX.blue.opacity(0.10)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    ),
+                    lineWidth: 0.8
+                )
+            }
+            .shadow(color: .black.opacity(0.08), radius: 9, y: 4)
     }
 }
 
