@@ -105,8 +105,8 @@ enum AppConfiguration {
     static let apiPrefixV1 = "/api/v1"
     /// 旧版路由前缀：`/api`（patients / health_records / events / tasks / timeline）。
     static let apiPrefixLegacy = "/api"
-    /// Extended APIs exist on xuantong/master but remain disabled until client integration is verified.
-    static let supportsExtendedAPI = false
+    /// 玄同生产分支已提供认证、流式对话、多模态、文档与事件进度接口。
+    static let supportsExtendedAPI = true
 
     // MARK: - 超时
 

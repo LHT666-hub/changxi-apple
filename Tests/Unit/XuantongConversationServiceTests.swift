@@ -73,6 +73,38 @@ final class XuantongEventConversationServiceTests: XCTestCase {
         XCTAssertEqual(reply.steps, ["rag_retrieval", "task_generation"])
     }
 
+    func testEventRequestsAttachJWTWhenAvailable() async throws {
+        let tokenStore = TokenStore(
+            service: "com.lht.changxi.tests.\(UUID().uuidString)",
+            account: "access_token"
+        )
+        do {
+            try tokenStore.save("signed-token")
+        } catch {
+            throw XCTSkip("当前测试环境无法使用 Keychain：\(error)")
+        }
+        defer { tokenStore.clear() }
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [URLProtocolStub.self]
+        let session = URLSession(configuration: configuration)
+        URLProtocolStub.handler = { request in
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer signed-token")
+            return (
+                HTTPURLResponse(url: request.url!, statusCode: 201, httpVersion: nil, headerFields: nil)!,
+                Data(#"{"workflow":{"status":"completed","patient_communication":"已收到"}}"#.utf8)
+            )
+        }
+        defer { URLProtocolStub.handler = nil }
+
+        let service = XuantongEventConversationService(
+            baseURL: URL(string: "http://127.0.0.1:8000")!,
+            session: session,
+            tokenStore: tokenStore
+        )
+        _ = try await service.reply(to: "你好", patientID: "patient-001")
+    }
+
     func testAcceptProposedTaskUsesExplicitConsentEndpoint() async throws {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [URLProtocolStub.self]

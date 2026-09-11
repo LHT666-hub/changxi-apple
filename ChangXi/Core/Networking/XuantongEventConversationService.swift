@@ -82,6 +82,7 @@ struct XuantongEventConversationService: Sendable {
 
     let baseURL: URL
     var session: URLSession = .shared
+    var tokenStore: TokenStore = TokenStore()
 
     static func configured() -> Self {
         Self(baseURL: AppConfiguration.apiBaseURL)
@@ -95,6 +96,7 @@ struct XuantongEventConversationService: Sendable {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
+        applyAuthentication(to: &request)
         request.httpBody = try JSONEncoder().encode(
             EventRequest(
                 patientID: patientID,
@@ -144,11 +146,17 @@ struct XuantongEventConversationService: Sendable {
         var request = URLRequest(url: baseURL.appending(path: "api/tasks/\(id)/accept"))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Accept")
+        applyAuthentication(to: &request)
         request.timeoutInterval = 30
         let (_, response) = try await session.data(for: request)
         guard let response = response as? HTTPURLResponse,
               (200..<300).contains(response.statusCode) else {
             throw URLError(.badServerResponse)
         }
+    }
+
+    private func applyAuthentication(to request: inout URLRequest) {
+        guard let token = tokenStore.load(), !token.isEmpty else { return }
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
     }
 }
