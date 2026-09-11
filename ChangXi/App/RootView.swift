@@ -134,7 +134,7 @@ private struct PersistentTabBar: View {
 
                 Button {
                     guard !isSelected else { return }
-                    withAnimation(reduceMotion ? nil : .snappy(duration: 0.32, extraBounce: 0.10)) {
+                    withAnimation(reduceMotion ? nil : .smooth(duration: 0.30)) {
                         selection = tab
                     }
                 } label: {
@@ -145,7 +145,6 @@ private struct PersistentTabBar: View {
                         Text(tab.rawValue).font(.caption2.weight(.semibold))
                     }
                     .foregroundStyle(isSelected ? CX.blue : CX.ink.opacity(0.70))
-                    .scaleEffect(isSelected && !reduceMotion ? 1.015 : 1)
                     .frame(maxWidth: .infinity, minHeight: 52)
                     .background {
                         if isSelected {
@@ -179,7 +178,7 @@ private struct PersistentTabBar: View {
                     }
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(TabPressButtonStyle(reduceMotion: reduceMotion))
+                .buttonStyle(.plain)
                 .accessibilityLabel(tab.rawValue)
                 .accessibilityHint(isSelected ? "当前页面" : "切换到\(tab.rawValue)")
                 .accessibilityIdentifier("root-tab-\(tab.rawValue)")
@@ -200,25 +199,6 @@ private struct PersistentTabBar: View {
         .padding(.horizontal, 8)
         .padding(.top, 6)
         .frame(maxWidth: .infinity)
-        .sensoryFeedback(.selection, trigger: selection)
-    }
-}
-
-private struct TabPressButtonStyle: ButtonStyle {
-    let reduceMotion: Bool
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.955 : 1)
-            .opacity(configuration.isPressed ? 0.82 : 1)
-            .animation(
-                reduceMotion
-                    ? nil
-                    : configuration.isPressed
-                        ? .smooth(duration: 0.12)
-                        : .spring(duration: 0.28, bounce: 0.18),
-                value: configuration.isPressed
-            )
     }
 }
 
