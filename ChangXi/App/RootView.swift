@@ -125,7 +125,9 @@ private struct PersistentTabBar: View {
     @Binding var selection: RootTab
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Namespace private var selectionHighlight
+    @State private var trackingX: CGFloat?
+    @State private var previewSelection: RootTab?
+    @State private var isTrackingSelection = false
 
     @ViewBuilder
     var body: some View {
@@ -139,36 +141,54 @@ private struct PersistentTabBar: View {
     }
 
     private var tabBar: some View {
-        HStack(spacing: 4) {
-            ForEach(RootTab.allCases) { tab in
-                let isSelected = selection == tab
+        GeometryReader { proxy in
+            let spacing: CGFloat = 4
+            let count = CGFloat(RootTab.allCases.count)
+            let itemWidth = (proxy.size.width - spacing * (count - 1)) / count
+            let activeSelection = previewSelection ?? selection
 
-                Button {
-                    guard !isSelected else { return }
-                    withAnimation(reduceMotion ? nil : .smooth(duration: 0.36)) {
-                        selection = tab
+            ZStack(alignment: .leading) {
+                selectionSurface
+                    .frame(width: itemWidth, height: 52)
+                    .scaleEffect(
+                        x: isTrackingSelection && !reduceMotion ? 1.08 : 1,
+                        y: isTrackingSelection && !reduceMotion ? 0.97 : 1
+                    )
+                    .animation(
+                        reduceMotion ? nil : .smooth(duration: 0.18),
+                        value: isTrackingSelection
+                    )
+                    .offset(x: indicatorLeadingOffset(itemWidth: itemWidth, spacing: spacing))
+
+                HStack(spacing: spacing) {
+                    ForEach(RootTab.allCases) { tab in
+                        let isSelected = activeSelection == tab
+
+                        Button {
+                            select(tab)
+                        } label: {
+                            VStack(spacing: 3) {
+                                Image(systemName: isSelected ? "\(tab.symbol).fill" : tab.symbol)
+                                    .font(.system(size: 19, weight: .medium))
+                                    .contentTransition(.symbolEffect(.replace))
+                                Text(tab.rawValue).font(.caption2.weight(.semibold))
+                            }
+                            .foregroundStyle(isSelected ? CX.blue : CX.ink.opacity(0.70))
+                            .frame(maxWidth: .infinity, minHeight: 52)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(tab.rawValue)
+                        .accessibilityHint(selection == tab ? "当前页面" : "切换到\(tab.rawValue)")
+                        .accessibilityIdentifier("root-tab-\(tab.rawValue)")
+                        .accessibilityAddTraits(selection == tab ? .isSelected : [])
                     }
-                } label: {
-                    VStack(spacing: 3) {
-                        Image(systemName: isSelected ? "\(tab.symbol).fill" : tab.symbol)
-                            .font(.system(size: 19, weight: .medium))
-                            .contentTransition(.symbolEffect(.replace))
-                        Text(tab.rawValue).font(.caption2.weight(.semibold))
-                    }
-                    .foregroundStyle(isSelected ? CX.blue : CX.ink.opacity(0.70))
-                    .frame(maxWidth: .infinity, minHeight: 52)
-                    .background {
-                        selectionSurface(isSelected: isSelected)
-                    }
-                    .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(tab.rawValue)
-                .accessibilityHint(isSelected ? "当前页面" : "切换到\(tab.rawValue)")
-                .accessibilityIdentifier("root-tab-\(tab.rawValue)")
-                .accessibilityAddTraits(isSelected ? .isSelected : [])
             }
+            .contentShape(Rectangle())
+            .highPriorityGesture(selectionGesture(width: proxy.size.width, itemWidth: itemWidth, spacing: spacing))
         }
+        .frame(height: 52)
         .padding(7)
         .frame(maxWidth: 520)
         .modifier(FrostedTabBarSurface(reduceTransparency: reduceTransparency))
@@ -186,22 +206,73 @@ private struct PersistentTabBar: View {
     }
 
     @ViewBuilder
-    private func selectionSurface(isSelected: Bool) -> some View {
-        if isSelected {
-            if #available(iOS 26, *) {
-                Capsule()
-                    .fill(.clear)
-                    .glassEffect(
-                        .regular.tint(CX.blue.opacity(0.10)),
-                        in: .capsule
-                    )
-                    .glassEffectID("selected-tab", in: selectionHighlight)
-                    .allowsHitTesting(false)
-            } else {
-                legacySelectionSurface
-                    .matchedGeometryEffect(id: "selected-tab", in: selectionHighlight)
-            }
+    private var selectionSurface: some View {
+        if #available(iOS 26, *) {
+            Capsule()
+                .fill(.clear)
+                .glassEffect(
+                    .regular.tint(CX.blue.opacity(0.10)),
+                    in: .capsule
+                )
+                .allowsHitTesting(false)
+        } else {
+            legacySelectionSurface
+                .allowsHitTesting(false)
         }
+    }
+
+    private func select(_ tab: RootTab) {
+        guard selection != tab else { return }
+        withAnimation(reduceMotion ? nil : .smooth(duration: 0.30)) {
+            selection = tab
+        }
+    }
+
+    private func indicatorLeadingOffset(itemWidth: CGFloat, spacing: CGFloat) -> CGFloat {
+        if let trackingX {
+            let maximum = (itemWidth + spacing) * CGFloat(RootTab.allCases.count - 1)
+            return min(max(trackingX - itemWidth / 2, 0), maximum)
+        }
+
+        let index = RootTab.allCases.firstIndex(of: selection) ?? 0
+        return CGFloat(index) * (itemWidth + spacing)
+    }
+
+    private func selectionGesture(width: CGFloat, itemWidth: CGFloat, spacing: CGFloat) -> some Gesture {
+        DragGesture(minimumDistance: 0, coordinateSpace: .local)
+            .onChanged { value in
+                let distance = hypot(value.translation.width, value.translation.height)
+                guard isTrackingSelection || distance > 3 else { return }
+
+                if !isTrackingSelection {
+                    let index = RootTab.allCases.firstIndex(of: selection) ?? 0
+                    let selectedCenter = CGFloat(index) * (itemWidth + spacing) + itemWidth / 2
+                    guard abs(value.startLocation.x - selectedCenter) <= itemWidth * 0.62 else { return }
+                    isTrackingSelection = true
+                }
+
+                let clampedX = min(max(value.location.x, itemWidth / 2), width - itemWidth / 2)
+                trackingX = clampedX
+                previewSelection = tab(at: clampedX, width: width)
+            }
+            .onEnded { value in
+                let target = isTrackingSelection
+                    ? tab(at: value.location.x, width: width)
+                    : tab(at: value.startLocation.x, width: width)
+
+                withAnimation(reduceMotion ? nil : .smooth(duration: 0.26)) {
+                    selection = target
+                    trackingX = nil
+                    previewSelection = nil
+                    isTrackingSelection = false
+                }
+            }
+    }
+
+    private func tab(at locationX: CGFloat, width: CGFloat) -> RootTab {
+        let normalized = min(max(locationX / max(width, 1), 0), 0.999)
+        let index = min(Int(normalized * CGFloat(RootTab.allCases.count)), RootTab.allCases.count - 1)
+        return RootTab.allCases[index]
     }
 
     private var legacySelectionSurface: some View {
