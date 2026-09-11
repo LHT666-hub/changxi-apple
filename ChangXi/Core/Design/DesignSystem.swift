@@ -16,6 +16,19 @@ enum CX {
     static let gold = Color(.displayP3, red: 0.91, green: 0.66, blue: 0.20)
 }
 
+enum CXLayout {
+    static func adaptiveColumns(
+        minimum: CGFloat,
+        spacing: CGFloat = 12,
+        dynamicTypeSize: DynamicTypeSize
+    ) -> [GridItem] {
+        if dynamicTypeSize >= .xxxLarge {
+            return [GridItem(.flexible())]
+        }
+        return [GridItem(.adaptive(minimum: minimum), spacing: spacing)]
+    }
+}
+
 struct MoonBackground: View {
     var illustrated = false
 
@@ -540,15 +553,28 @@ struct MoonRhythmDetailView: View {
 struct SectionEyebrow: View {
     let title: String
     var action: String?
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
+    @ViewBuilder
     var body: some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text(title).font(.title3.weight(.semibold))
-            Spacer()
-            if let action {
-                Text(action)
-                    .font(.subheadline)
-                    .foregroundStyle(CX.muted)
+        if dynamicTypeSize >= .xxxLarge {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).font(.title3.weight(.semibold))
+                if let action {
+                    Text(action)
+                        .font(.subheadline)
+                        .foregroundStyle(CX.muted)
+                }
+            }
+        } else {
+            HStack(alignment: .firstTextBaseline) {
+                Text(title).font(.title3.weight(.semibold))
+                Spacer()
+                if let action {
+                    Text(action)
+                        .font(.subheadline)
+                        .foregroundStyle(CX.muted)
+                }
             }
         }
     }

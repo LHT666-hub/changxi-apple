@@ -2,6 +2,7 @@ import SwiftUI
 
 struct HealthPortraitView: View {
     private let dimensions = HealthPortraitDimension.samples
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         ScrollView {
@@ -14,22 +15,11 @@ struct HealthPortraitView: View {
                 }
 
                 Card {
-                    HStack(spacing: 20) {
-                        SixDimensionRing(dimensions: dimensions)
-                            .frame(width: 142, height: 142)
-                        VStack(alignment: .leading, spacing: 8) {
-                            Label("重点关注", systemImage: "circle.lefthalf.filled")
-                                .font(.headline).foregroundStyle(CX.gold)
-                            Text("最近活动量有所下降，下肢力量也需要继续观察。")
-                                .font(.subheadline).foregroundStyle(CX.muted)
-                            Text("画像会随着记录逐步更新")
-                                .font(.caption).foregroundStyle(CX.faint)
-                        }
-                    }
+                    portraitSummary
                 }
 
                 SectionEyebrow(title: "六维画像", action: "事实 · 状态 · 需要 · 行动")
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 155), spacing: 12)], spacing: 12) {
+                LazyVGrid(columns: CXLayout.adaptiveColumns(minimum: 155, dynamicTypeSize: dynamicTypeSize), spacing: 12) {
                     ForEach(dimensions) { dimension in
                         NavigationLink { destination(for: dimension) } label: {
                             HealthPortraitCard(dimension: dimension)
@@ -51,6 +41,29 @@ struct HealthPortraitView: View {
         }
         .cxMoonScreenBackground(illustrated: true)
         .navigationTitle("健康画像").navigationBarTitleDisplayMode(.inline)
+    }
+
+    @ViewBuilder
+    private var portraitSummary: some View {
+        let ring = SixDimensionRing(dimensions: dimensions)
+            .frame(width: 142, height: 142)
+        let copy = VStack(alignment: .leading, spacing: 8) {
+            Label("重点关注", systemImage: "circle.lefthalf.filled")
+                .font(.headline)
+                .foregroundStyle(CX.gold)
+            Text("最近活动量有所下降，下肢力量也需要继续观察。")
+                .font(.subheadline)
+                .foregroundStyle(CX.muted)
+            Text("画像会随着记录逐步更新")
+                .font(.caption)
+                .foregroundStyle(CX.faint)
+        }
+
+        if dynamicTypeSize >= .xxxLarge {
+            VStack(alignment: .leading, spacing: 16) { ring; copy }
+        } else {
+            HStack(spacing: 20) { ring; copy }
+        }
     }
 
     @ViewBuilder private func destination(for dimension: HealthPortraitDimension) -> some View {
@@ -87,6 +100,7 @@ private struct HealthPortraitDimension: Identifiable {
 
 private struct HealthPortraitCard: View {
     let dimension: HealthPortraitDimension
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
@@ -96,7 +110,10 @@ private struct HealthPortraitCard: View {
             }
             Text(dimension.title).font(.headline)
             Text(dimension.state).font(.subheadline.weight(.semibold)).foregroundStyle(dimension.tint)
-            Text(dimension.detail).font(.caption).foregroundStyle(CX.muted).lineLimit(2)
+            Text(dimension.detail)
+                .font(.caption)
+                .foregroundStyle(CX.muted)
+                .lineLimit(dynamicTypeSize >= .xxxLarge ? nil : 2)
             Image(systemName: "chevron.right").font(.caption).foregroundStyle(CX.faint).frame(maxWidth: .infinity, alignment: .trailing)
         }
         .frame(maxWidth: .infinity, minHeight: 145, alignment: .leading)

@@ -3,6 +3,7 @@ import UIKit
 
 struct ConstitutionHomeView: View {
     @State private var store = ConstitutionStore()
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         ScrollView {
@@ -20,7 +21,7 @@ struct ConstitutionHomeView: View {
                     }.buttonStyle(.plain)
                 }
 
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 145), spacing: 12)], spacing: 12) {
+                LazyVGrid(columns: CXLayout.adaptiveColumns(minimum: 145, dynamicTypeSize: dynamicTypeSize), spacing: 12) {
                     ForEach(TCMConstitution.allCases) { constitution in
                         NavigationLink { ConstitutionGuideView(constitution: constitution, store: store) } label: {
                             ConstitutionCard(constitution: constitution)
@@ -45,13 +46,17 @@ struct ConstitutionHomeView: View {
 
 private struct ConstitutionCard: View {
     let constitution: TCMConstitution
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     var body: some View {
         VStack(spacing: 0) {
             ConstitutionArtwork(constitution: constitution)
                 .frame(height: 132).clipped()
             VStack(alignment: .leading, spacing: 7) {
                 Text(constitution.rawValue).font(.title3.weight(.semibold)).fontDesign(.serif)
-                Text(constitution.shortDescription).font(.caption).foregroundStyle(CX.muted).lineLimit(2)
+                Text(constitution.shortDescription)
+                    .font(.caption)
+                    .foregroundStyle(CX.muted)
+                    .lineLimit(dynamicTypeSize >= .xxxLarge ? nil : 2)
                 HStack {
                     Text(constitution.gentlePhrase).font(.caption2).foregroundStyle(constitution.tint)
                     Spacer(); Image(systemName: "chevron.right").font(.caption2).foregroundStyle(CX.faint)
@@ -405,6 +410,7 @@ private struct ReviewPipeline: View {
 struct ConstitutionGuideView: View {
     let constitution: TCMConstitution
     let store: ConstitutionStore
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
@@ -423,7 +429,7 @@ struct ConstitutionGuideView: View {
                 }
                 Card {
                     Text("日常可以这样照顾自己").font(.title3.weight(.semibold))
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 125), spacing: 10)], spacing: 10) {
+                    LazyVGrid(columns: CXLayout.adaptiveColumns(minimum: 125, spacing: 10, dynamicTypeSize: dynamicTypeSize), spacing: 10) {
                         ForEach(constitution.suggestions, id: \.self) { suggestion in
                             Label(suggestion, systemImage: "leaf")
                                 .font(.subheadline).frame(maxWidth: .infinity, minHeight: 54)
@@ -446,9 +452,16 @@ struct ConstitutionGuideView: View {
 private struct TagFlow: View {
     let items: [String]
     let tint: Color
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     var body: some View {
-        HStack(spacing: 8) {
-            ForEach(items, id: \.self) { Text($0).font(.subheadline).padding(.horizontal, 14).frame(minHeight: 40).background(tint.opacity(0.10), in: Capsule()) }
+        LazyVGrid(columns: CXLayout.adaptiveColumns(minimum: 116, spacing: 8, dynamicTypeSize: dynamicTypeSize), alignment: .leading, spacing: 8) {
+            ForEach(items, id: \.self) {
+                Text($0)
+                    .font(.subheadline)
+                    .padding(.horizontal, 14)
+                    .frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
+                    .background(tint.opacity(0.10), in: .rect(cornerRadius: 14, style: .continuous))
+            }
         }
     }
 }

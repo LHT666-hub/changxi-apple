@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ServicesView: View {
     @Environment(AppStore.self) private var store
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var category = "医疗服务"
     var body: some View {
         Page {
@@ -21,7 +22,7 @@ struct ServicesView: View {
             Picker("服务分类", selection: $category) { ForEach(["医疗服务", "活动通知", "家医课堂"], id: \.self) { Text($0) } }.pickerStyle(.segmented)
             if category == "医疗服务" {
                 CXGlassGroup(spacing: 12) {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 156), spacing: 12)], spacing: 12) {
+                    LazyVGrid(columns: CXLayout.adaptiveColumns(minimum: 156, dynamicTypeSize: dynamicTypeSize), spacing: 12) {
                         ForEach(ServiceItem.all) { item in
                             NavigationLink { ServiceDetailView(service: item) } label: {
                                 ServiceTile(item: item)

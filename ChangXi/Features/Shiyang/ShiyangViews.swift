@@ -3,12 +3,17 @@ import PhotosUI
 import SwiftUI
 
 private enum SY {
-    static let ink = Color(.displayP3, red: 0.24, green: 0.13, blue: 0.09)
-    static let muted = Color(.displayP3, red: 0.43, green: 0.34, blue: 0.29)
+    static let ink = Color.primary
+    static let muted = Color(uiColor: .secondaryLabel)
+    static let onWarmSurface = Color(.displayP3, red: 0.24, green: 0.13, blue: 0.09)
     static let apricot = Color(.displayP3, red: 0.94, green: 0.48, blue: 0.28)
     static let amber = Color(.displayP3, red: 0.93, green: 0.66, blue: 0.27)
-    static let tea = Color(.displayP3, red: 0.34, green: 0.49, blue: 0.31)
-    static let cream = Color(.displayP3, red: 1.0, green: 0.96, blue: 0.89)
+    static let tea = Color(uiColor: .systemGreen)
+    static let cream = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? .secondarySystemGroupedBackground
+            : UIColor(displayP3Red: 1.0, green: 0.96, blue: 0.89, alpha: 1)
+    })
 }
 
 struct ShiyangEntryCard: View {
@@ -34,7 +39,7 @@ struct ShiyangEntryCard: View {
                         if !store.data.shiyangOnboarded {
                             Text("上新")
                                 .font(.caption2.weight(.bold))
-                                .foregroundStyle(SY.ink)
+                                .foregroundStyle(SY.onWarmSurface)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
                                 .background(SY.amber.opacity(0.24), in: Capsule())
@@ -484,6 +489,7 @@ private struct ShiyangChoiceGrid<Value: Hashable>: View {
     let options: [Value]
     @Binding var selection: Value
     let label: (Value) -> String
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     init(options: [Value], selection: Binding<Value>, label: @escaping (Value) -> String) {
         self.options = options
@@ -492,7 +498,7 @@ private struct ShiyangChoiceGrid<Value: Hashable>: View {
     }
 
     var body: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 128), spacing: 10)], spacing: 10) {
+        LazyVGrid(columns: CXLayout.adaptiveColumns(minimum: 128, spacing: 10, dynamicTypeSize: dynamicTypeSize), spacing: 10) {
             ForEach(options, id: \.self) { option in
                 Button {
                     selection = option
@@ -502,7 +508,7 @@ private struct ShiyangChoiceGrid<Value: Hashable>: View {
                         Spacer()
                         if selection == option { Image(systemName: "checkmark.circle.fill") }
                     }
-                    .foregroundStyle(selection == option ? .white : SY.ink)
+                    .foregroundStyle(selection == option ? SY.onWarmSurface : SY.ink)
                     .padding(.horizontal, 14)
                     .frame(maxWidth: .infinity, minHeight: 52)
                     .background(selection == option ? SY.apricot : SY.cream.opacity(0.72), in: .rect(cornerRadius: 17, style: .continuous))
@@ -556,6 +562,8 @@ private struct ShiyangOnboardingPage<Content: View>: View {
 }
 
 private struct ShiyangBrowseView: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
@@ -572,7 +580,7 @@ private struct ShiyangBrowseView: View {
                 ShiyangBrowseLink(title: "一日三餐", detail: "早餐、午餐、晚餐与外卖、食堂、家庭饭桌的实际搭配。", symbol: "fork.knife")
 
                 SectionEyebrow(title: "家常菜谱", action: "\(ShiyangCatalog.recipes.count)道 · 离线可看")
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
+                LazyVGrid(columns: CXLayout.adaptiveColumns(minimum: 150, dynamicTypeSize: dynamicTypeSize), spacing: 12) {
                     ForEach(ShiyangCatalog.recipes) { recipe in
                         NavigationLink {
                             ShiyangRecipeDetailView(recipe: recipe)
@@ -585,7 +593,9 @@ private struct ShiyangBrowseView: View {
                                     .frame(maxWidth: .infinity)
                                     .clipped()
                                     .clipShape(.rect(cornerRadius: 18, style: .continuous))
-                                Text(recipe.title).font(.headline).lineLimit(1)
+                                Text(recipe.title)
+                                    .font(.headline)
+                                    .lineLimit(dynamicTypeSize >= .xxxLarge ? nil : 1)
                                 Text("约\(recipe.minutes)分钟")
                                     .font(.caption)
                                     .foregroundStyle(SY.muted)
@@ -1115,6 +1125,7 @@ private struct ShiyangRecipeRow: View {
 private struct ShiyangPantryView: View {
     @Environment(AppStore.self) private var store
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var selected: Set<String> = []
     @State private var category = ShiyangIngredientCategory.vegetable
     @State private var input = ""
@@ -1225,7 +1236,7 @@ private struct ShiyangPantryView: View {
                 }
                 .pickerStyle(.segmented)
 
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 10)], spacing: 10) {
+                LazyVGrid(columns: CXLayout.adaptiveColumns(minimum: 96, spacing: 10, dynamicTypeSize: dynamicTypeSize), spacing: 10) {
                     ForEach(categoryIngredients) { ingredient in
                         Button {
                             toggle(ingredient.id)
@@ -2173,14 +2184,14 @@ private struct ShiyangCookingStoryboard: View {
                 .font(.caption2.weight(.bold))
                 .lineLimit(1)
         }
-        .foregroundStyle(SY.ink)
+        .foregroundStyle(SY.onWarmSurface)
         .frame(width: 66, height: 58)
         .background(ingredientColor(ingredient.category), in: .rect(cornerRadius: 18, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(active ? Color.white.opacity(0.9) : SY.ink.opacity(0.12), lineWidth: active ? 3 : 1.5)
+                .stroke(active ? Color.white.opacity(0.9) : SY.onWarmSurface.opacity(0.12), lineWidth: active ? 3 : 1.5)
         }
-        .shadow(color: SY.ink.opacity(active ? 0.17 : 0.07), radius: active ? 7 : 3, y: 4)
+        .shadow(color: SY.onWarmSurface.opacity(active ? 0.17 : 0.07), radius: active ? 7 : 3, y: 4)
     }
 
     private func ingredientColor(_ category: ShiyangIngredientCategory) -> Color {
@@ -2385,6 +2396,8 @@ private extension View {
 }
 
 private struct ShiyangBackground: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
         ZStack {
             Color(uiColor: .systemGroupedBackground)
@@ -2396,16 +2409,27 @@ private struct ShiyangBackground: View {
                     [0, 0.5], [0.48, 0.45], [1, 0.5],
                     [0, 1], [0.5, 1], [1, 1]
                 ],
-                colors: [
-                    SY.cream, Color.white, CX.moonlight.opacity(0.20),
-                    Color.white, SY.apricot.opacity(0.12), SY.cream,
-                    SY.amber.opacity(0.10), Color.white, CX.moonlight.opacity(0.10)
-                ]
+                colors: meshColors
             )
-            .opacity(0.74)
+            .opacity(colorScheme == .dark ? 0.64 : 0.74)
         }
         .ignoresSafeArea()
         .accessibilityHidden(true)
+    }
+
+    private var meshColors: [Color] {
+        if colorScheme == .dark {
+            return [
+                CX.mist, CX.surface, CX.blue.opacity(0.16),
+                CX.surface, SY.apricot.opacity(0.10), SY.cream,
+                SY.amber.opacity(0.07), CX.mist, CX.moonlight.opacity(0.10)
+            ]
+        }
+        return [
+            SY.cream, .white, CX.moonlight.opacity(0.20),
+            .white, SY.apricot.opacity(0.12), SY.cream,
+            SY.amber.opacity(0.10), .white, CX.moonlight.opacity(0.10)
+        ]
     }
 }
 

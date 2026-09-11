@@ -12,6 +12,7 @@ struct RootView: View {
     /// `@Environment(AuthSession.self)` 读取。
     @State private var auth = AuthSession()
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         Group {
@@ -28,6 +29,7 @@ struct RootView: View {
                     .safeAreaInset(edge: .bottom, spacing: 0) {
                         if !isKeyboardVisible {
                             PersistentTabBar(selection: $selectedTab)
+                                .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                                 .padding(.bottom, -8)
                                 .transition(.move(edge: .bottom).combined(with: .opacity))
                         }
@@ -38,13 +40,10 @@ struct RootView: View {
                             assistant.activateGeneral()
                             showGeneralChat = true
                         } label: {
-                            Label("常曦", systemImage: "moonphase.waxing.crescent")
-                                .font(.subheadline.weight(.semibold))
-                                .padding(.horizontal, 14)
-                                .frame(minHeight: 44)
-                                .cxInteractiveGlass(cornerRadius: 22)
+                            globalAssistantLabel
                         }
                         .buttonStyle(.plain)
+                        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                         .accessibilityLabel("召唤常曦")
                         .accessibilityIdentifier("global-assistant")
                         .padding(.trailing, 16)
@@ -95,6 +94,22 @@ struct RootView: View {
         }
     }
 
+    @ViewBuilder
+    private var globalAssistantLabel: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            Image(systemName: "moonphase.waxing.crescent")
+                .font(.title3.weight(.semibold))
+                .frame(width: 52, height: 52)
+                .cxInteractiveGlassCircle()
+        } else {
+            Label("常曦", systemImage: "moonphase.waxing.crescent")
+                .font(.subheadline.weight(.semibold))
+                .padding(.horizontal, 14)
+                .frame(minHeight: 44)
+                .cxInteractiveGlass(cornerRadius: 22)
+        }
+    }
+
     private func tabLayer<Content: View>(_ tab: RootTab, @ViewBuilder content: () -> Content) -> some View {
         content()
             .opacity(selectedTab == tab ? 1 : 0)
@@ -125,6 +140,7 @@ private struct PersistentTabBar: View {
     @Binding var selection: RootTab
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var trackingX: CGFloat?
     @State private var previewSelection: RootTab?
     @State private var isTrackingSelection = false
@@ -149,7 +165,7 @@ private struct PersistentTabBar: View {
 
             ZStack(alignment: .leading) {
                 selectionSurface
-                    .frame(width: itemWidth, height: 52)
+                    .frame(width: itemWidth, height: itemHeight)
                     .scaleEffect(
                         x: isTrackingSelection && !reduceMotion ? 1.08 : 1,
                         y: isTrackingSelection && !reduceMotion ? 0.97 : 1
@@ -173,12 +189,12 @@ private struct PersistentTabBar: View {
                         } label: {
                             VStack(spacing: 3) {
                                 Image(systemName: isSelected ? "\(tab.symbol).fill" : tab.symbol)
-                                    .font(.system(size: 19, weight: .medium))
+                                    .font(.body.weight(.medium))
                                     .contentTransition(.symbolEffect(.replace))
                                 Text(tab.rawValue).font(.caption2.weight(.semibold))
                             }
                             .foregroundStyle(isSelected ? CX.blue : CX.ink.opacity(0.70))
-                            .frame(maxWidth: .infinity, minHeight: 52)
+                            .frame(maxWidth: .infinity, minHeight: itemHeight)
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
@@ -196,7 +212,7 @@ private struct PersistentTabBar: View {
             .contentShape(Rectangle())
             .highPriorityGesture(selectionGesture(width: proxy.size.width, itemWidth: itemWidth, spacing: spacing))
         }
-        .frame(height: 52)
+        .frame(height: itemHeight)
         .padding(7)
         .frame(maxWidth: 520)
         .modifier(FrostedTabBarSurface(reduceTransparency: reduceTransparency))
@@ -211,6 +227,12 @@ private struct PersistentTabBar: View {
         .padding(.horizontal, 8)
         .padding(.top, 6)
         .frame(maxWidth: .infinity)
+    }
+
+    private var itemHeight: CGFloat {
+        if dynamicTypeSize.isAccessibilitySize { return 76 }
+        if dynamicTypeSize >= .xxLarge { return 60 }
+        return 52
     }
 
     @ViewBuilder

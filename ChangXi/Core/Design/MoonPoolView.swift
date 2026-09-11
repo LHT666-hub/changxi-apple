@@ -416,6 +416,7 @@ private struct MoonStatusPill: View {
     var body: some View {
         Label(state.label, systemImage: state.symbol)
             .font(.subheadline.weight(.semibold))
+            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
             .foregroundStyle(CX.ink)
             .padding(.horizontal, 14)
             .frame(minHeight: 36)

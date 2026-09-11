@@ -3,6 +3,7 @@ import SwiftUI
 /// Native body-sensation entry used by the health portrait and Health tab.
 struct PainLocationView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(AssistantCoordinator.self) private var assistant
     @State private var journal = PainJournal()
     @State private var draft = PainRecord()
@@ -140,7 +141,7 @@ struct PainLocationView: View {
     }
 
     private var regionGrid: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 145), spacing: 14)], spacing: 14) {
+        LazyVGrid(columns: CXLayout.adaptiveColumns(minimum: 145, spacing: 14, dynamicTypeSize: dynamicTypeSize), spacing: 14) {
             ForEach(PainRegion.allCases) { region in
                 Button {
                     draft = PainRecord(region: region)
@@ -246,7 +247,7 @@ struct PainLocationView: View {
 
     private var markTools: some View {
         VStack(spacing: 12) {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 112), spacing: 8)], spacing: 8) {
+            LazyVGrid(columns: CXLayout.adaptiveColumns(minimum: 112, spacing: 8, dynamicTypeSize: dynamicTypeSize), spacing: 8) {
                 ForEach(PainMarkKind.allCases) { tool in
                     Button { kind = tool } label: {
                         Label(tool.label, systemImage: tool.symbol)
@@ -265,7 +266,7 @@ struct PainLocationView: View {
     private var landmarks: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("也可以直接选位置").font(.subheadline).foregroundStyle(CX.muted)
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 100))]) {
+            LazyVGrid(columns: CXLayout.adaptiveColumns(minimum: 100, dynamicTypeSize: dynamicTypeSize)) {
                 ForEach(headLandmarks, id: \.name) { item in
                     Button(item.name) {
                         draft.marks.append(PainMark(angle: angle, kind: .point, points: [PainCoordinate(x: item.x, y: item.y)], name: item.name))
@@ -357,7 +358,7 @@ struct PainLocationView: View {
                 Text("疼起来像什么").font(.title3.weight(.semibold))
                 Text("选择最接近的一种感觉；它和疼痛强度是两回事。")
                     .font(.footnote).foregroundStyle(CX.muted)
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 128))]) {
+                LazyVGrid(columns: CXLayout.adaptiveColumns(minimum: 128, dynamicTypeSize: dynamicTypeSize)) {
                     ForEach(painQualities, id: \.title) { item in
                         Button { draft.sensation = item.title } label: {
                             VStack(alignment: .leading, spacing: 3) {
@@ -444,7 +445,7 @@ struct PainLocationView: View {
             Text("再注明具体部位").font(.subheadline.weight(.semibold))
             Text("先在模型上标记，再选最接近的名称；不确定可以不选。")
                 .font(.caption).foregroundStyle(CX.muted)
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 105), spacing: 8)], spacing: 8) {
+            LazyVGrid(columns: CXLayout.adaptiveColumns(minimum: 105, spacing: 8, dynamicTypeSize: dynamicTypeSize), spacing: 8) {
                 ForEach(detailedAreas, id: \.self) { area in
                     Button(area) {
                         guard let index = surfaceIndexForDetail else { return }
