@@ -159,6 +159,10 @@ private struct PersistentTabBar: View {
                         value: isTrackingSelection
                     )
                     .offset(x: indicatorLeadingOffset(itemWidth: itemWidth, spacing: spacing))
+                    .animation(
+                        reduceMotion ? nil : .smooth(duration: 0.30),
+                        value: selection
+                    )
 
                 HStack(spacing: spacing) {
                     ForEach(RootTab.allCases) { tab in
@@ -184,6 +188,10 @@ private struct PersistentTabBar: View {
                         .accessibilityAddTraits(selection == tab ? .isSelected : [])
                     }
                 }
+                .animation(
+                    reduceMotion ? nil : .easeOut(duration: 0.14),
+                    value: activeSelection
+                )
             }
             .contentShape(Rectangle())
             .highPriorityGesture(selectionGesture(width: proxy.size.width, itemWidth: itemWidth, spacing: spacing))
@@ -223,9 +231,7 @@ private struct PersistentTabBar: View {
 
     private func select(_ tab: RootTab) {
         guard selection != tab else { return }
-        withAnimation(reduceMotion ? nil : .smooth(duration: 0.30)) {
-            selection = tab
-        }
+        selection = tab
     }
 
     private func indicatorLeadingOffset(itemWidth: CGFloat, spacing: CGFloat) -> CGFloat {
@@ -260,8 +266,10 @@ private struct PersistentTabBar: View {
                     ? tab(at: value.location.x, width: width)
                     : tab(at: value.startLocation.x, width: width)
 
+                // Commit the page change outside the animation transaction. Only the
+                // glass focus should animate; heavy tab contents switch immediately.
+                selection = target
                 withAnimation(reduceMotion ? nil : .smooth(duration: 0.26)) {
-                    selection = target
                     trackingX = nil
                     previewSelection = nil
                     isTrackingSelection = false
