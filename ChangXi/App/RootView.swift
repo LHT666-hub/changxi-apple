@@ -130,16 +130,25 @@ private struct PersistentTabBar: View {
     var body: some View {
         HStack(spacing: 4) {
             ForEach(RootTab.allCases) { tab in
-                Button { selection = tab } label: {
+                let isSelected = selection == tab
+
+                Button {
+                    guard !isSelected else { return }
+                    withAnimation(reduceMotion ? nil : .snappy(duration: 0.32, extraBounce: 0.10)) {
+                        selection = tab
+                    }
+                } label: {
                     VStack(spacing: 3) {
-                        Image(systemName: "\(tab.symbol).fill")
+                        Image(systemName: isSelected ? "\(tab.symbol).fill" : tab.symbol)
                             .font(.system(size: 19, weight: .medium))
+                            .contentTransition(.symbolEffect(.replace))
                         Text(tab.rawValue).font(.caption2.weight(.semibold))
                     }
-                    .foregroundStyle(selection == tab ? CX.blue : CX.ink)
+                    .foregroundStyle(isSelected ? CX.blue : CX.ink.opacity(0.70))
+                    .scaleEffect(isSelected && !reduceMotion ? 1.015 : 1)
                     .frame(maxWidth: .infinity, minHeight: 52)
                     .background {
-                        if selection == tab {
+                        if isSelected {
                             Capsule()
                                 .fill(
                                     LinearGradient(
@@ -170,10 +179,11 @@ private struct PersistentTabBar: View {
                     }
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(TabPressButtonStyle(reduceMotion: reduceMotion))
                 .accessibilityLabel(tab.rawValue)
+                .accessibilityHint(isSelected ? "当前页面" : "切换到\(tab.rawValue)")
                 .accessibilityIdentifier("root-tab-\(tab.rawValue)")
-                .accessibilityAddTraits(selection == tab ? .isSelected : [])
+                .accessibilityAddTraits(isSelected ? .isSelected : [])
             }
         }
         .padding(7)
@@ -190,11 +200,25 @@ private struct PersistentTabBar: View {
         .padding(.horizontal, 8)
         .padding(.top, 6)
         .frame(maxWidth: .infinity)
-        .animation(
-            reduceMotion ? nil : .spring(response: 0.34, dampingFraction: 0.86),
-            value: selection
-        )
         .sensoryFeedback(.selection, trigger: selection)
+    }
+}
+
+private struct TabPressButtonStyle: ButtonStyle {
+    let reduceMotion: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.955 : 1)
+            .opacity(configuration.isPressed ? 0.82 : 1)
+            .animation(
+                reduceMotion
+                    ? nil
+                    : configuration.isPressed
+                        ? .smooth(duration: 0.12)
+                        : .spring(duration: 0.28, bounce: 0.18),
+                value: configuration.isPressed
+            )
     }
 }
 
