@@ -1,9 +1,80 @@
 import SwiftUI
 import UIKit
 
+struct ConstitutionEntryCard: View {
+    @State private var constitutionStore = ConstitutionStore()
+
+    private var tint: Color {
+        constitutionStore.result?.primary.tint ?? CX.teal
+    }
+
+    var body: some View {
+        NavigationLink {
+            ConstitutionHomeView(store: constitutionStore)
+        } label: {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle().fill(tint.opacity(0.15))
+                    Image(systemName: "figure.mind.and.body")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(tint)
+                        .symbolRenderingMode(.hierarchical)
+                }
+                .frame(width: 46, height: 46)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Text(constitutionStore.result == nil ? "中医体质识别" : "我的体质画像")
+                            .font(.headline)
+                        Text(constitutionStore.result == nil ? "初测" : constitutionStore.result?.status.rawValue ?? "常曦初测")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(CX.ink)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(tint.opacity(0.18), in: Capsule())
+                    }
+
+                    if let result = constitutionStore.result {
+                        Text("当前倾向：\(result.primary.rawValue) · \(result.primary.gentlePhrase)")
+                            .font(.subheadline)
+                            .foregroundStyle(CX.muted)
+                            .lineLimit(2)
+                    } else {
+                        Text("从 18 个生活化问题开始，约 3 分钟完成")
+                            .font(.subheadline)
+                            .foregroundStyle(CX.muted)
+                            .lineLimit(2)
+                    }
+                }
+
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(CX.faint)
+            }
+            .foregroundStyle(CX.ink)
+            .padding(.horizontal, 18)
+            .frame(minHeight: 78)
+            .cxInteractiveGlass(cornerRadius: 24)
+            .shadow(color: tint.opacity(0.10), radius: 18, y: 8)
+        }
+        .buttonStyle(QuietPressButton())
+        .accessibilityLabel(
+            constitutionStore.result == nil
+                ? "中医体质识别，开始体质初测"
+                : "我的体质画像，当前倾向\(constitutionStore.result?.primary.rawValue ?? "")"
+        )
+        .accessibilityIdentifier("open-constitution")
+    }
+}
+
 struct ConstitutionHomeView: View {
-    @State private var store = ConstitutionStore()
+    @State private var store: ConstitutionStore
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    init(store: ConstitutionStore = ConstitutionStore()) {
+        _store = State(initialValue: store)
+    }
 
     var body: some View {
         ScrollView {

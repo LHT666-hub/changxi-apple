@@ -73,7 +73,7 @@ enum PainMarkKind: String, CaseIterable, Codable, Identifiable {
     var instruction: String {
         switch self {
         case .point: "点一下最疼的位置"
-        case .area: "沿疼痛范围画一圈"
+        case .area: "在疼痛范围内轻轻涂过，不用闭合"
         case .line: "顺着疼痛走向划线"
         case .radiating: "从起点向扩散方向划线"
         }

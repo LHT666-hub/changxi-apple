@@ -15,9 +15,7 @@ struct PainLocationView: View {
     @State private var history = false
     @State private var enlarged = false
     @State private var voiceLocation = false
-    @State private var use3D = true
     @State private var voiceHint: String?
-    @State private var voiceSurfaceBaseline: Set<UUID> = []
     @State private var assistantContextID = UUID()
 
     private var title: String {
@@ -90,11 +88,9 @@ struct PainLocationView: View {
                         error = "这次正在记录\(draft.region.rawValue)。请先保存已有标记，再新建\(region.rawValue)记录。"
                     } else {
                         draft.region = region
-                        voiceSurfaceBaseline = Set(draft.marks.filter(\.hasSurfaceLocation).map(\.id))
                         draft.marks.append(contentsOf: marks)
                         angle = selectedAngle
                         voiceHint = marks.last?.name
-                        use3D = true
                         advance(1)
                     }
                 }
@@ -102,14 +98,16 @@ struct PainLocationView: View {
         }
         .fullScreenCover(isPresented: $enlarged) {
             NavigationStack {
-                VStack(spacing: 20) {
-                    anglePicker
-                    PainMarkingSurface(region: draft.region, angle: angle, kind: kind, marks: $draft.marks)
-                    markTools
+                ScrollView {
+                    VStack(spacing: 20) {
+                        anglePicker
+                        PainMarkingSurface(region: draft.region, angle: angle, kind: kind, marks: $draft.marks)
+                        markTools
+                    }
+                    .padding(20)
                 }
-                .padding(20)
                 .cxMoonScreenBackground()
-                .navigationTitle("放大标记")
+                .navigationTitle("细标疼痛位置")
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { enlarged = false } } }
             }
         }
@@ -141,29 +139,71 @@ struct PainLocationView: View {
     }
 
     private var regionGrid: some View {
-        LazyVGrid(columns: CXLayout.adaptiveColumns(minimum: 145, spacing: 14, dynamicTypeSize: dynamicTypeSize), spacing: 14) {
-            ForEach(PainRegion.allCases) { region in
-                Button {
-                    draft = PainRecord(region: region)
-                    angle = region == .back ? .back : .front
-                    advance(1)
-                } label: {
-                    VStack(spacing: 12) {
-                        PainRegionThumbnail(region: region)
-                            .frame(height: 135).clipShape(.rect(cornerRadius: 24))
-                        HStack {
-                            Text(region.rawValue).font(.headline)
-                            Spacer()
-                            Image(systemName: "arrow.up.right").font(.caption).foregroundStyle(CX.muted)
-                        }
-                    }
-                    .padding(14)
-                    .cxInteractiveGlass(cornerRadius: 28)
-                    .contentShape(.rect(cornerRadius: 28))
+        VStack(spacing: 16) {
+            Card {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("先选一个大致范围").font(.title3.weight(.semibold))
+                    Text("只画体表轮廓，不显示骨骼、肌肉或内部结构。")
+                        .font(.subheadline).foregroundStyle(CX.muted)
                 }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("pain-region-\(region.anatomyAssetName)")
+                GentleBodyOverview()
+                    .frame(height: 260)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityHidden(true)
             }
+
+            LazyVGrid(columns: CXLayout.adaptiveColumns(minimum: 156, spacing: 12, dynamicTypeSize: dynamicTypeSize), spacing: 12) {
+                ForEach(PainRegion.allCases) { region in
+                    Button {
+                        draft = PainRecord(region: region)
+                        angle = region == .back ? .back : .front
+                        advance(1)
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: regionSymbol(region))
+                                .font(.title3.weight(.medium))
+                                .foregroundStyle(CX.blue)
+                                .frame(width: 42, height: 42)
+                                .background(CX.moonlight.opacity(0.14), in: Circle())
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(region.rawValue).font(.headline)
+                                Text(regionHint(region)).font(.caption).foregroundStyle(CX.muted)
+                            }
+                            Spacer(minLength: 4)
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold)).foregroundStyle(CX.faint)
+                        }
+                        .padding(.horizontal, 14)
+                        .frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
+                        .cxInteractiveGlass(cornerRadius: 22)
+                        .contentShape(.rect(cornerRadius: 22))
+                    }
+                    .buttonStyle(QuietPressButton())
+                    .accessibilityIdentifier("pain-region-\(region.anatomyAssetName)")
+                }
+            }
+        }
+    }
+
+    private func regionSymbol(_ region: PainRegion) -> String {
+        switch region {
+        case .head: "person.crop.circle"
+        case .neck: "figure.mind.and.body"
+        case .torso: "figure.arms.open"
+        case .back: "figure.walk"
+        case .arms: "figure.strengthtraining.traditional"
+        case .legs: "figure.run"
+        }
+    }
+
+    private func regionHint(_ region: PainRegion) -> String {
+        switch region {
+        case .head: "头面、耳周"
+        case .neck: "后颈、肩膀"
+        case .torso: "胸口、腹部"
+        case .back: "肩胛、腰背"
+        case .arms: "手臂、手掌"
+        case .legs: "髋腿、足部"
         }
     }
 
@@ -179,7 +219,7 @@ struct PainLocationView: View {
                 Image("ChangXiCharacter").resizable().scaledToFit().frame(width: 42, height: 42)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title).font(.title2.weight(.semibold)).fontDesign(.serif)
-                    Text("先转到看得清的位置，再切到“标记疼处”。")
+                    Text(kind.instruction)
                         .font(.caption).foregroundStyle(CX.muted)
                 }
                 Spacer()
@@ -190,56 +230,30 @@ struct PainLocationView: View {
                         .cxInteractiveGlassCircle()
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("说给常曦听，再在模型上确认")
+                .accessibilityLabel("说给常曦听，再在图上确认")
             }
-            Picker("位置展示", selection: $use3D) {
-                Text("局部三维").tag(true)
-                Text("插画标记").tag(false)
-            }.pickerStyle(.segmented)
-            if use3D {
-                Label("\(draft.region.rawValue)局部模型", systemImage: "view.3d")
+            if let voiceHint {
+                Label("已按语音标出“\(voiceHint)”，还可以在图上调整", systemImage: "waveform.badge.mic")
                     .font(.subheadline.weight(.semibold))
-                PainBody3DView(region: draft.region, marks: $draft.marks)
-                if draft.marks.isEmpty {
-                    Button { voiceLocation = true } label: {
-                        Label("不方便点？说给常曦听", systemImage: "waveform.badge.mic")
-                            .frame(maxWidth: .infinity, minHeight: 48)
-                    }
-                    .buttonStyle(.bordered)
-                } else {
-                    Label("位置已在模型上确认", systemImage: "checkmark.circle.fill")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(CX.teal)
-                }
-                if let voiceHint {
-                    Card {
-                        Label("常曦听到：\(voiceHint)", systemImage: "waveform.badge.mic")
-                            .font(.headline).foregroundStyle(CX.blue)
-                        Text("语音先确定大致位置。请转动模型，再点、圈或沿着疼痛方向划一下，位置会更准确。")
-                            .font(.subheadline).foregroundStyle(CX.muted)
-                        Button("我已在三维人体上核对") { finishVoice3DCheck() }
-                            .frame(minHeight: 44)
-                            .disabled(surfaceIndexForDetail == nil)
-                    }
-                }
-                if surfaceIndexForDetail != nil { preciseAreaPicker }
-            } else {
-                Text("选择视角后，点一下、圈一片，或沿疼痛方向划线。")
-                    .font(.body).foregroundStyle(CX.muted)
-                anglePicker
-                PainMarkingSurface(region: draft.region, angle: angle, kind: kind, marks: $draft.marks)
-                    .id(angle)
-                    .transition(.opacity)
-                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: angle)
-                HStack {
-                    Label("已标记 \(draft.marks.count) 处", systemImage: "smallcircle.filled.circle")
-                        .foregroundStyle(CX.coral)
-                    Spacer()
-                    Button { enlarged = true } label: { Label("放大", systemImage: "arrow.up.left.and.arrow.down.right") }
-                }.font(.subheadline)
-                markTools
-                if draft.region == .head { landmarks }
+                    .foregroundStyle(CX.blue)
+                    .padding(.horizontal, 12)
+                    .frame(minHeight: 42)
+                    .background(CX.moonlight.opacity(0.12), in: .rect(cornerRadius: 14))
             }
+            anglePicker
+            PainMarkingSurface(region: draft.region, angle: angle, kind: kind, marks: $draft.marks)
+                .id(angle)
+                .transition(.opacity)
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: angle)
+            HStack {
+                let count = draft.marks.filter { $0.angle == angle && !$0.hasSurfaceLocation }.count
+                Label(count == 0 ? "还没有标记" : "这个视角已标记 \(count) 处", systemImage: count == 0 ? "hand.draw" : "checkmark.circle.fill")
+                    .foregroundStyle(count == 0 ? CX.muted : CX.teal)
+                Spacer()
+                Button { enlarged = true } label: { Label("放大细标", systemImage: "arrow.up.left.and.arrow.down.right") }
+            }.font(.subheadline)
+            markTools
+            if draft.region == .head { landmarks }
             Text("以你自己的身体左右为准。标记只表达你感到疼的位置。")
                 .font(.footnote).foregroundStyle(CX.muted)
         }
@@ -247,19 +261,47 @@ struct PainLocationView: View {
 
     private var markTools: some View {
         VStack(spacing: 12) {
-            LazyVGrid(columns: CXLayout.adaptiveColumns(minimum: 112, spacing: 8, dynamicTypeSize: dynamicTypeSize), spacing: 8) {
+            LazyVGrid(columns: CXLayout.adaptiveColumns(minimum: 146, spacing: 10, dynamicTypeSize: dynamicTypeSize), spacing: 10) {
                 ForEach(PainMarkKind.allCases) { tool in
                     Button { kind = tool } label: {
-                        Label(tool.label, systemImage: tool.symbol)
-                            .font(.subheadline.weight(.medium)).frame(maxWidth: .infinity, minHeight: 48)
-                            .background(kind == tool ? CX.blue.opacity(0.14) : CX.surface, in: .rect(cornerRadius: 16))
-                    }.buttonStyle(.plain).accessibilityAddTraits(kind == tool ? .isSelected : [])
+                        HStack(spacing: 10) {
+                            PainToolPreview(kind: tool)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(tool.label).font(.subheadline.weight(.semibold))
+                                Text(toolShortHint(tool)).font(.caption2).foregroundStyle(CX.muted)
+                            }
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.horizontal, 12)
+                        .frame(maxWidth: .infinity, minHeight: 62, alignment: .leading)
+                        .background(kind == tool ? CX.moonlight.opacity(0.16) : CX.surface.opacity(0.82), in: .rect(cornerRadius: 18))
+                        .overlay { RoundedRectangle(cornerRadius: 18).strokeBorder(kind == tool ? CX.blue.opacity(0.45) : CX.separator.opacity(0.12), lineWidth: kind == tool ? 1.2 : 0.5) }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(kind == tool ? .isSelected : [])
+                    .accessibilityHint(tool.instruction)
+                    .accessibilityIdentifier("pain-tool-\(tool.label)")
                 }
             }
-            Button {
-                if let index = draft.marks.lastIndex(where: { $0.angle == angle }) { draft.marks.remove(at: index) }
-            } label: { Label("撤销这个视角的上一笔", systemImage: "arrow.uturn.backward").frame(minHeight: 44) }
-                .disabled(!draft.marks.contains(where: { $0.angle == angle }))
+            HStack(spacing: 12) {
+                Button {
+                    if let index = draft.marks.lastIndex(where: { $0.angle == angle && !$0.hasSurfaceLocation }) { draft.marks.remove(at: index) }
+                } label: { Label("撤销上一笔", systemImage: "arrow.uturn.backward").frame(maxWidth: .infinity, minHeight: 44) }
+                    .disabled(!draft.marks.contains(where: { $0.angle == angle && !$0.hasSurfaceLocation }))
+                Button(role: .destructive) {
+                    draft.marks.removeAll { $0.angle == angle && !$0.hasSurfaceLocation }
+                } label: { Label("清空此面", systemImage: "eraser").frame(maxWidth: .infinity, minHeight: 44) }
+                    .disabled(!draft.marks.contains(where: { $0.angle == angle && !$0.hasSurfaceLocation }))
+            }
+        }
+    }
+
+    private func toolShortHint(_ tool: PainMarkKind) -> String {
+        switch tool {
+        case .point: "轻点最疼处"
+        case .area: "像涂色一样"
+        case .line: "顺着方向画"
+        case .radiating: "从起点拖出去"
         }
     }
 
@@ -387,7 +429,7 @@ struct PainLocationView: View {
     private var review: some View {
         VStack(spacing: 20) {
             if draft.marks.contains(where: \.hasSurfaceLocation) {
-                PainBody3DView(region: draft.region, marks: .constant(draft.marks), editable: false)
+                LegacySurfaceMarkSummary(count: draft.marks.filter(\.hasSurfaceLocation).count)
             }
             ForEach(PainAngle.allCases.filter { a in draft.marks.contains { $0.angle == a && !$0.hasSurfaceLocation } }) { a in
                 VStack(alignment: .leading) {
@@ -440,37 +482,6 @@ struct PainLocationView: View {
         }
     }
 
-    private var preciseAreaPicker: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("再注明具体部位").font(.subheadline.weight(.semibold))
-            Text("先在模型上标记，再选最接近的名称；不确定可以不选。")
-                .font(.caption).foregroundStyle(CX.muted)
-            LazyVGrid(columns: CXLayout.adaptiveColumns(minimum: 105, spacing: 8, dynamicTypeSize: dynamicTypeSize), spacing: 8) {
-                ForEach(detailedAreas, id: \.self) { area in
-                    Button(area) {
-                        guard let index = surfaceIndexForDetail else { return }
-                        draft.marks[index].name = area
-                        finishVoice3DCheck()
-                    }
-                    .buttonStyle(.bordered)
-                    .frame(minHeight: 44)
-                    .disabled(surfaceIndexForDetail == nil)
-                }
-            }
-        }
-    }
-
-    private var detailedAreas: [String] {
-        switch draft.region {
-        case .head: ["头顶", "额头", "左太阳穴", "右太阳穴", "眼眶周围", "耳周", "面颊", "下颌", "后脑勺"]
-        case .neck: ["颈前", "颈侧", "后颈", "左肩", "右肩", "锁骨周围"]
-        case .torso: ["胸口正中", "左胸", "右胸", "上腹", "肚脐周围", "下腹", "左侧腹", "右侧腹"]
-        case .back: ["左肩胛", "右肩胛", "上背", "脊柱周围", "左腰", "右腰", "骶尾部"]
-        case .arms: ["肩关节", "上臂", "肘部", "前臂", "手腕", "手掌", "手背", "手指"]
-        case .legs: ["髋部", "大腿", "膝前", "膝后", "小腿", "脚踝", "脚背", "脚底", "脚趾"]
-        }
-    }
-
     private var painQualities: [(title: String, detail: String)] {
         [("酸痛", "酸胀、持续"), ("刺痛", "针扎一样"), ("跳痛", "一跳一跳"),
          ("灼痛", "烧灼、发热"), ("胀痛", "发紧、撑胀"), ("电击样", "突然窜过"),
@@ -488,87 +499,262 @@ struct PainLocationView: View {
         ]
     }
 
-    private func finishVoice3DCheck() {
-        guard let hint = voiceHint,
-              let surfaceIndex = surfaceIndexForDetail else { return }
-        if draft.marks[surfaceIndex].name == "三维表面自选位置" ||
-            draft.marks[surfaceIndex].name == "三维表面圈选范围" ||
-            draft.marks[surfaceIndex].name == "三维表面疼痛走向" ||
-            draft.marks[surfaceIndex].name == "三维表面放射路径" {
-            draft.marks[surfaceIndex].name = hint
-        }
-        draft.marks.removeAll { !$0.hasSurfaceLocation && $0.name == hint }
-        voiceHint = nil
-        voiceSurfaceBaseline = []
-    }
-
-    private var surfaceIndexForDetail: Int? {
-        if voiceHint != nil {
-            return draft.marks.lastIndex { $0.hasSurfaceLocation && !voiceSurfaceBaseline.contains($0.id) }
-        }
-        return draft.marks.lastIndex(where: \.hasSurfaceLocation)
-    }
-
     private func advance(_ value: Int) {
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) { step = value }
     }
 }
 
-/// Warm clay-style editorial art for the six region entry cards. Each region
-/// is a separate asset so its scale remains consistent and cannot reveal an
-/// adjacent atlas cell while the card animates.
-private struct PainRegionThumbnail: View {
-    let region: PainRegion
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var isFloating = false
-
-    private var assetName: String {
-        switch region {
-        case .head: "PainRegionHead"
-        case .neck: "PainRegionNeck"
-        case .torso: "PainRegionTorso"
-        case .back: "PainRegionBack"
-        case .arms: "PainRegionArms"
-        case .legs: "PainRegionLegs"
-        }
-    }
+private struct LegacySurfaceMarkSummary: View {
+    let count: Int
 
     var body: some View {
-        Image(assetName)
-            .resizable()
-            .scaledToFill()
-            .scaleEffect(isFloating ? 1.012 : 0.995)
-            .offset(y: isFloating ? -1.5 : 1.5)
-            .clipped()
-            .overlay {
-                LinearGradient(
-                    colors: [.white.opacity(0.16), .clear, CX.moonlight.opacity(0.05)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .allowsHitTesting(false)
-            }
-            .onAppear {
-                guard !reduceMotion else { return }
-                withAnimation(.easeInOut(duration: 3.6).repeatForever(autoreverses: true)) {
-                    isFloating = true
-                }
-            }
-            .accessibilityHidden(true)
+        Card {
+            Label("旧版立体位置已保留", systemImage: "archivebox.fill")
+                .font(.headline)
+                .foregroundStyle(CX.blue)
+            Text("这条记录包含 \(count) 处旧版三维坐标。为避免再次展示骨骼或切面模型，这里只保留位置说明；原始数据不会被删除。")
+                .font(.subheadline)
+                .foregroundStyle(CX.muted)
+                .lineSpacing(4)
+        }
     }
 }
 
-/// Neutral medical diagram used for both region cards and 2D marking.
-/// It deliberately avoids generated faces, nudity, and diagnostic anatomy claims.
+/// A continuous, paper-cut style body overview. It avoids the severed-looking
+/// regional thumbnails and keeps selection separate from diagnostic anatomy.
+private struct GentleBodyOverview: View {
+    var body: some View {
+        HStack(spacing: 26) {
+            VStack(spacing: 8) {
+                GentlePainFigure(region: nil, angle: .front)
+                Text("正面").font(.caption).foregroundStyle(CX.muted)
+            }
+            VStack(spacing: 8) {
+                GentlePainFigure(region: nil, angle: .back)
+                Text("背面").font(.caption).foregroundStyle(CX.muted)
+            }
+        }
+        .padding(.horizontal, 16)
+    }
+}
+
+/// Calm code-native body art: no generated face, exposed anatomy, hard section
+/// cuts, or photorealistic mannequin material. Region focus fades at the edges.
 struct PainArtwork: View {
     let region: PainRegion
     let angle: PainAngle
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Color.white.opacity(0.92), CX.moonlight.opacity(0.12)], startPoint: .topLeading, endPoint: .bottomTrailing)
-            PainAnatomyIllustrationView(region: region, angle: angle)
-                .padding(8)
+            LinearGradient(
+                colors: [Color.white.opacity(0.94), CX.moonlight.opacity(0.10), Color.white.opacity(0.88)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            GentlePainFigure(region: region, angle: angle)
+                .padding(12)
+            LinearGradient(
+                stops: [
+                    .init(color: Color.white.opacity(0.78), location: 0),
+                    .init(color: .clear, location: 0.10),
+                    .init(color: .clear, location: 0.88),
+                    .init(color: Color.white.opacity(0.74), location: 1)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .allowsHitTesting(false)
         }.aspectRatio(1, contentMode: .fit).accessibilityHidden(true)
+    }
+}
+
+private struct GentlePainFigure: View {
+    let region: PainRegion?
+    let angle: PainAngle
+
+    var body: some View {
+        Canvas { context, size in
+            let focus = focusConfiguration(in: size)
+            var drawing = context
+            drawing.translateBy(x: size.width / 2 - focus.center.x * focus.scale,
+                                y: size.height / 2 - focus.center.y * focus.scale)
+            drawing.scaleBy(x: focus.scale, y: focus.scale)
+
+            let glow = Path(ellipseIn: highlightRect)
+            drawing.fill(glow, with: .color(CX.moonlight.opacity(region == nil ? 0.07 : 0.15)))
+
+            let parts = angle == .left || angle == .right ? sideParts : frontParts
+            for part in parts {
+                drawing.fill(
+                    part,
+                    with: .linearGradient(
+                        Gradient(colors: [
+                            Color(red: 0.88, green: 0.92, blue: 0.94),
+                            Color(red: 0.71, green: 0.79, blue: 0.83)
+                        ]),
+                        startPoint: CGPoint(x: 95, y: 80),
+                        endPoint: CGPoint(x: 230, y: 560)
+                    )
+                )
+            }
+
+            var guide = Path()
+            if angle == .back {
+                guide.move(to: CGPoint(x: 160, y: 154))
+                guide.addCurve(to: CGPoint(x: 160, y: 320), control1: CGPoint(x: 154, y: 210), control2: CGPoint(x: 166, y: 268))
+            } else if angle == .front {
+                guide.move(to: CGPoint(x: 130, y: 170))
+                guide.addQuadCurve(to: CGPoint(x: 190, y: 170), control: CGPoint(x: 160, y: 184))
+            } else {
+                guide.move(to: CGPoint(x: 168, y: 164))
+                guide.addCurve(to: CGPoint(x: 173, y: 315), control1: CGPoint(x: 180, y: 210), control2: CGPoint(x: 164, y: 270))
+            }
+            drawing.stroke(guide, with: .color(CX.blue.opacity(0.18)), style: StrokeStyle(lineWidth: 2.2 / focus.scale, lineCap: .round))
+        }
+    }
+
+    private func focusConfiguration(in size: CGSize) -> (center: CGPoint, scale: CGFloat) {
+        let base = min(size.width / 320, size.height / 640)
+        let center: CGPoint
+        let zoom: CGFloat
+        switch region {
+        case nil: center = CGPoint(x: 160, y: 320); zoom = 0.92
+        case .head?: center = CGPoint(x: 160, y: 102); zoom = 2.25
+        case .neck?: center = CGPoint(x: 160, y: 158); zoom = 1.95
+        case .torso?, .back?: center = CGPoint(x: 160, y: 250); zoom = 1.30
+        case .arms?: center = CGPoint(x: 160, y: 260); zoom = 0.92
+        case .legs?: center = CGPoint(x: 160, y: 454); zoom = 0.92
+        }
+        return (center, base * zoom)
+    }
+
+    private var highlightRect: CGRect {
+        switch region {
+        case nil: CGRect(x: 84, y: 48, width: 152, height: 520)
+        case .head?: CGRect(x: 112, y: 20, width: 96, height: 112)
+        case .neck?: CGRect(x: 93, y: 112, width: 134, height: 96)
+        case .torso?: CGRect(x: 94, y: 170, width: 132, height: 174)
+        case .back?: CGRect(x: 92, y: 164, width: 136, height: 190)
+        case .arms?: CGRect(x: 48, y: 145, width: 224, height: 226)
+        case .legs?: CGRect(x: 96, y: 322, width: 128, height: 292)
+        }
+    }
+
+    private var frontParts: [Path] {
+        var head = Path(ellipseIn: CGRect(x: 119, y: 24, width: 82, height: 94))
+        head.addEllipse(in: CGRect(x: 112, y: 66, width: 13, height: 28))
+        head.addEllipse(in: CGRect(x: 195, y: 66, width: 13, height: 28))
+
+        var neck = Path()
+        neck.addRect(CGRect(x: 143, y: 108, width: 34, height: 55))
+        neck.addEllipse(in: CGRect(x: 143, y: 137, width: 34, height: 32))
+
+        var torso = Path()
+        torso.move(to: CGPoint(x: 105, y: 151))
+        torso.addCurve(to: CGPoint(x: 128, y: 318), control1: CGPoint(x: 112, y: 205), control2: CGPoint(x: 116, y: 270))
+        torso.addCurve(to: CGPoint(x: 160, y: 337), control1: CGPoint(x: 137, y: 330), control2: CGPoint(x: 148, y: 337))
+        torso.addCurve(to: CGPoint(x: 192, y: 318), control1: CGPoint(x: 172, y: 337), control2: CGPoint(x: 183, y: 330))
+        torso.addCurve(to: CGPoint(x: 215, y: 151), control1: CGPoint(x: 204, y: 270), control2: CGPoint(x: 208, y: 205))
+        torso.addCurve(to: CGPoint(x: 177, y: 132), control1: CGPoint(x: 204, y: 137), control2: CGPoint(x: 188, y: 134))
+        torso.addLine(to: CGPoint(x: 143, y: 132))
+        torso.addCurve(to: CGPoint(x: 105, y: 151), control1: CGPoint(x: 132, y: 134), control2: CGPoint(x: 116, y: 137))
+        torso.closeSubpath()
+
+        var leftArm = Path()
+        leftArm.move(to: CGPoint(x: 111, y: 148))
+        leftArm.addCurve(to: CGPoint(x: 76, y: 315), control1: CGPoint(x: 94, y: 192), control2: CGPoint(x: 87, y: 262))
+        leftArm.addCurve(to: CGPoint(x: 59, y: 363), control1: CGPoint(x: 74, y: 334), control2: CGPoint(x: 66, y: 349))
+        leftArm.addCurve(to: CGPoint(x: 78, y: 370), control1: CGPoint(x: 64, y: 371), control2: CGPoint(x: 72, y: 373))
+        leftArm.addCurve(to: CGPoint(x: 105, y: 250), control1: CGPoint(x: 88, y: 327), control2: CGPoint(x: 98, y: 286))
+        leftArm.addCurve(to: CGPoint(x: 124, y: 162), control1: CGPoint(x: 112, y: 217), control2: CGPoint(x: 121, y: 183))
+        leftArm.closeSubpath()
+
+        var rightArm = leftArm
+        rightArm = leftArm.applying(CGAffineTransform(a: -1, b: 0, c: 0, d: 1, tx: 320, ty: 0))
+
+        var leftLeg = Path()
+        leftLeg.move(to: CGPoint(x: 128, y: 312))
+        leftLeg.addCurve(to: CGPoint(x: 112, y: 472), control1: CGPoint(x: 120, y: 366), control2: CGPoint(x: 112, y: 426))
+        leftLeg.addCurve(to: CGPoint(x: 101, y: 602), control1: CGPoint(x: 111, y: 520), control2: CGPoint(x: 107, y: 566))
+        leftLeg.addCurve(to: CGPoint(x: 127, y: 612), control1: CGPoint(x: 105, y: 614), control2: CGPoint(x: 118, y: 615))
+        leftLeg.addCurve(to: CGPoint(x: 153, y: 337), control1: CGPoint(x: 139, y: 518), control2: CGPoint(x: 149, y: 411))
+        leftLeg.closeSubpath()
+
+        let rightLeg = leftLeg.applying(CGAffineTransform(a: -1, b: 0, c: 0, d: 1, tx: 320, ty: 0))
+        return [leftArm, rightArm, leftLeg, rightLeg, torso, neck, head]
+    }
+
+    private var sideParts: [Path] {
+        var head = Path(ellipseIn: CGRect(x: 126, y: 24, width: 72, height: 96))
+        var profile = Path()
+        profile.move(to: CGPoint(x: 190, y: 62))
+        profile.addLine(to: CGPoint(x: 207, y: 76))
+        profile.addLine(to: CGPoint(x: 191, y: 83))
+        profile.addLine(to: CGPoint(x: 195, y: 101))
+        profile.addQuadCurve(to: CGPoint(x: 177, y: 116), control: CGPoint(x: 190, y: 114))
+        profile.closeSubpath()
+        head.addPath(profile)
+
+        var neck = Path()
+        neck.addRect(CGRect(x: 145, y: 107, width: 35, height: 58))
+        var torso = Path()
+        torso.move(to: CGPoint(x: 137, y: 142))
+        torso.addCurve(to: CGPoint(x: 137, y: 331), control1: CGPoint(x: 126, y: 204), control2: CGPoint(x: 127, y: 275))
+        torso.addCurve(to: CGPoint(x: 185, y: 331), control1: CGPoint(x: 150, y: 342), control2: CGPoint(x: 173, y: 341))
+        torso.addCurve(to: CGPoint(x: 192, y: 165), control1: CGPoint(x: 199, y: 269), control2: CGPoint(x: 201, y: 202))
+        torso.addCurve(to: CGPoint(x: 137, y: 142), control1: CGPoint(x: 180, y: 146), control2: CGPoint(x: 158, y: 140))
+        torso.closeSubpath()
+
+        var arm = Path()
+        arm.move(to: CGPoint(x: 146, y: 153))
+        arm.addCurve(to: CGPoint(x: 159, y: 360), control1: CGPoint(x: 151, y: 214), control2: CGPoint(x: 154, y: 294))
+        arm.addCurve(to: CGPoint(x: 177, y: 360), control1: CGPoint(x: 163, y: 371), control2: CGPoint(x: 172, y: 369))
+        arm.addCurve(to: CGPoint(x: 177, y: 170), control1: CGPoint(x: 178, y: 292), control2: CGPoint(x: 179, y: 219))
+        arm.closeSubpath()
+
+        var frontLeg = Path()
+        frontLeg.move(to: CGPoint(x: 139, y: 315))
+        frontLeg.addCurve(to: CGPoint(x: 122, y: 601), control1: CGPoint(x: 135, y: 404), control2: CGPoint(x: 128, y: 527))
+        frontLeg.addCurve(to: CGPoint(x: 166, y: 611), control1: CGPoint(x: 128, y: 616), control2: CGPoint(x: 153, y: 615))
+        frontLeg.addCurve(to: CGPoint(x: 174, y: 336), control1: CGPoint(x: 169, y: 505), control2: CGPoint(x: 176, y: 410))
+        frontLeg.closeSubpath()
+
+        let backLeg = frontLeg.applying(CGAffineTransform(translationX: 24, y: -2))
+        let parts = [backLeg, frontLeg, torso, arm, neck, head]
+        if angle == .right {
+            return parts.map { $0.applying(CGAffineTransform(a: -1, b: 0, c: 0, d: 1, tx: 320, ty: 0)) }
+        }
+        return parts
+    }
+}
+
+private struct PainToolPreview: View {
+    let kind: PainMarkKind
+
+    var body: some View {
+        Canvas { context, size in
+            let coral = CX.coral
+            switch kind {
+            case .point:
+                context.fill(Path(ellipseIn: CGRect(x: 4, y: 4, width: size.width - 8, height: size.height - 8)), with: .color(coral.opacity(0.13)))
+                context.fill(Path(ellipseIn: CGRect(x: size.width / 2 - 4, y: size.height / 2 - 4, width: 8, height: 8)), with: .color(coral))
+            case .area:
+                for point in [CGPoint(x: 12, y: 18), CGPoint(x: 20, y: 13), CGPoint(x: 26, y: 20), CGPoint(x: 18, y: 25)] {
+                    context.fill(Path(ellipseIn: CGRect(x: point.x - 8, y: point.y - 8, width: 16, height: 16)), with: .color(coral.opacity(0.18)))
+                }
+            case .line:
+                var path = Path(); path.move(to: CGPoint(x: 5, y: 25)); path.addCurve(to: CGPoint(x: size.width - 5, y: 11), control1: CGPoint(x: 13, y: 7), control2: CGPoint(x: 24, y: 29))
+                context.stroke(path, with: .color(coral), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+            case .radiating:
+                let center = CGPoint(x: 11, y: size.height / 2)
+                context.fill(Path(ellipseIn: CGRect(x: center.x - 4, y: center.y - 4, width: 8, height: 8)), with: .color(coral))
+                for offset: CGFloat in [-8, 0, 8] {
+                    var ray = Path(); ray.move(to: CGPoint(x: 16, y: center.y)); ray.addLine(to: CGPoint(x: size.width - 5, y: center.y + offset))
+                    context.stroke(ray, with: .color(coral.opacity(0.78)), style: StrokeStyle(lineWidth: 2.2, lineCap: .round))
+                }
+            }
+        }
+        .frame(width: 36, height: 36)
+        .background(CX.coral.opacity(0.06), in: Circle())
     }
 }
 
@@ -590,6 +776,20 @@ struct PainMarkingSurface: View {
                         for mark in visible { paint(mark.points, kind: mark.kind, context: &context, size: size) }
                         paint(stroke, kind: kind, context: &context, size: size)
                     }.allowsHitTesting(false)
+                    VStack {
+                        HStack {
+                            Label(kind.instruction, systemImage: kind.symbol)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(CX.ink.opacity(0.78))
+                                .padding(.horizontal, 11)
+                                .frame(minHeight: 34)
+                                .background(.ultraThinMaterial, in: Capsule())
+                            Spacer()
+                        }
+                        Spacer()
+                    }
+                    .padding(12)
+                    .allowsHitTesting(false)
                 }
                 .contentShape(Rectangle())
                 .gesture(DragGesture(minimumDistance: 0)
@@ -597,37 +797,69 @@ struct PainMarkingSurface: View {
                         guard editable else { return }
                         let point = PainCoordinate(x: min(1, max(0, value.location.x / geo.size.width)), y: min(1, max(0, value.location.y / geo.size.height)))
                         if kind == .point { stroke = [point] }
-                        else if stroke.count < 1500 { stroke.append(point) }
+                        else if stroke.count < 500, shouldAppend(point) { stroke.append(point) }
                     }
                     .onEnded { _ in
                         guard editable, !stroke.isEmpty else { return }
-                        marks.append(PainMark(angle: angle, kind: stroke.count < 3 ? .point : kind, points: stroke))
+                        let finalKind: PainMarkKind = (kind == .line || kind == .radiating) && stroke.count < 2 ? .point : kind
+                        marks.append(PainMark(angle: angle, kind: finalKind, points: stroke))
                         stroke = []
                     }, including: editable ? .all : .none)
             }.aspectRatio(1, contentMode: .fit)
                 .clipShape(.rect(cornerRadius: 30))
                 .overlay { RoundedRectangle(cornerRadius: 30).strokeBorder(CX.moonlight.opacity(0.22), lineWidth: 1) }
                 .accessibilityLabel("\(region.rawValue)\(angle.rawValue)位置图")
+                .accessibilityHint(kind.instruction)
+                .accessibilityIdentifier("pain-marking-surface")
             Text(angle.orientation).font(.caption).foregroundStyle(CX.muted)
         }
+        .sensoryFeedback(.impact(weight: .light), trigger: marks.count)
+    }
+
+    private func shouldAppend(_ point: PainCoordinate) -> Bool {
+        guard let last = stroke.last else { return true }
+        let dx = point.x - last.x
+        let dy = point.y - last.y
+        return dx * dx + dy * dy > 0.000025
     }
 
     private func paint(_ points: [PainCoordinate], kind: PainMarkKind, context: inout GraphicsContext, size: CGSize) {
         guard let first = points.first else { return }
         let start = CGPoint(x: first.x * size.width, y: first.y * size.height)
-        if kind == .point || points.count < 3 {
-            context.fill(Path(ellipseIn: CGRect(x: start.x - 17, y: start.y - 17, width: 34, height: 34)), with: .color(CX.coral.opacity(0.18)))
-            context.fill(Path(ellipseIn: CGRect(x: start.x - 6, y: start.y - 6, width: 12, height: 12)), with: .color(CX.coral))
+        if kind == .point {
+            context.fill(Path(ellipseIn: CGRect(x: start.x - 19, y: start.y - 19, width: 38, height: 38)), with: .color(CX.coral.opacity(0.12)))
+            context.stroke(Path(ellipseIn: CGRect(x: start.x - 10, y: start.y - 10, width: 20, height: 20)), with: .color(Color.white.opacity(0.92)), lineWidth: 3)
+            context.fill(Path(ellipseIn: CGRect(x: start.x - 7, y: start.y - 7, width: 14, height: 14)), with: .color(CX.coral))
+        } else if kind == .area {
+            let diameter = max(34, min(size.width, size.height) * 0.115)
+            let step = max(1, points.count / 90)
+            for index in stride(from: 0, to: points.count, by: step) {
+                let point = points[index]
+                let center = CGPoint(x: point.x * size.width, y: point.y * size.height)
+                context.fill(
+                    Path(ellipseIn: CGRect(x: center.x - diameter / 2, y: center.y - diameter / 2, width: diameter, height: diameter)),
+                    with: .color(CX.coral.opacity(0.10))
+                )
+            }
+            if points.count > 1 {
+                var brushPath = Path(); brushPath.move(to: start)
+                for point in points.dropFirst() { brushPath.addLine(to: CGPoint(x: point.x * size.width, y: point.y * size.height)) }
+                context.stroke(brushPath, with: .color(CX.coral.opacity(0.14)), style: StrokeStyle(lineWidth: diameter * 0.60, lineCap: .round, lineJoin: .round))
+                context.stroke(brushPath, with: .color(CX.coral.opacity(0.72)), style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+            }
         } else {
             var path = Path(); path.move(to: start)
             for point in points.dropFirst() { path.addLine(to: CGPoint(x: point.x * size.width, y: point.y * size.height)) }
-            if kind == .area { path.closeSubpath(); context.fill(path, with: .color(CX.coral.opacity(0.16))) }
-            let strokeColor = kind == .radiating ? Color.orange : CX.coral
-            context.stroke(path, with: .color(strokeColor), style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
+            let strokeColor = CX.coral
+            context.stroke(path, with: .color(strokeColor.opacity(0.13)), style: StrokeStyle(lineWidth: 11, lineCap: .round, lineJoin: .round))
+            context.stroke(path, with: .color(strokeColor), style: StrokeStyle(lineWidth: 3.2, lineCap: .round, lineJoin: .round))
             if kind == .radiating, let last = points.last {
                 let end = CGPoint(x: last.x * size.width, y: last.y * size.height)
-                context.fill(Path(ellipseIn: CGRect(x: end.x - 10, y: end.y - 10, width: 20, height: 20)), with: .color(strokeColor.opacity(0.20)))
-                context.fill(Path(ellipseIn: CGRect(x: end.x - 4, y: end.y - 4, width: 8, height: 8)), with: .color(strokeColor))
+                context.fill(Path(ellipseIn: CGRect(x: start.x - 11, y: start.y - 11, width: 22, height: 22)), with: .color(strokeColor.opacity(0.16)))
+                context.fill(Path(ellipseIn: CGRect(x: start.x - 4, y: start.y - 4, width: 8, height: 8)), with: .color(strokeColor))
+                for radius: CGFloat in [12, 20] {
+                    context.stroke(Path(ellipseIn: CGRect(x: end.x - radius, y: end.y - radius, width: radius * 2, height: radius * 2)), with: .color(strokeColor.opacity(radius == 12 ? 0.32 : 0.16)), lineWidth: 2)
+                }
             }
         }
     }
@@ -646,7 +878,7 @@ private struct PainHistoryView: View {
                         VStack(alignment: .leading, spacing: 20) {
                             Text(record.summary).font(.title3)
                             if record.marks.contains(where: \.hasSurfaceLocation) {
-                                PainBody3DView(region: record.region, marks: .constant(record.marks), editable: false)
+                                LegacySurfaceMarkSummary(count: record.marks.filter(\.hasSurfaceLocation).count)
                             }
                             ForEach(PainAngle.allCases.filter { angle in record.marks.contains { $0.angle == angle && !$0.hasSurfaceLocation } }) { angle in
                                 Text(angle.rawValue).font(.headline)

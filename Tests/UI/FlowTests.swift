@@ -141,6 +141,20 @@ final class FlowTests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
     }
 
+    func testConstitutionEntryLivesBelowShiyang() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing"]
+        app.launch()
+
+        XCTAssertTrue(app.buttons["open-shiyang"].waitForExistence(timeout: 10))
+        let constitutionEntry = app.buttons["open-constitution"]
+        if !constitutionEntry.isHittable { app.swipeUp() }
+        XCTAssertTrue(constitutionEntry.waitForExistence(timeout: 5))
+        constitutionEntry.tap()
+        XCTAssertTrue(app.navigationBars["中医体质"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["认识自己的体质"].exists)
+    }
+
     func testDoctorReplyAndContextualFill() {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing"]
@@ -174,7 +188,7 @@ final class FlowTests: XCTestCase {
         XCTAssertEqual(app.textFields["reading-secondary"].value as? String, "77")
     }
 
-    func testPainAnatomyLayers() {
+    func testPainGentleSurfaceMarking() {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing"]
         app.launch()
@@ -187,45 +201,25 @@ final class FlowTests: XCTestCase {
         openPainLocation(in: app, entry: painEntry, head: head)
         XCTAssertTrue(head.waitForExistence(timeout: 5))
         capture("15-pain-region-grid")
-        // The card artwork breathes subtly; its lower label area remains a
-        // stable tap target while the decorative image is moving.
-        head.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.88)).tap()
-        let model = app.otherElements["pain-anatomy-model"]
-        XCTAssertTrue(model.waitForExistence(timeout: 12))
-        capture("16-pain-head-surface")
-        capture("16-pain-head-surface-model", element: model)
-        app.segmentedControls.buttons["标记疼处"].tap()
-        model.coordinate(withNormalizedOffset: CGVector(dx: 0.50, dy: 0.32)).tap()
-        let markedStatus = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH '已标记 '")).firstMatch
-        XCTAssertTrue(markedStatus.waitForExistence(timeout: 3))
+        head.tap()
+        let surface = app.otherElements["pain-marking-surface"]
+        XCTAssertTrue(surface.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.segmentedControls.buttons["骨骼"].exists)
+        XCTAssertFalse(app.segmentedControls.buttons["肌肉"].exists)
+        capture("16-pain-head-gentle-surface")
+        surface.coordinate(withNormalizedOffset: CGVector(dx: 0.50, dy: 0.32)).tap()
+        XCTAssertTrue(app.staticTexts["这个视角已标记 1 处"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.buttons["pain-primary-step"].isEnabled)
         capture("16-pain-head-marked")
-        app.segmentedControls.buttons["转动查看"].tap()
-        app.segmentedControls.buttons["插画标记"].tap()
-        capture("16-pain-head-illustration-front")
         app.segmentedControls.buttons["右侧"].tap()
-        capture("16-pain-head-illustration-right")
-        app.segmentedControls.buttons["局部三维"].tap()
-        app.segmentedControls.buttons["肌肉"].tap()
-        capture("17-pain-head-muscle")
-        capture("17-pain-head-muscle-model", element: model)
-        app.segmentedControls.buttons["骨骼"].tap()
-        capture("18-pain-head-skeleton")
-        capture("18-pain-head-skeleton-model", element: model)
-
-        // A region drill-down must load the actual local body part, not return
-        // to a generic full-body mesh. Exercise the arm model in all layers.
+        XCTAssertTrue(app.staticTexts["还没有标记"].waitForExistence(timeout: 3))
+        capture("17-pain-head-gentle-profile")
         app.buttons["上一步"].tap()
         let arms = app.buttons["pain-region-arms"]
         XCTAssertTrue(arms.waitForExistence(timeout: 5))
         arms.tap()
-        XCTAssertTrue(model.waitForExistence(timeout: 12))
-        app.segmentedControls.buttons["体表"].tap()
-        capture("19-pain-arms-surface-model", element: model)
-        app.segmentedControls.buttons["肌肉"].tap()
-        capture("20-pain-arms-muscle-model", element: model)
-        app.segmentedControls.buttons["骨骼"].tap()
-        capture("21-pain-arms-skeleton-model", element: model)
+        XCTAssertTrue(surface.waitForExistence(timeout: 5))
+        capture("18-pain-arms-gentle-surface")
     }
 
     func testPainNaturalLanguageIntensity() {
@@ -241,31 +235,26 @@ final class FlowTests: XCTestCase {
         openPainLocation(in: app, entry: painEntry, head: head)
         XCTAssertTrue(head.waitForExistence(timeout: 5))
         head.tap()
-        let model = app.otherElements["pain-anatomy-model"]
-        XCTAssertTrue(model.waitForExistence(timeout: 12))
-        capture("22-pain-head-refined-eyes")
-        model.swipeLeft()
-        capture("22-pain-head-profile-eyes-contained")
-        app.buttons["回正"].tap()
-        app.segmentedControls.buttons["标记疼处"].tap()
-        model.coordinate(withNormalizedOffset: CGVector(dx: 0.50, dy: 0.32)).tap()
+        let surface = app.otherElements["pain-marking-surface"]
+        XCTAssertTrue(surface.waitForExistence(timeout: 5))
+        surface.coordinate(withNormalizedOffset: CGVector(dx: 0.50, dy: 0.32)).tap()
         let next = app.buttons["pain-primary-step"]
         XCTAssertTrue(next.isEnabled)
         capture("22-pain-head-selection-confirmed")
-        app.segmentedControls.buttons["片状"].tap()
-        model.coordinate(withNormalizedOffset: CGVector(dx: 0.43, dy: 0.30))
+        app.buttons["pain-tool-片状"].tap()
+        surface.coordinate(withNormalizedOffset: CGVector(dx: 0.43, dy: 0.30))
             .press(
                 forDuration: 0.12,
-                thenDragTo: model.coordinate(withNormalizedOffset: CGVector(dx: 0.56, dy: 0.39))
+                thenDragTo: surface.coordinate(withNormalizedOffset: CGVector(dx: 0.56, dy: 0.39))
             )
-        XCTAssertTrue(app.staticTexts["已标记 2 处"].waitForExistence(timeout: 3))
-        app.segmentedControls.buttons["放射"].tap()
-        model.coordinate(withNormalizedOffset: CGVector(dx: 0.44, dy: 0.36))
+        XCTAssertTrue(app.staticTexts["这个视角已标记 2 处"].waitForExistence(timeout: 3))
+        app.buttons["pain-tool-放射"].tap()
+        surface.coordinate(withNormalizedOffset: CGVector(dx: 0.44, dy: 0.36))
             .press(
                 forDuration: 0.12,
-                thenDragTo: model.coordinate(withNormalizedOffset: CGVector(dx: 0.62, dy: 0.48))
+                thenDragTo: surface.coordinate(withNormalizedOffset: CGVector(dx: 0.62, dy: 0.48))
             )
-        XCTAssertTrue(app.staticTexts["已标记 3 处"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["这个视角已标记 3 处"].waitForExistence(timeout: 3))
         capture("22-pain-area-and-radiating-marks")
         next.tap()
         let naturalChoice = app.buttons["pain-intensity-5"]
