@@ -112,6 +112,54 @@ enum MetricKind: String, Codable, CaseIterable, Identifiable {
     var inputRange: ClosedRange<Double> { switch self { case .pressure: 40...300; case .glucose: 0.5...50; case .weight: 10...400 } }
 }
 
+/// 中国成人 BMI 分级（WS/T 428—2013）。BMI 是由身高和体重推导出的指标，不作为一条独立测量记录保存。
+enum BMIClassification: String, CaseIterable, Identifiable, Equatable {
+    case underweight = "体重过低"
+    case normal = "体重正常"
+    case overweight = "超重"
+    case obesity = "肥胖"
+
+    var id: Self { self }
+
+    var rangeDescription: String {
+        switch self {
+        case .underweight: "BMI < 18.5"
+        case .normal: "18.5 ≤ BMI < 24.0"
+        case .overweight: "24.0 ≤ BMI < 28.0"
+        case .obesity: "BMI ≥ 28.0"
+        }
+    }
+
+    static func classification(for bmi: Double) -> Self {
+        switch bmi {
+        case ..<18.5: .underweight
+        case ..<24.0: .normal
+        case ..<28.0: .overweight
+        default: .obesity
+        }
+    }
+}
+
+struct BMIResult: Equatable {
+    let value: Double
+    let classification: BMIClassification
+
+    var display: String {
+        value.formatted(.number.precision(.fractionLength(1)))
+    }
+
+    static func calculate(weightKilograms: Double, heightCentimeters: Double) -> Self? {
+        guard weightKilograms.isFinite, weightKilograms > 0,
+              heightCentimeters.isFinite, heightCentimeters > 0 else { return nil }
+        let heightMeters = heightCentimeters / 100
+        let roundedValue = ((weightKilograms / (heightMeters * heightMeters)) * 10).rounded() / 10
+        return BMIResult(
+            value: roundedValue,
+            classification: BMIClassification.classification(for: roundedValue)
+        )
+    }
+}
+
 /// 云端同步状态（Task #25）。随 ``HealthReading`` 持久化到本地 JSON（`String` 原始值）。
 ///
 /// 旧版 `changxi-local-demo.json` 无此键 → ``HealthReading/syncState`` 解码为 nil（仅本机记录），
@@ -259,6 +307,8 @@ struct LocalState: Codable {
     var patientID = UUID().uuidString
     var name = "张阿姨"
     var person = "张阿姨（本人）"
+    /// 演示档案身高。真实使用时可在「个人资料」中修改，BMI 会据此自动重算。
+    var heightCentimeters = 165.0
     var onboarded = false
     var rememberAllowed = true
     var medicationReminders = false
@@ -361,6 +411,10 @@ final class AppStore {
     var completed: Int { data.plans.filter(\.completed).count }
     var pendingMemories: Int { data.memories.filter { !$0.confirmed }.count }
     func latest(_ kind: MetricKind) -> HealthReading? { data.readings.filter { $0.kind == kind }.max { $0.date < $1.date } }
+    var currentBMI: BMIResult? {
+        guard let weight = latest(.weight)?.value else { return nil }
+        return BMIResult.calculate(weightKilograms: weight, heightCentimeters: data.heightCentimeters)
+    }
     func readings(_ kind: MetricKind, days: Int) -> [HealthReading] {
         let start = Calendar.current.date(byAdding: .day, value: -(days - 1), to: Calendar.current.startOfDay(for: .now))!
         return data.readings.filter { $0.kind == kind && $0.date >= start }.sorted { $0.date < $1.date }

@@ -9,6 +9,7 @@ import XCTest
         let store = AppStore(fileURL: file)
         let patientID = store.data.patientID
         store.data.name = "测试用户"
+        store.data.heightCentimeters = 172
         let id = store.data.plans[2].id
         store.togglePlan(id)
         store.data.memories[0].confirmed = true
@@ -16,9 +17,32 @@ import XCTest
         let reload = AppStore(fileURL: file)
         XCTAssertEqual(reload.data.patientID, patientID)
         XCTAssertEqual(reload.data.name, "测试用户")
+        XCTAssertEqual(reload.data.heightCentimeters, 172)
         XCTAssertTrue(reload.data.plans.first { $0.id == id }!.completed)
         XCTAssertTrue(reload.data.memories[0].confirmed)
         XCTAssertEqual(reload.latest(.pressure)?.display, "121/76")
+    }
+
+    func testBMICalculationUsesLatestWeightAndProfileHeight() throws {
+        let store = AppStore(fileURL: file)
+        store.data.heightCentimeters = 165
+        store.data.readings = [HealthReading(kind: .weight, value: 68.5)]
+
+        let result = try XCTUnwrap(store.currentBMI)
+        XCTAssertEqual(result.value, 25.2, accuracy: 0.001)
+        XCTAssertEqual(result.display, "25.2")
+        XCTAssertEqual(result.classification, .overweight)
+    }
+
+    func testBMIClassificationIncludesEveryBoundary() {
+        XCTAssertEqual(BMIClassification.classification(for: 18.4), .underweight)
+        XCTAssertEqual(BMIClassification.classification(for: 18.5), .normal)
+        XCTAssertEqual(BMIClassification.classification(for: 23.9), .normal)
+        XCTAssertEqual(BMIClassification.classification(for: 24.0), .overweight)
+        XCTAssertEqual(BMIClassification.classification(for: 27.9), .overweight)
+        XCTAssertEqual(BMIClassification.classification(for: 28.0), .obesity)
+        XCTAssertNil(BMIResult.calculate(weightKilograms: 0, heightCentimeters: 165))
+        XCTAssertNil(BMIResult.calculate(weightKilograms: 68.5, heightCentimeters: 0))
     }
     func testNewDayResetsPlanButPreservesReadings() {
         let store = AppStore(fileURL: file)

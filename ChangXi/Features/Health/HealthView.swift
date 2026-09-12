@@ -70,6 +70,12 @@ struct HealthView: View {
                             )
                         }.buttonStyle(.plain).accessibilityIdentifier("metric-\(kind.rawValue)")
                     }
+
+                    NavigationLink { BMIDetailView() } label: {
+                        BMISummaryTile(result: store.currentBMI)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("metric-BMI")
                 }
             }
             SectionEyebrow(title: "身体感受", action: "本机记录")
@@ -92,6 +98,225 @@ struct HealthView: View {
             }
             NavigationLink { PlanView() } label: { Card { RhythmView(completed: store.completed, total: store.data.plans.count) } }.buttonStyle(.plain)
             NavigationLink { ReportDetailView() } label: { Card { RowLabel(title: "体检报告已整理", subtitle: "查看数值、参考范围和关注事项", icon: "doc.text.magnifyingglass") } }.buttonStyle(.plain)
+        }
+    }
+}
+
+private struct BMISummaryTile: View {
+    let result: BMIResult?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "figure.arms.open")
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(CX.teal)
+                Text("BMI")
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(CX.faint)
+            }
+
+            Text(result?.display ?? "—")
+                .font(.title2.weight(.bold))
+                .fontDesign(.rounded)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+                .contentTransition(.numericText())
+
+            Text(result.map { "kg/m² · \($0.classification.rawValue)" } ?? "等待体重记录")
+                .font(.caption)
+                .foregroundStyle(CX.muted)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .frame(maxWidth: .infinity, minHeight: 112, alignment: .leading)
+        .padding(16)
+        .cxInteractiveGlass(cornerRadius: 18)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilitySummary)
+    }
+
+    private var accessibilitySummary: String {
+        guard let result else { return "BMI，等待体重记录" }
+        return "BMI \(result.display)，\(result.classification.rawValue)"
+    }
+}
+
+struct BMIDetailView: View {
+    @Environment(AppStore.self) private var store
+
+    private var result: BMIResult? { store.currentBMI }
+    private var latestWeight: HealthReading? { store.latest(.weight) }
+
+    var body: some View {
+        Page {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("体质指数")
+                    .font(.largeTitle.weight(.semibold))
+                    .fontDesign(.serif)
+                Text("由最新体重和档案身高自动计算。")
+                    .font(.body)
+                    .foregroundStyle(CX.muted)
+            }
+
+            Card {
+                Text("当前 BMI")
+                    .font(.subheadline)
+                    .foregroundStyle(CX.muted)
+
+                if let result {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(result.display)
+                            .font(.largeTitle.weight(.bold))
+                            .fontDesign(.rounded)
+                            .monospacedDigit()
+                            .contentTransition(.numericText())
+                        Text("kg/m²")
+                            .font(.subheadline)
+                            .foregroundStyle(CX.muted)
+                    }
+
+                    Label(result.classification.rawValue, systemImage: result.classification.systemImage)
+                        .font(.headline)
+                        .foregroundStyle(result.classification.tint)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(result.classification.tint.opacity(0.10), in: Capsule())
+
+                    if let latestWeight {
+                        Text("按最新体重 \(latestWeight.display) kg 与身高 \(heightDisplay) cm 计算")
+                            .font(.subheadline)
+                            .foregroundStyle(CX.muted)
+                    }
+                } else {
+                    ContentUnavailableView(
+                        "还不能计算 BMI",
+                        systemImage: "scalemass",
+                        description: Text("先添加一条体重记录，BMI 会自动出现。")
+                    )
+                }
+            }
+            .accessibilityElement(children: .combine)
+
+            Text("中国成人 BMI 分级")
+                .font(.title2.weight(.semibold))
+
+            Card {
+                ForEach(Array(BMIClassification.allCases.enumerated()), id: \.element) { index, classification in
+                    BMIRangeRow(
+                        classification: classification,
+                        isCurrent: result?.classification == classification
+                    )
+                    if index < BMIClassification.allCases.count - 1 {
+                        Divider()
+                    }
+                }
+            }
+
+            Card {
+                Text("计算依据")
+                    .font(.title3.weight(.semibold))
+
+                NavigationLink { MetricDetailView(kind: .weight) } label: {
+                    RowLabel(
+                        title: latestWeight.map { "体重 \($0.display) kg" } ?? "添加体重记录",
+                        subtitle: latestWeight.map { "更新于 \($0.date.formatted(date: .abbreviated, time: .shortened))" } ?? "BMI 需要最新体重",
+                        icon: "scalemass",
+                        tint: CX.blue
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Divider()
+
+                NavigationLink { AccountView() } label: {
+                    RowLabel(
+                        title: "身高 \(heightDisplay) cm",
+                        subtitle: "身高变化或资料有误时，请在这里修改",
+                        icon: "ruler",
+                        tint: CX.teal
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Text("BMI = 体重（kg）÷ 身高（m）²")
+                    .font(.footnote)
+                    .foregroundStyle(CX.muted)
+            }
+
+            Text("依据现行《成人体重判定》WS/T 428—2013，适用于 18 岁及以上一般成人。BMI 只用于体重状况筛查，运动员、孕产妇等特殊人群，以及需要个体化评估的人群，请结合医生建议判断。")
+                .font(.footnote)
+                .foregroundStyle(CX.muted)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .navigationTitle("BMI")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var heightDisplay: String {
+        store.data.heightCentimeters.formatted(.number.precision(.fractionLength(0...1)))
+    }
+}
+
+private struct BMIRangeRow: View {
+    let classification: BMIClassification
+    let isCurrent: Bool
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: isCurrent ? "checkmark.circle.fill" : "circle.fill")
+                .font(isCurrent ? .title3 : .caption2)
+                .foregroundStyle(classification.tint)
+                .frame(width: 28)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(classification.rawValue)
+                    .font(.headline)
+                Text(classification.rangeDescription)
+                    .font(.subheadline)
+                    .monospacedDigit()
+                    .foregroundStyle(CX.muted)
+            }
+
+            Spacer(minLength: 8)
+
+            if isCurrent {
+                Text("当前")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(classification.tint)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(classification.tint.opacity(0.10), in: Capsule())
+            }
+        }
+        .frame(minHeight: 52)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(classification.rawValue)，\(classification.rangeDescription)\(isCurrent ? "，当前所在区间" : "")")
+    }
+}
+
+private extension BMIClassification {
+    var tint: Color {
+        switch self {
+        case .underweight: CX.blue
+        case .normal: CX.teal
+        case .overweight: CX.gold
+        case .obesity: CX.coral
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .underweight: "arrow.down.circle.fill"
+        case .normal: "checkmark.seal.fill"
+        case .overweight: "exclamationmark.circle.fill"
+        case .obesity: "exclamationmark.triangle.fill"
         }
     }
 }

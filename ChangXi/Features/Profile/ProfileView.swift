@@ -238,17 +238,58 @@ struct MemoryEditView: View {
 struct AccountView: View {
     @Environment(AppStore.self) private var store
     @State private var name = ""
+    @State private var height = ""
     @State private var saved = false
+    @State private var validationMessage: String?
     var body: some View {
         Form {
-            Section("个人资料") { TextField("称呼", text: $name); Button(saved ? "已保存" : "保存资料") { store.data.name = name; store.data.person = "\(name)（本人）"; saved = true }.disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) }
+            Section {
+                TextField("称呼", text: $name)
+                TextField("身高（cm）", text: $height)
+                    .keyboardType(.decimalPad)
+                if let validationMessage {
+                    Label(validationMessage, systemImage: "exclamationmark.circle.fill")
+                        .font(.footnote)
+                        .foregroundStyle(CX.coral)
+                }
+                Button(saved ? "已保存" : "保存资料", action: saveProfile)
+                    .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            } header: {
+                Text("个人资料")
+            } footer: {
+                Text("BMI 会根据这里的身高和健康页最新体重自动更新。")
+            }
             Section("账户") {
                 Label(store.data.demoSignedIn ? "演示账户已登录" : "访客体验", systemImage: "person.crop.circle")
                 if store.data.demoSignedIn { Button("退出演示账户") { store.data.demoSignedIn = false } }
                 else { NavigationLink("登录 / 注册体验") { DemoAuthView() } }
                 Text("真实短信验证与云端同步尚未接通，可继续以访客方式使用。").foregroundStyle(.secondary)
             }
-        }.navigationTitle("个人资料").onAppear { name = store.data.name }.onChange(of: name) { _, _ in saved = false }
+        }
+        .navigationTitle("个人资料")
+        .onAppear {
+            name = store.data.name
+            height = store.data.heightCentimeters.formatted(.number.precision(.fractionLength(0...1)))
+        }
+        .onChange(of: name) { saved = false; validationMessage = nil }
+        .onChange(of: height) { saved = false; validationMessage = nil }
+    }
+
+    private func saveProfile() {
+        let normalizedHeight = height.replacingOccurrences(of: ",", with: ".")
+        guard let heightValue = Double(normalizedHeight),
+              heightValue.isFinite,
+              (80...250).contains(heightValue) else {
+            validationMessage = "请输入 80 至 250 cm 之间的身高。"
+            return
+        }
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        store.data.name = trimmedName
+        store.data.person = "\(trimmedName)（本人）"
+        store.data.heightCentimeters = heightValue
+        height = heightValue.formatted(.number.precision(.fractionLength(0...1)))
+        saved = true
+        validationMessage = nil
     }
 }
 
