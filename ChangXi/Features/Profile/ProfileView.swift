@@ -98,7 +98,13 @@ struct BackendConnectionView: View {
             if url != AppConfiguration.apiBaseURL { auth.logout() }
             UserDefaults.standard.set(url.absoluteString, forKey: "cx.backend.url")
             connected = true
-            status = probe.provider == "mock" ? "已连接玄同 · 当前为 Mock 测试模型，非真实 AI" : "已连接玄同 · \(probe.provider)"
+            if probe.provider == "mock" {
+                status = "已连接玄同 · 当前为 Mock 测试模型，非真实 AI"
+            } else if let provider = probe.provider {
+                status = "已连接玄同 · \(provider)"
+            } else {
+                status = "已连接玄同"
+            }
         } catch {
             status = "未能连接，地址没有更改。请确认玄同已经启动、网络可达。"
         }

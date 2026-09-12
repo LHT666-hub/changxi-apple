@@ -18,18 +18,18 @@ final class XuantongEventConversationServiceTests: XCTestCase {
         XCTAssertNil(AppConfiguration.sanitizedURL("https://example.com/api/events"))
     }
 
-    func testBackendProbeReportsMockHonestly() async throws {
+    func testBackendProbeUsesFastServiceHealthEndpoint() async throws {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [URLProtocolStub.self]
         let session = URLSession(configuration: configuration)
         URLProtocolStub.handler = { request in
-            XCTAssertEqual(request.url?.path, "/api/health/detail")
+            XCTAssertEqual(request.url?.path, "/api/health")
             let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
-            return (response, Data(#"{"app":{"status":"ok"},"llm":{"provider":"mock","healthy":true}}"#.utf8))
+            return (response, Data(#"{"status":"ok","version":"0.1.0"}"#.utf8))
         }
         defer { URLProtocolStub.handler = nil }
         let status = try await BackendProbe.check(URL(string: "http://127.0.0.1:8000")!, session: session)
-        XCTAssertEqual(status.provider, "mock")
+        XCTAssertNil(status.provider)
     }
     func testEventContractAndRiskMapping() async throws {
         let configuration = URLSessionConfiguration.ephemeral

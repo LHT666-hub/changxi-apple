@@ -153,19 +153,20 @@ extension Notification.Name {
 
 struct BackendProbe {
     struct Response: Decodable {
-        struct App: Decodable { let status: String }
-        struct LLM: Decodable { let provider: String; let healthy: Bool }
-        let app: App
-        let llm: LLM
+        let status: String
     }
-    let provider: String
+
+    let provider: String?
+
     static func check(_ baseURL: URL, session: URLSession = .shared) async throws -> BackendProbe {
-        var request = URLRequest(url: baseURL.appending(path: "api/health/detail"))
+        // 连接页只验证手机能否到达玄同。`/api/health/detail` 还会实时探测
+        // 多个外部模型，可能耗时数十秒，不能作为局域网连接是否成功的依据。
+        var request = URLRequest(url: baseURL.appending(path: "api/health"))
         request.timeoutInterval = 8
         let (data, response) = try await session.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }
         let result = try JSONDecoder().decode(Response.self, from: data)
-        guard result.app.status == "ok", result.llm.healthy else { throw URLError(.cannotConnectToHost) }
-        return .init(provider: result.llm.provider)
+        guard result.status == "ok" else { throw URLError(.cannotConnectToHost) }
+        return .init(provider: nil)
     }
 }

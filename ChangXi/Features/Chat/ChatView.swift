@@ -2,6 +2,64 @@ import SwiftUI
 import UniformTypeIdentifiers
 import PDFKit
 
+private struct StarterPrompt: Identifiable, Equatable {
+    let id: String
+    let title: String
+    let subtitle: String
+    let systemImage: String
+    let request: String
+    let fallback: String
+}
+
+private let starterPrompts: [StarterPrompt] = [
+    StarterPrompt(
+        id: "report",
+        title: "读懂我的体检报告",
+        subtitle: "上传报告后，按异常项逐条解释",
+        systemImage: "doc.text.magnifyingglass",
+        request: """
+        我点击了“读懂我的体检报告”，但这一轮还没有上传具体报告。请用常曦温和、简洁的口吻告诉我下一步如何上传，并说明你会按“异常项目—可能影响—建议复查或就医时机”三层解读。不要编造任何检查数值，不要现在生成照护工单，控制在 180 字以内。
+        """,
+        fallback: """
+        可以。点击输入栏左侧的“＋”，拍摄或选择体检报告即可。
+
+        我会按三层帮你整理：先找出超出参考范围的项目，再解释它可能与什么有关，最后标出哪些适合观察、哪些建议复查或咨询医生。没有看到报告前，我不会猜测数值，也不会自动生成工单。
+        """
+    ),
+    StarterPrompt(
+        id: "medication",
+        title: "核对今天的用药",
+        subtitle: "按处方检查药名、剂量与时间",
+        systemImage: "pills.fill",
+        request: """
+        我点击了“核对今天的用药”。请先引导我打开已记录的用药计划，或通过拍照/文字补充药名、处方剂量和服药时间；用三个很短的步骤说明你能如何核对。不要替医生调整药物，不要假设我正在服用任何具体药物，不要现在生成工单，控制在 180 字以内。
+        """,
+        fallback: """
+        我们先核对，不改处方：
+
+        1. 打开“健康 → 用药管理”查看今天的计划；
+        2. 核对药名、处方剂量和服用时间；
+        3. 有疑问可拍下药盒或处方，我帮你整理成给医生或药师确认的问题。
+
+        在你确认前，我不会更改计划或创建工单。
+        """
+    ),
+    StarterPrompt(
+        id: "feeling",
+        title: "记录今天的身体感受",
+        subtitle: "整理成一条清楚的健康日记",
+        systemImage: "heart.text.clipboard",
+        request: """
+        我点击了“记录今天的身体感受”。请像常曦一样一次只邀请我补充最关键的信息：什么时候开始、身体哪里、是什么感觉、0 到 10 分强度，以及有没有伴随症状。明确说明整理后仍需我确认才保存，不自动生成工单。语气温和，控制在 160 字以内。
+        """,
+        fallback: """
+        好，我们慢慢记。你可以直接告诉我：什么时候开始、身体哪里不舒服、是酸胀还是刺痛等感觉、强度大约 0–10 分，以及有没有头晕、发热等伴随情况。
+
+        我会先整理成一条健康日记给你核对；只有你确认后才保存，也不会自动生成工单。
+        """
+    )
+]
+
 struct ChatView: View {
     var initialPrompt = ""
     @Environment(AppStore.self) private var store
@@ -31,6 +89,9 @@ struct ChatView: View {
     @State private var lastMetadata: ChatMetadata?
     @State private var isEnriching = false
     @State private var didRestoreHistory = false
+    @State private var activeStarterID: String?
+    @State private var queuedStarterID: String?
+    @State private var showAuth = false
     @FocusState private var keyboard: Bool
     private let demo = DemoConversationService()
     private var eventService: XuantongEventConversationService { .configured() }
@@ -65,11 +126,31 @@ struct ChatView: View {
                                 Text("此刻，想聊些什么？").font(.title2.weight(.medium)).fontDesign(.serif)
                                 Text("一段心事，一次记录，或一个小小的疑问。")
                                     .font(.subheadline).foregroundStyle(CX.muted)
-                                ForEach(["我想了解这份体检报告", "看看今天的用药计划", "我想记录今天的感受"], id: \.self) { prompt in
-                                    Button { text = prompt; keyboard = true } label: {
-                                        HStack { Text(prompt).font(.subheadline); Spacer(); Image(systemName: "arrow.up.left").font(.caption).foregroundStyle(CX.muted) }
-                                            .frame(minHeight: 44).contentShape(Rectangle())
-                                    }.buttonStyle(QuietPressButton())
+                                ForEach(starterPrompts) { prompt in
+                                    Button { sendStarter(prompt) } label: {
+                                        HStack(spacing: 12) {
+                                            Image(systemName: prompt.systemImage)
+                                                .font(.subheadline.weight(.semibold))
+                                                .foregroundStyle(CX.blue)
+                                                .frame(width: 32, height: 32)
+                                                .background(CX.blue.opacity(0.09), in: Circle())
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text(prompt.title).font(.subheadline.weight(.semibold))
+                                                Text(prompt.subtitle)
+                                                    .font(.caption)
+                                                    .foregroundStyle(CX.muted)
+                                                    .multilineTextAlignment(.leading)
+                                            }
+                                            Spacer()
+                                            Image(systemName: "arrow.up.right")
+                                                .font(.caption.weight(.semibold))
+                                                .foregroundStyle(CX.muted)
+                                        }
+                                        .frame(minHeight: 52)
+                                        .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(QuietPressButton())
+                                    .disabled(isBusy)
                                 }
                             }
                             .padding(.horizontal, 8)
@@ -104,6 +185,7 @@ struct ChatView: View {
         }
         .sheet(isPresented: $showCamera) { NavigationStack { ReportImportView(onAttach: { text = $0; keyboard = true }) } }
         .sheet(isPresented: $showHistory) { NavigationStack { ChatHistoryView() } }
+        .sheet(isPresented: $showAuth) { NavigationStack { DemoAuthView() } }
         .fileImporter(isPresented: $showFiles, allowedContentTypes: [.pdf, .text], allowsMultipleSelection: false) { result in
             switch result {
             case .success(let urls):
@@ -121,6 +203,14 @@ struct ChatView: View {
         .onDisappear { speech.stop(); cancelRequest(); assistant.finish() }
         .onChange(of: scenePhase) { _, phase in if phase != .active { speech.stop(); if isBusy { cancelRequest() } } }
         .onChange(of: speech.transcript) { _, transcript in text = transcript }
+        .onChange(of: auth.isAuthenticated) { _, isAuthenticated in
+            guard isAuthenticated,
+                  let queuedStarterID,
+                  let prompt = starterPrompts.first(where: { $0.id == queuedStarterID }) else { return }
+            self.queuedStarterID = nil
+            showAuth = false
+            sendStarter(prompt)
+        }
         .task(id: activeRequest) {
             guard let id = activeRequest else { return }
             await performReply(requestId: id)
@@ -293,6 +383,20 @@ struct ChatView: View {
         MoonHaptics.shared.play(enabled: store.data.haptics)
     }
 
+    private func sendStarter(_ prompt: StarterPrompt) {
+        guard !isBusy else { return }
+        guard auth.isAuthenticated else {
+            queuedStarterID = prompt.id
+            showAuth = true
+            return
+        }
+        speech.stop()
+        keyboard = false
+        lastUserText = prompt.title
+        store.data.messages.append(ConversationMessage(isUser: true, text: prompt.title))
+        requestReply(prompt.request, starterID: prompt.id)
+    }
+
     private func fillBack() {
         let value = text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             ? lastUserText
@@ -325,8 +429,9 @@ struct ChatView: View {
         } catch { self.error = "文件读取失败，请重新选择 PDF 或 UTF-8 文件。"; return false }
     }
 
-    private func requestReply(_ value: String) {
+    private func requestReply(_ value: String, starterID: String? = nil) {
         pendingText = value
+        activeStarterID = starterID
         error = nil
         lastMetadata = nil
         streamingText = ""
@@ -413,7 +518,13 @@ struct ChatView: View {
             finishTurn()
         } catch {
             guard activeRequest == requestId else { return }
-            self.error = "暂时没有连接上玄同，未生成云端回复。请在「我的 → 玄同连接」检查服务地址，然后重试。"
+            if let activeStarterID,
+               let starter = starterPrompts.first(where: { $0.id == activeStarterID }) {
+                store.data.messages.append(ConversationMessage(isUser: false, text: starter.fallback))
+                self.error = "网络有些波动，常曦先为这个快捷入口展示了安全引导；连接恢复后仍可继续追问。"
+            } else {
+                self.error = "暂时没有连接上玄同，未生成云端回复。请在「我的 → 玄同连接」检查服务地址，然后重试。"
+            }
             finishTurn()
         }
     }
@@ -447,6 +558,7 @@ struct ChatView: View {
         streamingText = ""
         state = .idle
         activeRequest = nil
+        activeStarterID = nil
     }
 
     private func cancelRequest() {
@@ -455,6 +567,7 @@ struct ChatView: View {
         isEnriching = false
         streamingText = ""
         state = .idle
+        activeStarterID = nil
     }
 
     private func scrollToBottom(_ proxy: ScrollViewProxy) {

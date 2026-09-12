@@ -7,21 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A30000000000000000000001 /* ConstitutionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000001 /* ConstitutionModel.swift */; };
-		A30000000000000000000002 /* ConstitutionViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000002 /* ConstitutionViews.swift */; };
-		A30000000000000000000003 /* HealthPortraitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000003 /* HealthPortraitView.swift */; };
-		A30000000000000000000004 /* PainAssessmentForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000004 /* PainAssessmentForm.swift */; };
-		A30000000000000000000005 /* PainBody3DView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000005 /* PainBody3DView.swift */; };
-		A30000000000000000000006 /* PainLocationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000006 /* PainLocationView.swift */; };
-		A30000000000000000000007 /* PainRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000007 /* PainRecord.swift */; };
-		A30000000000000000000008 /* PainVoiceLocationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000008 /* PainVoiceLocationView.swift */; };
-		A30000000000000000000009 /* pain-body-v1.json in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000009 /* pain-body-v1.json */; };
-		A3000000000000000000000A /* head.usdc in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000A /* head.usdc */; };
-		A3000000000000000000000B /* neck.usdc in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000B /* neck.usdc */; };
-		A3000000000000000000000C /* torso.usdc in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000C /* torso.usdc */; };
-		A3000000000000000000000D /* back.usdc in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000D /* back.usdc */; };
-		A3000000000000000000000E /* arms.usdc in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000E /* arms.usdc */; };
-		A3000000000000000000000F /* legs.usdc in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000F /* legs.usdc */; };
 		11330683600D1562326A08A8 /* PlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AB26D831FCAA9E434EF446 /* PlanView.swift */; };
 		1471976122373B0F6E8ED156 /* MoonPoolView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20764D798340D2EDC23A4C3C /* MoonPoolView.swift */; };
 		151859FADF94ED715FF06E24 /* HealthRecordService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAC1F4037C13943824D07CDA /* HealthRecordService.swift */; };
@@ -56,9 +41,28 @@
 		9B73F559BADB9DA0BC254D13 /* XuantongEventConversationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6080C289575EC27CE850F6AD /* XuantongEventConversationService.swift */; };
 		9F88B57E66BACFD002FF53FC /* SpeechController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2588A4479B2E405A8E7A7588 /* SpeechController.swift */; };
 		A2ABFDD6BC9E9E7791D1AFC0 /* CloudDocumentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28B515CBEC1EC3BBE85F4783 /* CloudDocumentsView.swift */; };
+		A30000000000000000000001 /* ConstitutionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000001 /* ConstitutionModel.swift */; };
+		A30000000000000000000002 /* ConstitutionViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000002 /* ConstitutionViews.swift */; };
+		A30000000000000000000003 /* HealthPortraitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000003 /* HealthPortraitView.swift */; };
+		A30000000000000000000004 /* PainAssessmentForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000004 /* PainAssessmentForm.swift */; };
+		A30000000000000000000005 /* PainBody3DView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000005 /* PainBody3DView.swift */; };
+		A30000000000000000000006 /* PainLocationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000006 /* PainLocationView.swift */; };
+		A30000000000000000000007 /* PainRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000007 /* PainRecord.swift */; };
+		A30000000000000000000008 /* PainVoiceLocationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000008 /* PainVoiceLocationView.swift */; };
+		A30000000000000000000009 /* pain-body-v1.json in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000009 /* pain-body-v1.json */; };
+		A3000000000000000000000A /* head.usdc in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000A /* head.usdc */; };
+		A3000000000000000000000B /* neck.usdc in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000B /* neck.usdc */; };
+		A3000000000000000000000C /* torso.usdc in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000C /* torso.usdc */; };
+		A3000000000000000000000D /* back.usdc in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000D /* back.usdc */; };
+		A3000000000000000000000E /* arms.usdc in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000E /* arms.usdc */; };
+		A3000000000000000000000F /* legs.usdc in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000F /* legs.usdc */; };
 		A6E0B039F2293B6B00AE53B6 /* SSEClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C6FFB72C2F5DEDD1C5CA7DA /* SSEClient.swift */; };
 		ABEDED2AE341E6A4D6894291 /* SpeechTranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A789BD8B15D4C0325EA7AA88 /* SpeechTranscriptionService.swift */; };
 		AF3002FF126114E59B468672 /* TokenStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFA239E5BA681CF90427C1A6 /* TokenStoreTests.swift */; };
+		B30000000000000000000001 /* ShiyangModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000001 /* ShiyangModels.swift */; };
+		B30000000000000000000002 /* ShiyangViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000002 /* ShiyangViews.swift */; };
+		B30000000000000000000003 /* ShiyangIngredientArtwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000003 /* ShiyangIngredientArtwork.swift */; };
+		B30000000000000000000004 /* ShiyangRecommendationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000004 /* ShiyangRecommendationTests.swift */; };
 		B9DF58F1F8797857458D8997 /* MockURLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2221432C46487278E03D736 /* MockURLProtocol.swift */; };
 		C0254D1F82DA0CB3C16DB45D /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54357BEF7C54682DEA614395 /* HomeView.swift */; };
 		C434FC78DF1B57471C67D6E0 /* PatientServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD26349BAD8A4AFB317A9573 /* PatientServiceTests.swift */; };
@@ -69,10 +73,6 @@
 		EB6A9FCA3DDE3602712CBC09 /* ReportImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 232F1510C6D03D434451F7BE /* ReportImportView.swift */; };
 		ED0BDCC9CD154E2376B5D485 /* ReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D07478862A3BDF32AEBCDE7A /* ReportView.swift */; };
 		FAC19C63E588C688E13F8C40 /* XuantongConversationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7D2AADB24D75556F8902513 /* XuantongConversationServiceTests.swift */; };
-		B30000000000000000000001 /* ShiyangModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000001 /* ShiyangModels.swift */; };
-		B30000000000000000000002 /* ShiyangViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000002 /* ShiyangViews.swift */; };
-		B30000000000000000000003 /* ShiyangIngredientArtwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000003 /* ShiyangIngredientArtwork.swift */; };
-		B30000000000000000000004 /* ShiyangRecommendationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000004 /* ShiyangRecommendationTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -93,21 +93,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		A10000000000000000000001 /* ConstitutionModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConstitutionModel.swift; sourceTree = "<group>"; };
-		A10000000000000000000002 /* ConstitutionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConstitutionViews.swift; sourceTree = "<group>"; };
-		A10000000000000000000003 /* HealthPortraitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthPortraitView.swift; sourceTree = "<group>"; };
-		A10000000000000000000004 /* PainAssessmentForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PainAssessmentForm.swift; sourceTree = "<group>"; };
-		A10000000000000000000005 /* PainBody3DView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PainBody3DView.swift; sourceTree = "<group>"; };
-		A10000000000000000000006 /* PainLocationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PainLocationView.swift; sourceTree = "<group>"; };
-		A10000000000000000000007 /* PainRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PainRecord.swift; sourceTree = "<group>"; };
-		A10000000000000000000008 /* PainVoiceLocationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PainVoiceLocationView.swift; sourceTree = "<group>"; };
-		A10000000000000000000009 /* pain-body-v1.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "pain-body-v1.json"; sourceTree = "<group>"; };
-		A1000000000000000000000A /* head.usdc */ = {isa = PBXFileReference; lastKnownFileType = file.usd; path = head.usdc; sourceTree = "<group>"; };
-		A1000000000000000000000B /* neck.usdc */ = {isa = PBXFileReference; lastKnownFileType = file.usd; path = neck.usdc; sourceTree = "<group>"; };
-		A1000000000000000000000C /* torso.usdc */ = {isa = PBXFileReference; lastKnownFileType = file.usd; path = torso.usdc; sourceTree = "<group>"; };
-		A1000000000000000000000D /* back.usdc */ = {isa = PBXFileReference; lastKnownFileType = file.usd; path = back.usdc; sourceTree = "<group>"; };
-		A1000000000000000000000E /* arms.usdc */ = {isa = PBXFileReference; lastKnownFileType = file.usd; path = arms.usdc; sourceTree = "<group>"; };
-		A1000000000000000000000F /* legs.usdc */ = {isa = PBXFileReference; lastKnownFileType = file.usd; path = legs.usdc; sourceTree = "<group>"; };
 		01FD0C821F671B0408AA4853 /* ChangXiUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = ChangXiUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		08E5FA717A26759A16C71F0D /* HealthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthView.swift; sourceTree = "<group>"; };
 		0BA2633B9AB5BAD1DCA87C91 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
@@ -142,10 +127,120 @@
 		8F550F82820E94C1333D0485 /* APIClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClientTests.swift; sourceTree = "<group>"; };
 		92015495D334068A6F9BA4F4 /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
 		97FDC4FBE1ED9C2CFED763F0 /* AppStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStoreTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000001 /* ConstitutionModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConstitutionModel.swift; sourceTree = "<group>"; };
+		A10000000000000000000002 /* ConstitutionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConstitutionViews.swift; sourceTree = "<group>"; };
+		A10000000000000000000003 /* HealthPortraitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthPortraitView.swift; sourceTree = "<group>"; };
+		A10000000000000000000004 /* PainAssessmentForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PainAssessmentForm.swift; sourceTree = "<group>"; };
+		A10000000000000000000005 /* PainBody3DView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PainBody3DView.swift; sourceTree = "<group>"; };
+		A10000000000000000000006 /* PainLocationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PainLocationView.swift; sourceTree = "<group>"; };
+		A10000000000000000000007 /* PainRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PainRecord.swift; sourceTree = "<group>"; };
+		A10000000000000000000008 /* PainVoiceLocationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PainVoiceLocationView.swift; sourceTree = "<group>"; };
+		A10000000000000000000009 /* pain-body-v1.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "pain-body-v1.json"; sourceTree = "<group>"; };
+		A1000000000000000000000A /* head.usdc */ = {isa = PBXFileReference; lastKnownFileType = file.usd; path = head.usdc; sourceTree = "<group>"; };
+		A1000000000000000000000B /* neck.usdc */ = {isa = PBXFileReference; lastKnownFileType = file.usd; path = neck.usdc; sourceTree = "<group>"; };
+		A1000000000000000000000C /* torso.usdc */ = {isa = PBXFileReference; lastKnownFileType = file.usd; path = torso.usdc; sourceTree = "<group>"; };
+		A1000000000000000000000D /* back.usdc */ = {isa = PBXFileReference; lastKnownFileType = file.usd; path = back.usdc; sourceTree = "<group>"; };
+		A1000000000000000000000E /* arms.usdc */ = {isa = PBXFileReference; lastKnownFileType = file.usd; path = arms.usdc; sourceTree = "<group>"; };
+		A1000000000000000000000F /* legs.usdc */ = {isa = PBXFileReference; lastKnownFileType = file.usd; path = legs.usdc; sourceTree = "<group>"; };
+		A74865BC3053DF3C0028BC14 /* ios.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = ios.yml; sourceTree = "<group>"; };
+		A74865BF3053DF3C0028BC14 /* AppConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfiguration.swift; sourceTree = "<group>"; };
+		A74865C03053DF3C0028BC14 /* ChangXiApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangXiApp.swift; sourceTree = "<group>"; };
+		A74865C13053DF3C0028BC14 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		A74865C33053DF3C0028BC14 /* CloudDocumentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudDocumentsView.swift; sourceTree = "<group>"; };
+		A74865C43053DF3C0028BC14 /* ReportImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportImportView.swift; sourceTree = "<group>"; };
+		A74865C63053DF3C0028BC14 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		A74865C73053DF3C0028BC14 /* MoonPoolView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoonPoolView.swift; sourceTree = "<group>"; };
+		A74865C93053DF3C0028BC14 /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStore.swift; sourceTree = "<group>"; };
+		A74865CB3053DF3C0028BC14 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		A74865CC3053DF3C0028BC14 /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
+		A74865CD3053DF3C0028BC14 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		A74865CE3053DF3C0028BC14 /* AuthSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSession.swift; sourceTree = "<group>"; };
+		A74865CF3053DF3C0028BC14 /* ConversationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationService.swift; sourceTree = "<group>"; };
+		A74865D03053DF3C0028BC14 /* SSEClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSEClient.swift; sourceTree = "<group>"; };
+		A74865D13053DF3C0028BC14 /* TokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenStore.swift; sourceTree = "<group>"; };
+		A74865D23053DF3C0028BC14 /* XuantongEventConversationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XuantongEventConversationService.swift; sourceTree = "<group>"; };
+		A74865D43053DF3C0028BC14 /* DocumentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentService.swift; sourceTree = "<group>"; };
+		A74865D53053DF3C0028BC14 /* EventWorkflowService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventWorkflowService.swift; sourceTree = "<group>"; };
+		A74865D63053DF3C0028BC14 /* HealthRecordService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthRecordService.swift; sourceTree = "<group>"; };
+		A74865D73053DF3C0028BC14 /* HealthSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthSyncService.swift; sourceTree = "<group>"; };
+		A74865D83053DF3C0028BC14 /* PatientService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatientService.swift; sourceTree = "<group>"; };
+		A74865D93053DF3C0028BC14 /* TaskService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskService.swift; sourceTree = "<group>"; };
+		A74865DB3053DF3C0028BC14 /* SpeechController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechController.swift; sourceTree = "<group>"; };
+		A74865DC3053DF3C0028BC14 /* SpeechTranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechTranscriptionService.swift; sourceTree = "<group>"; };
+		A74865DF3053DF3C0028BC14 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
+		A74865E13053DF3C0028BC14 /* ConstitutionModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConstitutionModel.swift; sourceTree = "<group>"; };
+		A74865E23053DF3C0028BC14 /* ConstitutionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConstitutionViews.swift; sourceTree = "<group>"; };
+		A74865E33053DF3C0028BC14 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		A74865E53053DF3C0028BC14 /* HealthPortraitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthPortraitView.swift; sourceTree = "<group>"; };
+		A74865E63053DF3C0028BC14 /* HealthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthView.swift; sourceTree = "<group>"; };
+		A74865E73053DF3C0028BC14 /* MedicationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedicationView.swift; sourceTree = "<group>"; };
+		A74865E83053DF3C0028BC14 /* PlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanView.swift; sourceTree = "<group>"; };
+		A74865E93053DF3C0028BC14 /* ReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportView.swift; sourceTree = "<group>"; };
+		A74865EA3053DF3C0028BC14 /* WorkflowProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkflowProgressView.swift; sourceTree = "<group>"; };
+		A74865EC3053DF3C0028BC14 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		A74865EE3053DF3C0028BC14 /* MEDICAL-DESIGN.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "MEDICAL-DESIGN.md"; sourceTree = "<group>"; };
+		A74865EF3053DF3C0028BC14 /* PainAssessmentForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PainAssessmentForm.swift; sourceTree = "<group>"; };
+		A74865F03053DF3C0028BC14 /* PainBody3DView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PainBody3DView.swift; sourceTree = "<group>"; };
+		A74865F13053DF3C0028BC14 /* PainLocationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PainLocationView.swift; sourceTree = "<group>"; };
+		A74865F23053DF3C0028BC14 /* PainRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PainRecord.swift; sourceTree = "<group>"; };
+		A74865F33053DF3C0028BC14 /* PainVoiceLocationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PainVoiceLocationView.swift; sourceTree = "<group>"; };
+		A74865F43053DF3C0028BC14 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		A74865F63053DF3C0028BC14 /* DemoAuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoAuthView.swift; sourceTree = "<group>"; };
+		A74865F73053DF3C0028BC14 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		A74865F83053DF3C0028BC14 /* SpeechSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechSettingsView.swift; sourceTree = "<group>"; };
+		A74865FA3053DF3C0028BC14 /* CareTaskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareTaskView.swift; sourceTree = "<group>"; };
+		A74865FB3053DF3C0028BC14 /* ServicesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServicesView.swift; sourceTree = "<group>"; };
+		A74865FD3053DF3C0028BC14 /* ShiyangIngredientArtwork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShiyangIngredientArtwork.swift; sourceTree = "<group>"; };
+		A74865FE3053DF3C0028BC14 /* ShiyangModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShiyangModels.swift; sourceTree = "<group>"; };
+		A74865FF3053DF3C0028BC14 /* ShiyangViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShiyangViews.swift; sourceTree = "<group>"; };
+		A74866023053DF3C0028BC14 /* arms.usdc */ = {isa = PBXFileReference; lastKnownFileType = file; path = arms.usdc; sourceTree = "<group>"; };
+		A74866033053DF3C0028BC14 /* back.usdc */ = {isa = PBXFileReference; lastKnownFileType = file; path = back.usdc; sourceTree = "<group>"; };
+		A74866043053DF3C0028BC14 /* head.usdc */ = {isa = PBXFileReference; lastKnownFileType = file; path = head.usdc; sourceTree = "<group>"; };
+		A74866053053DF3C0028BC14 /* legs.usdc */ = {isa = PBXFileReference; lastKnownFileType = file; path = legs.usdc; sourceTree = "<group>"; };
+		A74866063053DF3C0028BC14 /* neck.usdc */ = {isa = PBXFileReference; lastKnownFileType = file; path = neck.usdc; sourceTree = "<group>"; };
+		A74866073053DF3C0028BC14 /* torso.usdc */ = {isa = PBXFileReference; lastKnownFileType = file; path = torso.usdc; sourceTree = "<group>"; };
+		A74866093053DF3C0028BC14 /* MAKEHUMAN-LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "MAKEHUMAN-LICENSE.txt"; sourceTree = "<group>"; };
+		A748660A3053DF3C0028BC14 /* pain-body-v1.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "pain-body-v1.json"; sourceTree = "<group>"; };
+		A748660C3053DF3C0028BC14 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A748660F3053DF3C0028BC14 /* ASSET_PROMPTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ASSET_PROMPTS.md; sourceTree = "<group>"; };
+		A74866103053DF3C0028BC14 /* BACKEND_INTEGRATION.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = BACKEND_INTEGRATION.md; sourceTree = "<group>"; };
+		A74866113053DF3C0028BC14 /* DELIVERY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = DELIVERY.md; sourceTree = "<group>"; };
+		A74866123053DF3C0028BC14 /* FRONTEND_MERGE_REVIEW.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = FRONTEND_MERGE_REVIEW.md; sourceTree = "<group>"; };
+		A74866133053DF3C0028BC14 /* LOCAL_BACKEND.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LOCAL_BACKEND.md; sourceTree = "<group>"; };
+		A74866143053DF3C0028BC14 /* SHIYANG_ARCHITECTURE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = SHIYANG_ARCHITECTURE.md; sourceTree = "<group>"; };
+		A74866153053DF3C0028BC14 /* XUANTONG_INTEGRATION.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = XUANTONG_INTEGRATION.md; sourceTree = "<group>"; };
+		A74866173053DF3C0028BC14 /* download_validation.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = download_validation.py; sourceTree = "<group>"; };
+		A74866183053DF3C0028BC14 /* register_sources.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = register_sources.py; sourceTree = "<group>"; };
+		A748661A3053DF3C0028BC14 /* FlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowTests.swift; sourceTree = "<group>"; };
+		A748661C3053DF3C0028BC14 /* APIClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClientTests.swift; sourceTree = "<group>"; };
+		A748661D3053DF3C0028BC14 /* AppStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStoreTests.swift; sourceTree = "<group>"; };
+		A748661E3053DF3C0028BC14 /* ConversationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationServiceTests.swift; sourceTree = "<group>"; };
+		A748661F3053DF3C0028BC14 /* HealthSyncServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthSyncServiceTests.swift; sourceTree = "<group>"; };
+		A74866203053DF3C0028BC14 /* MockURLProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockURLProtocol.swift; sourceTree = "<group>"; };
+		A74866213053DF3C0028BC14 /* PatientServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatientServiceTests.swift; sourceTree = "<group>"; };
+		A74866223053DF3C0028BC14 /* ShiyangRecommendationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShiyangRecommendationTests.swift; sourceTree = "<group>"; };
+		A74866233053DF3C0028BC14 /* SSEClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSEClientTests.swift; sourceTree = "<group>"; };
+		A74866243053DF3C0028BC14 /* TokenStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenStoreTests.swift; sourceTree = "<group>"; };
+		A74866253053DF3C0028BC14 /* XuantongConversationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XuantongConversationServiceTests.swift; sourceTree = "<group>"; };
+		A74866283053DF3C0028BC14 /* audit_z_anatomy.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = audit_z_anatomy.py; sourceTree = "<group>"; };
+		A74866293053DF3C0028BC14 /* export_human_atlas.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = export_human_atlas.py; sourceTree = "<group>"; };
+		A748662A3053DF3C0028BC14 /* export_z_anatomy.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = export_z_anatomy.py; sourceTree = "<group>"; };
+		A748662B3053DF3C0028BC14 /* inspect_z_anatomy.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = inspect_z_anatomy.py; sourceTree = "<group>"; };
+		A748662C3053DF3C0028BC14 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		A748662F3053DF3C0028BC14 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
+		A74866303053DF3C0028BC14 /* ChangXi.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ChangXi.xcodeproj; sourceTree = "<group>"; };
+		A74866313053DF3C0028BC14 /* project.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = project.yml; sourceTree = "<group>"; };
+		A74866323053DF3C0028BC14 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		A74866333053DF3C0028BC14 /* THIRD_PARTY_NOTICES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = THIRD_PARTY_NOTICES.md; sourceTree = "<group>"; };
+		A74866353053DF3C0028BC14 /* 2次改版.zip */ = {isa = PBXFileReference; lastKnownFileType = archive.zip; path = "2次改版.zip"; sourceTree = "<group>"; };
 		A789BD8B15D4C0325EA7AA88 /* SpeechTranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechTranscriptionService.swift; sourceTree = "<group>"; };
 		A7BED67B18D53E31835E3333 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		A7D2AADB24D75556F8902513 /* XuantongConversationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XuantongConversationServiceTests.swift; sourceTree = "<group>"; };
 		AEA43392D4DA6675F14869AD /* ConversationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationService.swift; sourceTree = "<group>"; };
+		B10000000000000000000001 /* ShiyangModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShiyangModels.swift; sourceTree = "<group>"; };
+		B10000000000000000000002 /* ShiyangViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShiyangViews.swift; sourceTree = "<group>"; };
+		B10000000000000000000003 /* ShiyangIngredientArtwork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShiyangIngredientArtwork.swift; sourceTree = "<group>"; };
+		B10000000000000000000004 /* ShiyangRecommendationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShiyangRecommendationTests.swift; sourceTree = "<group>"; };
 		B1E702A1CFE41F3D9F9301AD /* ConversationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationServiceTests.swift; sourceTree = "<group>"; };
 		B1F4E5EAF49738BD36789745 /* AuthSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSession.swift; sourceTree = "<group>"; };
 		BAC1F4037C13943824D07CDA /* HealthRecordService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthRecordService.swift; sourceTree = "<group>"; };
@@ -158,10 +253,6 @@
 		F0F330F6A0B8CF497797A99A /* AppConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfiguration.swift; sourceTree = "<group>"; };
 		F223D55D3B8A1C7783A88B04 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
 		FD26349BAD8A4AFB317A9573 /* PatientServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatientServiceTests.swift; sourceTree = "<group>"; };
-		B10000000000000000000001 /* ShiyangModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShiyangModels.swift; sourceTree = "<group>"; };
-		B10000000000000000000002 /* ShiyangViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShiyangViews.swift; sourceTree = "<group>"; };
-		B10000000000000000000003 /* ShiyangIngredientArtwork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShiyangIngredientArtwork.swift; sourceTree = "<group>"; };
-		B10000000000000000000004 /* ShiyangRecommendationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShiyangRecommendationTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -178,16 +269,6 @@
 				B20000000000000000000001 /* Shiyang */,
 			);
 			path = Features;
-			sourceTree = "<group>";
-		};
-		B20000000000000000000001 /* Shiyang */ = {
-			isa = PBXGroup;
-			children = (
-				B10000000000000000000001 /* ShiyangModels.swift */,
-				B10000000000000000000003 /* ShiyangIngredientArtwork.swift */,
-				B10000000000000000000002 /* ShiyangViews.swift */,
-			);
-			path = Shiyang;
 			sourceTree = "<group>";
 		};
 		2D3648E97F0A5EC44B40F21D /* Home */ = {
@@ -238,6 +319,7 @@
 		58BB0BE90347E268D443E083 = {
 			isa = PBXGroup;
 			children = (
+				A74866363053DF3C0028BC14 /* 未命名文件夹 */,
 				AE01AF899F11E5D979BC2929 /* ChangXi */,
 				BC81214C7436FE8230AC030D /* UI */,
 				A95EBE324650F2F05A53D730 /* Unit */,
@@ -290,15 +372,6 @@
 			path = Health;
 			sourceTree = "<group>";
 		};
-		A259F4131C1D89CFB0F209C1 /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-				133A8B7073F1580F7C4E77A4 /* Assets.xcassets */,
-				A20000000000000000000003 /* PainModels */,
-			);
-			path = Resources;
-			sourceTree = "<group>";
-		};
 		A20000000000000000000001 /* Constitution */ = {
 			isa = PBXGroup;
 			children = (
@@ -342,6 +415,368 @@
 			path = Anatomy;
 			sourceTree = "<group>";
 		};
+		A259F4131C1D89CFB0F209C1 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				133A8B7073F1580F7C4E77A4 /* Assets.xcassets */,
+				A20000000000000000000003 /* PainModels */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		A74865BD3053DF3C0028BC14 /* workflows */ = {
+			isa = PBXGroup;
+			children = (
+				A74865BC3053DF3C0028BC14 /* ios.yml */,
+			);
+			path = workflows;
+			sourceTree = "<group>";
+		};
+		A74865BE3053DF3C0028BC14 /* .github */ = {
+			isa = PBXGroup;
+			children = (
+				A74865BD3053DF3C0028BC14 /* workflows */,
+			);
+			path = .github;
+			sourceTree = "<group>";
+		};
+		A74865C23053DF3C0028BC14 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				A74865BF3053DF3C0028BC14 /* AppConfiguration.swift */,
+				A74865C03053DF3C0028BC14 /* ChangXiApp.swift */,
+				A74865C13053DF3C0028BC14 /* RootView.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		A74865C53053DF3C0028BC14 /* Camera */ = {
+			isa = PBXGroup;
+			children = (
+				A74865C33053DF3C0028BC14 /* CloudDocumentsView.swift */,
+				A74865C43053DF3C0028BC14 /* ReportImportView.swift */,
+			);
+			path = Camera;
+			sourceTree = "<group>";
+		};
+		A74865C83053DF3C0028BC14 /* Design */ = {
+			isa = PBXGroup;
+			children = (
+				A74865C63053DF3C0028BC14 /* DesignSystem.swift */,
+				A74865C73053DF3C0028BC14 /* MoonPoolView.swift */,
+			);
+			path = Design;
+			sourceTree = "<group>";
+		};
+		A74865CA3053DF3C0028BC14 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				A74865C93053DF3C0028BC14 /* AppStore.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		A74865D33053DF3C0028BC14 /* Networking */ = {
+			isa = PBXGroup;
+			children = (
+				A74865CB3053DF3C0028BC14 /* APIClient.swift */,
+				A74865CC3053DF3C0028BC14 /* APIError.swift */,
+				A74865CD3053DF3C0028BC14 /* AuthService.swift */,
+				A74865CE3053DF3C0028BC14 /* AuthSession.swift */,
+				A74865CF3053DF3C0028BC14 /* ConversationService.swift */,
+				A74865D03053DF3C0028BC14 /* SSEClient.swift */,
+				A74865D13053DF3C0028BC14 /* TokenStore.swift */,
+				A74865D23053DF3C0028BC14 /* XuantongEventConversationService.swift */,
+			);
+			path = Networking;
+			sourceTree = "<group>";
+		};
+		A74865DA3053DF3C0028BC14 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A74865D43053DF3C0028BC14 /* DocumentService.swift */,
+				A74865D53053DF3C0028BC14 /* EventWorkflowService.swift */,
+				A74865D63053DF3C0028BC14 /* HealthRecordService.swift */,
+				A74865D73053DF3C0028BC14 /* HealthSyncService.swift */,
+				A74865D83053DF3C0028BC14 /* PatientService.swift */,
+				A74865D93053DF3C0028BC14 /* TaskService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		A74865DD3053DF3C0028BC14 /* Speech */ = {
+			isa = PBXGroup;
+			children = (
+				A74865DB3053DF3C0028BC14 /* SpeechController.swift */,
+				A74865DC3053DF3C0028BC14 /* SpeechTranscriptionService.swift */,
+			);
+			path = Speech;
+			sourceTree = "<group>";
+		};
+		A74865DE3053DF3C0028BC14 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				A74865C53053DF3C0028BC14 /* Camera */,
+				A74865C83053DF3C0028BC14 /* Design */,
+				A74865CA3053DF3C0028BC14 /* Models */,
+				A74865D33053DF3C0028BC14 /* Networking */,
+				A74865DA3053DF3C0028BC14 /* Services */,
+				A74865DD3053DF3C0028BC14 /* Speech */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		A74865E03053DF3C0028BC14 /* Chat */ = {
+			isa = PBXGroup;
+			children = (
+				A74865DF3053DF3C0028BC14 /* ChatView.swift */,
+			);
+			path = Chat;
+			sourceTree = "<group>";
+		};
+		A74865E43053DF3C0028BC14 /* Constitution */ = {
+			isa = PBXGroup;
+			children = (
+				A74865E13053DF3C0028BC14 /* ConstitutionModel.swift */,
+				A74865E23053DF3C0028BC14 /* ConstitutionViews.swift */,
+				A74865E33053DF3C0028BC14 /* README.md */,
+			);
+			path = Constitution;
+			sourceTree = "<group>";
+		};
+		A74865EB3053DF3C0028BC14 /* Health */ = {
+			isa = PBXGroup;
+			children = (
+				A74865E53053DF3C0028BC14 /* HealthPortraitView.swift */,
+				A74865E63053DF3C0028BC14 /* HealthView.swift */,
+				A74865E73053DF3C0028BC14 /* MedicationView.swift */,
+				A74865E83053DF3C0028BC14 /* PlanView.swift */,
+				A74865E93053DF3C0028BC14 /* ReportView.swift */,
+				A74865EA3053DF3C0028BC14 /* WorkflowProgressView.swift */,
+			);
+			path = Health;
+			sourceTree = "<group>";
+		};
+		A74865ED3053DF3C0028BC14 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				A74865EC3053DF3C0028BC14 /* HomeView.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		A74865F53053DF3C0028BC14 /* Pain */ = {
+			isa = PBXGroup;
+			children = (
+				A74865EE3053DF3C0028BC14 /* MEDICAL-DESIGN.md */,
+				A74865EF3053DF3C0028BC14 /* PainAssessmentForm.swift */,
+				A74865F03053DF3C0028BC14 /* PainBody3DView.swift */,
+				A74865F13053DF3C0028BC14 /* PainLocationView.swift */,
+				A74865F23053DF3C0028BC14 /* PainRecord.swift */,
+				A74865F33053DF3C0028BC14 /* PainVoiceLocationView.swift */,
+				A74865F43053DF3C0028BC14 /* README.md */,
+			);
+			path = Pain;
+			sourceTree = "<group>";
+		};
+		A74865F93053DF3C0028BC14 /* Profile */ = {
+			isa = PBXGroup;
+			children = (
+				A74865F63053DF3C0028BC14 /* DemoAuthView.swift */,
+				A74865F73053DF3C0028BC14 /* ProfileView.swift */,
+				A74865F83053DF3C0028BC14 /* SpeechSettingsView.swift */,
+			);
+			path = Profile;
+			sourceTree = "<group>";
+		};
+		A74865FC3053DF3C0028BC14 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A74865FA3053DF3C0028BC14 /* CareTaskView.swift */,
+				A74865FB3053DF3C0028BC14 /* ServicesView.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		A74866003053DF3C0028BC14 /* Shiyang */ = {
+			isa = PBXGroup;
+			children = (
+				A74865FD3053DF3C0028BC14 /* ShiyangIngredientArtwork.swift */,
+				A74865FE3053DF3C0028BC14 /* ShiyangModels.swift */,
+				A74865FF3053DF3C0028BC14 /* ShiyangViews.swift */,
+			);
+			path = Shiyang;
+			sourceTree = "<group>";
+		};
+		A74866013053DF3C0028BC14 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				A74865E03053DF3C0028BC14 /* Chat */,
+				A74865E43053DF3C0028BC14 /* Constitution */,
+				A74865EB3053DF3C0028BC14 /* Health */,
+				A74865ED3053DF3C0028BC14 /* Home */,
+				A74865F53053DF3C0028BC14 /* Pain */,
+				A74865F93053DF3C0028BC14 /* Profile */,
+				A74865FC3053DF3C0028BC14 /* Services */,
+				A74866003053DF3C0028BC14 /* Shiyang */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		A74866083053DF3C0028BC14 /* Anatomy */ = {
+			isa = PBXGroup;
+			children = (
+				A74866023053DF3C0028BC14 /* arms.usdc */,
+				A74866033053DF3C0028BC14 /* back.usdc */,
+				A74866043053DF3C0028BC14 /* head.usdc */,
+				A74866053053DF3C0028BC14 /* legs.usdc */,
+				A74866063053DF3C0028BC14 /* neck.usdc */,
+				A74866073053DF3C0028BC14 /* torso.usdc */,
+			);
+			path = Anatomy;
+			sourceTree = "<group>";
+		};
+		A748660B3053DF3C0028BC14 /* PainModels */ = {
+			isa = PBXGroup;
+			children = (
+				A74866083053DF3C0028BC14 /* Anatomy */,
+				A74866093053DF3C0028BC14 /* MAKEHUMAN-LICENSE.txt */,
+				A748660A3053DF3C0028BC14 /* pain-body-v1.json */,
+			);
+			path = PainModels;
+			sourceTree = "<group>";
+		};
+		A748660D3053DF3C0028BC14 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A748660B3053DF3C0028BC14 /* PainModels */,
+				A748660C3053DF3C0028BC14 /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		A748660E3053DF3C0028BC14 /* ChangXi */ = {
+			isa = PBXGroup;
+			children = (
+				A74865C23053DF3C0028BC14 /* App */,
+				A74865DE3053DF3C0028BC14 /* Core */,
+				A74866013053DF3C0028BC14 /* Features */,
+				A748660D3053DF3C0028BC14 /* Resources */,
+			);
+			path = ChangXi;
+			sourceTree = "<group>";
+		};
+		A74866163053DF3C0028BC14 /* docs */ = {
+			isa = PBXGroup;
+			children = (
+				A748660F3053DF3C0028BC14 /* ASSET_PROMPTS.md */,
+				A74866103053DF3C0028BC14 /* BACKEND_INTEGRATION.md */,
+				A74866113053DF3C0028BC14 /* DELIVERY.md */,
+				A74866123053DF3C0028BC14 /* FRONTEND_MERGE_REVIEW.md */,
+				A74866133053DF3C0028BC14 /* LOCAL_BACKEND.md */,
+				A74866143053DF3C0028BC14 /* SHIYANG_ARCHITECTURE.md */,
+				A74866153053DF3C0028BC14 /* XUANTONG_INTEGRATION.md */,
+			);
+			path = docs;
+			sourceTree = "<group>";
+		};
+		A74866193053DF3C0028BC14 /* scripts */ = {
+			isa = PBXGroup;
+			children = (
+				A74866173053DF3C0028BC14 /* download_validation.py */,
+				A74866183053DF3C0028BC14 /* register_sources.py */,
+			);
+			path = scripts;
+			sourceTree = "<group>";
+		};
+		A748661B3053DF3C0028BC14 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				A748661A3053DF3C0028BC14 /* FlowTests.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		A74866263053DF3C0028BC14 /* Unit */ = {
+			isa = PBXGroup;
+			children = (
+				A748661C3053DF3C0028BC14 /* APIClientTests.swift */,
+				A748661D3053DF3C0028BC14 /* AppStoreTests.swift */,
+				A748661E3053DF3C0028BC14 /* ConversationServiceTests.swift */,
+				A748661F3053DF3C0028BC14 /* HealthSyncServiceTests.swift */,
+				A74866203053DF3C0028BC14 /* MockURLProtocol.swift */,
+				A74866213053DF3C0028BC14 /* PatientServiceTests.swift */,
+				A74866223053DF3C0028BC14 /* ShiyangRecommendationTests.swift */,
+				A74866233053DF3C0028BC14 /* SSEClientTests.swift */,
+				A74866243053DF3C0028BC14 /* TokenStoreTests.swift */,
+				A74866253053DF3C0028BC14 /* XuantongConversationServiceTests.swift */,
+			);
+			path = Unit;
+			sourceTree = "<group>";
+		};
+		A74866273053DF3C0028BC14 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				A748661B3053DF3C0028BC14 /* UI */,
+				A74866263053DF3C0028BC14 /* Unit */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		A748662D3053DF3C0028BC14 /* AnatomyPipeline */ = {
+			isa = PBXGroup;
+			children = (
+				A74866283053DF3C0028BC14 /* audit_z_anatomy.py */,
+				A74866293053DF3C0028BC14 /* export_human_atlas.py */,
+				A748662A3053DF3C0028BC14 /* export_z_anatomy.py */,
+				A748662B3053DF3C0028BC14 /* inspect_z_anatomy.py */,
+				A748662C3053DF3C0028BC14 /* README.md */,
+			);
+			path = AnatomyPipeline;
+			sourceTree = "<group>";
+		};
+		A748662E3053DF3C0028BC14 /* Tools */ = {
+			isa = PBXGroup;
+			children = (
+				A748662D3053DF3C0028BC14 /* AnatomyPipeline */,
+			);
+			path = Tools;
+			sourceTree = "<group>";
+		};
+		A74866343053DF3C0028BC14 /* changxi-apple-main */ = {
+			isa = PBXGroup;
+			children = (
+				A74865BE3053DF3C0028BC14 /* .github */,
+				A748660E3053DF3C0028BC14 /* ChangXi */,
+				A74866163053DF3C0028BC14 /* docs */,
+				A74866193053DF3C0028BC14 /* scripts */,
+				A74866273053DF3C0028BC14 /* Tests */,
+				A748662E3053DF3C0028BC14 /* Tools */,
+				A748662F3053DF3C0028BC14 /* .gitignore */,
+				A74866303053DF3C0028BC14 /* ChangXi.xcodeproj */,
+				A74866313053DF3C0028BC14 /* project.yml */,
+				A74866323053DF3C0028BC14 /* README.md */,
+				A74866333053DF3C0028BC14 /* THIRD_PARTY_NOTICES.md */,
+			);
+			path = "changxi-apple-main";
+			sourceTree = "<group>";
+		};
+		A74866363053DF3C0028BC14 /* 未命名文件夹 */ = {
+			isa = PBXGroup;
+			children = (
+				A74866343053DF3C0028BC14 /* changxi-apple-main */,
+				A74866353053DF3C0028BC14 /* 2次改版.zip */,
+			);
+			path = "未命名文件夹";
+			sourceTree = "<group>";
+		};
+		A74866373053DF3C0028BC14 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		A95EBE324650F2F05A53D730 /* Unit */ = {
 			isa = PBXGroup;
 			children = (
@@ -369,6 +804,16 @@
 				A259F4131C1D89CFB0F209C1 /* Resources */,
 			);
 			path = ChangXi;
+			sourceTree = "<group>";
+		};
+		B20000000000000000000001 /* Shiyang */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000001 /* ShiyangModels.swift */,
+				B10000000000000000000003 /* ShiyangIngredientArtwork.swift */,
+				B10000000000000000000002 /* ShiyangViews.swift */,
+			);
+			path = Shiyang;
 			sourceTree = "<group>";
 		};
 		BC81214C7436FE8230AC030D /* UI */ = {
@@ -526,6 +971,12 @@
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 351A79D2E937FFC8280AE983 /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = A74866373053DF3C0028BC14 /* Products */;
+					ProjectRef = A74866303053DF3C0028BC14 /* ChangXi.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				9FD10A64F51FB0F4CB15C1E6 /* ChangXi */,
@@ -854,8 +1305,8 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "常曦";
 				INFOPLIST_KEY_NSAppTransportSecurity_NSAllowsLocalNetworking = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "常曦仅在你主动拍摄报告或药盒时使用相机。";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "常曦仅在你主动发起语音输入时使用麦克风。";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "常曦仅在你配置局域网玄同服务后连接该服务。";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "常曦仅在你主动发起语音输入时使用麦克风。";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "常曦将你主动输入的语音转成可修改的文字。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -885,8 +1336,8 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "常曦";
 				INFOPLIST_KEY_NSAppTransportSecurity_NSAllowsLocalNetworking = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "常曦仅在你主动拍摄报告或药盒时使用相机。";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "常曦仅在你主动发起语音输入时使用麦克风。";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "常曦仅在你配置局域网玄同服务后连接该服务。";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "常曦仅在你主动发起语音输入时使用麦克风。";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "常曦将你主动输入的语音转成可修改的文字。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
