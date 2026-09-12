@@ -148,9 +148,8 @@ final class FlowTests: XCTestCase {
 
         XCTAssertTrue(app.buttons["open-shiyang"].waitForExistence(timeout: 10))
         let constitutionEntry = app.buttons["open-constitution"]
-        if !constitutionEntry.isHittable { app.swipeUp() }
         XCTAssertTrue(constitutionEntry.waitForExistence(timeout: 5))
-        constitutionEntry.tap()
+        tapVisiblePortion(of: constitutionEntry, in: app)
         XCTAssertTrue(app.navigationBars["中医体质"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["认识自己的体质"].exists)
     }
@@ -188,7 +187,7 @@ final class FlowTests: XCTestCase {
         XCTAssertEqual(app.textFields["reading-secondary"].value as? String, "77")
     }
 
-    func testPainGentleSurfaceMarking() {
+    func testPainClinicalSurfaceMarking() {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing"]
         app.launch()
@@ -202,24 +201,24 @@ final class FlowTests: XCTestCase {
         XCTAssertTrue(head.waitForExistence(timeout: 5))
         capture("15-pain-region-grid")
         head.tap()
-        let surface = app.otherElements["pain-marking-surface"]
+        let surface = app.descendants(matching: .any)["pain-marking-surface"].firstMatch
         XCTAssertTrue(surface.waitForExistence(timeout: 5))
         XCTAssertFalse(app.segmentedControls.buttons["骨骼"].exists)
         XCTAssertFalse(app.segmentedControls.buttons["肌肉"].exists)
-        capture("16-pain-head-gentle-surface")
+        capture("16-pain-head-clinical-surface")
         surface.coordinate(withNormalizedOffset: CGVector(dx: 0.50, dy: 0.32)).tap()
         XCTAssertTrue(app.staticTexts["这个视角已标记 1 处"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.buttons["pain-primary-step"].isEnabled)
         capture("16-pain-head-marked")
         app.segmentedControls.buttons["右侧"].tap()
         XCTAssertTrue(app.staticTexts["还没有标记"].waitForExistence(timeout: 3))
-        capture("17-pain-head-gentle-profile")
+        capture("17-pain-head-clinical-profile")
         app.buttons["上一步"].tap()
         let arms = app.buttons["pain-region-arms"]
         XCTAssertTrue(arms.waitForExistence(timeout: 5))
         arms.tap()
         XCTAssertTrue(surface.waitForExistence(timeout: 5))
-        capture("18-pain-arms-gentle-surface")
+        capture("18-pain-arms-clinical-surface")
     }
 
     func testPainNaturalLanguageIntensity() {
@@ -235,7 +234,7 @@ final class FlowTests: XCTestCase {
         openPainLocation(in: app, entry: painEntry, head: head)
         XCTAssertTrue(head.waitForExistence(timeout: 5))
         head.tap()
-        let surface = app.otherElements["pain-marking-surface"]
+        let surface = app.descendants(matching: .any)["pain-marking-surface"].firstMatch
         XCTAssertTrue(surface.waitForExistence(timeout: 5))
         surface.coordinate(withNormalizedOffset: CGVector(dx: 0.50, dy: 0.32)).tap()
         let next = app.buttons["pain-primary-step"]
@@ -265,23 +264,20 @@ final class FlowTests: XCTestCase {
 
     private func openPainLocation(in app: XCUIApplication, entry: XCUIElement, head: XCUIElement) {
         XCTAssertTrue(entry.waitForExistence(timeout: 5))
-        for _ in 0..<4 where !entry.isHittable {
-            app.swipeUp()
-        }
-        for _ in 0..<3 where !head.exists {
-            if entry.isHittable {
-                entry.tap()
-            } else {
-                // The persistent glass bar can make XCTest report the lower
-                // card as occluded although its leading half is visible.
-                let frame = entry.frame
-                app.coordinate(withNormalizedOffset: .zero)
-                    .withOffset(CGVector(dx: frame.minX + min(100, frame.width * 0.3), dy: frame.midY))
-                    .tap()
-            }
-            _ = head.waitForExistence(timeout: 2)
-        }
+        entry.tap()
         XCTAssertTrue(head.waitForExistence(timeout: 5))
+    }
+
+    /// Taps the part of a lower card that remains above the persistent tab bar.
+    /// XCTest can report these cards as non-hittable even though their top edge is visible.
+    private func tapVisiblePortion(of element: XCUIElement, in app: XCUIApplication) {
+        let frame = element.frame
+        let tabTop = app.buttons["root-tab-首页"].frame.minY
+        let x = frame.minX + min(110, frame.width * 0.3)
+        let y = min(frame.midY, tabTop - 14)
+        app.coordinate(withNormalizedOffset: .zero)
+            .withOffset(CGVector(dx: x, dy: y))
+            .tap()
     }
 
     func testShiyangPantryToCookingJourney() {

@@ -20,10 +20,10 @@ struct PainLocationView: View {
 
     private var title: String {
         switch step {
-        case 0: "哪里不舒服？"
-        case 1: "\(draft.region.rawValue)，指给我看"
+        case 0: "选择不适部位"
+        case 1: "\(draft.region.rawValue) · 标注位置"
         case 2: "疼痛感觉和强度"
-        default: "这样记，对吗？"
+        default: "确认本次记录"
         }
     }
 
@@ -52,19 +52,19 @@ struct PainLocationView: View {
                     case 2: descriptionForm
                     default: review
                     }
-                    if step > 1 {
+                    if step > 1 || (step == 1 && dynamicTypeSize.isAccessibilitySize) {
                         footer.padding(.top, 4)
                     }
                 }
             }
             .frame(maxWidth: 680)
             .padding(20)
-            .padding(.bottom, step == 1 && !saved ? 172 : 24)
+            .padding(.bottom, step == 1 && !saved && !dynamicTypeSize.isAccessibilitySize ? 172 : 24)
             .frame(maxWidth: .infinity)
             .id(step)
         }
         .cxMoonScreenBackground(illustrated: true)
-        .navigationTitle("身体感受")
+        .navigationTitle("疼痛位置记录")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -73,7 +73,7 @@ struct PainLocationView: View {
             }
         }
         .overlay(alignment: .bottom) {
-            if step == 1 && !saved {
+            if step == 1 && !saved && !dynamicTypeSize.isAccessibilitySize {
                 footer
                     .padding(.horizontal, 14)
                     .padding(.bottom, 82)
@@ -128,9 +128,14 @@ struct PainLocationView: View {
                 }
             }.accessibilityLabel("第\(step + 1)步，共4步")
             HStack(alignment: .center, spacing: 12) {
-                Image("ChangXiCharacter").resizable().scaledToFit().frame(width: 56, height: 56)
-                Text("不用急着说清楚，\n我陪你一点点记下来。")
-                    .font(.subheadline).foregroundStyle(CX.muted)
+                Image(systemName: "cross.case.fill")
+                    .font(.title3)
+                    .foregroundStyle(CX.blue)
+                    .frame(width: 42, height: 42)
+                    .background(CX.moonlight.opacity(0.14), in: Circle())
+                Text("按实际感受记录即可；无法确定时，可先选择最接近的区域。")
+                    .font(.subheadline)
+                    .foregroundStyle(CX.muted)
             }
             Text(saved ? "这次感受，记下来了" : title)
                 .font(.largeTitle.weight(.semibold)).fontDesign(.serif)
@@ -140,17 +145,10 @@ struct PainLocationView: View {
 
     private var regionGrid: some View {
         VStack(spacing: 16) {
-            Card {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("先选一个大致范围").font(.title3.weight(.semibold))
-                    Text("只画体表轮廓，不显示骨骼、肌肉或内部结构。")
-                        .font(.subheadline).foregroundStyle(CX.muted)
-                }
-                GentleBodyOverview()
-                    .frame(height: 260)
-                    .frame(maxWidth: .infinity)
-                    .accessibilityHidden(true)
-            }
+            Text("选择最接近的身体区域；下一步可切换正面、侧面和背面，进一步标注具体位置。")
+                .font(.subheadline)
+                .foregroundStyle(CX.muted)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             LazyVGrid(columns: CXLayout.adaptiveColumns(minimum: 156, spacing: 12, dynamicTypeSize: dynamicTypeSize), spacing: 12) {
                 ForEach(PainRegion.allCases) { region in
@@ -216,9 +214,8 @@ struct PainLocationView: View {
     private var location: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack(alignment: .center, spacing: 12) {
-                Image("ChangXiCharacter").resizable().scaledToFit().frame(width: 42, height: 42)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(.title2.weight(.semibold)).fontDesign(.serif)
+                    Text(title).font(.title2.weight(.semibold))
                     Text(kind.instruction)
                         .font(.caption).foregroundStyle(CX.muted)
                 }
@@ -444,25 +441,24 @@ struct PainLocationView: View {
                 }
                 if !draft.note.isEmpty { Text(draft.note) }
                 if let assessment = draft.assessment { PainAssessmentSummary(assessment: assessment) }
-                Button("重新指位置") { advance(1) }
+                Button("重新标注位置") { advance(1) }
             }
         }
     }
 
     private var footer: some View {
-        HStack(spacing: 12) {
-            Button("上一步") { advance(step - 1) }.frame(minWidth: 80, minHeight: 48)
-            Button(step == 3 ? "保存这次记录" : step == 1 ? "下一步：选感觉和强度" : "看看记录") {
-                if step < 3 { advance(step + 1) }
-                else {
-                    do { draft.date = .now; try journal.save(draft); saved = true }
-                    catch { self.error = journal.readError ?? "记录没有保存成功，请保留当前内容后重试。" }
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(spacing: 10) {
+                    primaryStepButton
+                    backStepButton.frame(maxWidth: .infinity)
+                }
+            } else {
+                HStack(spacing: 12) {
+                    backStepButton
+                    primaryStepButton
                 }
             }
-            .buttonStyle(PrimaryButton())
-            .disabled(step == 1 && draft.marks.isEmpty)
-            .accessibilityHint(step == 1 ? "进入疼痛感觉和强度选择" : "")
-            .accessibilityIdentifier("pain-primary-step")
         }
         .padding(10)
         .background(.regularMaterial, in: .rect(cornerRadius: 24, style: .continuous))
@@ -471,6 +467,25 @@ struct PainLocationView: View {
                 .strokeBorder(Color.white.opacity(0.66), lineWidth: 0.8)
         }
         .shadow(color: .black.opacity(0.10), radius: 18, y: 8)
+    }
+
+    private var backStepButton: some View {
+        Button("上一步") { advance(step - 1) }
+            .frame(minWidth: 80, minHeight: 48)
+    }
+
+    private var primaryStepButton: some View {
+        Button(step == 3 ? "保存这次记录" : step == 1 ? "下一步：选感觉和强度" : "看看记录") {
+            if step < 3 { advance(step + 1) }
+            else {
+                do { draft.date = .now; try journal.save(draft); saved = true }
+                catch { self.error = journal.readError ?? "记录没有保存成功，请保留当前内容后重试。" }
+            }
+        }
+        .buttonStyle(PrimaryButton())
+        .disabled(step == 1 && draft.marks.isEmpty)
+        .accessibilityHint(step == 1 ? "进入疼痛感觉和强度选择" : "")
+        .accessibilityIdentifier("pain-primary-step")
     }
 
     private var success: some View {
@@ -520,50 +535,72 @@ private struct LegacySurfaceMarkSummary: View {
     }
 }
 
-/// A continuous, paper-cut style body overview. It avoids the severed-looking
-/// regional thumbnails and keeps selection separate from diagnostic anatomy.
+/// Compact, neutral body reference used before region selection.
 private struct GentleBodyOverview: View {
     var body: some View {
-        HStack(spacing: 26) {
-            VStack(spacing: 8) {
-                GentlePainFigure(region: nil, angle: .front)
-                Text("正面").font(.caption).foregroundStyle(CX.muted)
-            }
-            VStack(spacing: 8) {
-                GentlePainFigure(region: nil, angle: .back)
-                Text("背面").font(.caption).foregroundStyle(CX.muted)
+        HStack(spacing: 22) {
+            ForEach([PainAngle.front, .back]) { angle in
+                VStack(spacing: 6) {
+                    PainAtlasCell(angle: angle, crop: PainAtlasCell.fullBody)
+                        .frame(width: 104, height: 128)
+                        .clipShape(.rect(cornerRadius: 14, style: .continuous))
+                    Text(angle.rawValue)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(CX.muted)
+                }
             }
         }
-        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity)
     }
 }
 
-/// Calm code-native body art: no generated face, exposed anatomy, hard section
-/// cuts, or photorealistic mannequin material. Region focus fades at the edges.
+/// Static surface-only clinical illustration. The interactive anatomy layers are
+/// intentionally not used in this flow.
 struct PainArtwork: View {
     let region: PainRegion
     let angle: PainAngle
     var body: some View {
         ZStack {
             LinearGradient(
-                colors: [Color.white.opacity(0.94), CX.moonlight.opacity(0.10), Color.white.opacity(0.88)],
+                colors: [Color.white.opacity(0.98), CX.moonlight.opacity(0.08)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
-            GentlePainFigure(region: region, angle: angle)
-                .padding(12)
-            LinearGradient(
-                stops: [
-                    .init(color: Color.white.opacity(0.78), location: 0),
-                    .init(color: .clear, location: 0.10),
-                    .init(color: .clear, location: 0.88),
-                    .init(color: Color.white.opacity(0.74), location: 1)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .allowsHitTesting(false)
-        }.aspectRatio(1, contentMode: .fit).accessibilityHidden(true)
+            PainAtlasCell(angle: angle, crop: crop)
+                .padding(10)
+        }
+        .aspectRatio(1, contentMode: .fit)
+        .accessibilityHidden(true)
+    }
+
+    private var crop: CGRect {
+        switch region {
+        case .head: CGRect(x: 0.34, y: 0.015, width: 0.32, height: 0.32)
+        default: region.crop
+        }
+    }
+}
+
+private struct PainAtlasCell: View {
+    let angle: PainAngle
+    let crop: CGRect
+
+    static let fullBody = CGRect(x: 0, y: 0, width: 1, height: 1)
+
+    var body: some View {
+        GeometryReader { geometry in
+            let side = max(geometry.size.width, geometry.size.height)
+            let cell = side / max(crop.width, crop.height)
+            Image("PainBodyAtlas")
+                .resizable()
+                .frame(width: cell * 2, height: cell * 2)
+                .offset(
+                    x: -(angle.column + crop.minX) * cell,
+                    y: -(angle.row + crop.minY) * cell
+                )
+                .frame(width: geometry.size.width, height: geometry.size.height, alignment: .topLeading)
+                .clipped()
+        }
     }
 }
 
@@ -776,20 +813,6 @@ struct PainMarkingSurface: View {
                         for mark in visible { paint(mark.points, kind: mark.kind, context: &context, size: size) }
                         paint(stroke, kind: kind, context: &context, size: size)
                     }.allowsHitTesting(false)
-                    VStack {
-                        HStack {
-                            Label(kind.instruction, systemImage: kind.symbol)
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(CX.ink.opacity(0.78))
-                                .padding(.horizontal, 11)
-                                .frame(minHeight: 34)
-                                .background(.ultraThinMaterial, in: Capsule())
-                            Spacer()
-                        }
-                        Spacer()
-                    }
-                    .padding(12)
-                    .allowsHitTesting(false)
                 }
                 .contentShape(Rectangle())
                 .gesture(DragGesture(minimumDistance: 0)
@@ -808,6 +831,7 @@ struct PainMarkingSurface: View {
             }.aspectRatio(1, contentMode: .fit)
                 .clipShape(.rect(cornerRadius: 30))
                 .overlay { RoundedRectangle(cornerRadius: 30).strokeBorder(CX.moonlight.opacity(0.22), lineWidth: 1) }
+                .accessibilityElement(children: .ignore)
                 .accessibilityLabel("\(region.rawValue)\(angle.rawValue)位置图")
                 .accessibilityHint(kind.instruction)
                 .accessibilityIdentifier("pain-marking-surface")

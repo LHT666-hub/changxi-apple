@@ -68,13 +68,17 @@ struct ConstitutionEntryCard: View {
     }
 }
 
-struct ConstitutionHomeView: View {
-    @State private var store: ConstitutionStore
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+struct ConstitutionRootView: View {
+    @State private var store = ConstitutionStore()
 
-    init(store: ConstitutionStore = ConstitutionStore()) {
-        _store = State(initialValue: store)
+    var body: some View {
+        ConstitutionHomeView(store: store)
     }
+}
+
+struct ConstitutionHomeView: View {
+    let store: ConstitutionStore
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         ScrollView {
@@ -603,7 +607,7 @@ struct ConstitutionCarePlanView: View {
 }
 
 #Preview("中医体质总览") {
-    NavigationStack { ConstitutionHomeView() }
+    NavigationStack { ConstitutionRootView() }
 }
 
 #Preview("六维健康画像") {

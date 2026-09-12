@@ -51,19 +51,9 @@ struct HomeView: View {
                     TodaySummaryCard(nextPlan: nextPlan)
                         .entrance(index: 7, appeared: appeared, reduceMotion: reduceMotion)
 
-                    NavigationLink {
-                        PlanView()
-                    } label: {
-                        Card {
-                            RhythmView(completed: store.completed, total: store.data.plans.count)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .entrance(index: 8, appeared: appeared, reduceMotion: reduceMotion)
-
                     DemoLabel()
                         .frame(maxWidth: .infinity)
-                        .entrance(index: 9, appeared: appeared, reduceMotion: reduceMotion)
+                        .entrance(index: 8, appeared: appeared, reduceMotion: reduceMotion)
                 }
                 .frame(maxWidth: 680)
                 .padding(.horizontal, 20)

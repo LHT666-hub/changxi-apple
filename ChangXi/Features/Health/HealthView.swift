@@ -76,8 +76,8 @@ struct HealthView: View {
             NavigationLink { PainLocationView() } label: {
                 Card {
                     RowLabel(
-                        title: "哪里疼，指给常曦看",
-                        subtitle: "先选身体部位，再用三维人体标出具体位置",
+                        title: "疼痛位置记录",
+                        subtitle: "选择身体区域，并在体表图上标注具体位置",
                         icon: "figure.stand",
                         tint: CX.coral
                     )

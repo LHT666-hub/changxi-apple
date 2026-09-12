@@ -68,7 +68,7 @@ struct HealthPortraitView: View {
 
     @ViewBuilder private func destination(for dimension: HealthPortraitDimension) -> some View {
         switch dimension.kind {
-        case .characteristics: ConstitutionHomeView()
+        case .characteristics: ConstitutionRootView()
         case .function: HealthDimensionDetailView(dimension: dimension, painEntry: true)
         default: HealthDimensionDetailView(dimension: dimension, painEntry: false)
         }
