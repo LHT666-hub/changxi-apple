@@ -138,7 +138,7 @@ struct PainLocationView: View {
                     .foregroundStyle(CX.muted)
             }
             Text(saved ? "这次感受，记下来了" : title)
-                .font(.largeTitle.weight(.semibold)).fontDesign(.serif)
+                .font(CXTypography.display)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
