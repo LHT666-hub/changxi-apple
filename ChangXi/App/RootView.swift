@@ -542,95 +542,363 @@ private struct FrostedTabBarSurface: ViewModifier {
 struct WelcomeView: View {
     @Environment(AppStore.self) private var store
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    @State private var stage = 0
     @State private var accepted = false
     @State private var name = "张阿姨"
-    @State private var appeared = false
+    @State private var useLargeText = false
+
+    private let stageCount = 5
 
     var body: some View {
         ZStack {
             MoonBackground(illustrated: true)
 
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 24) {
-                    welcomeHeader
-                        .welcomeEntrance(index: 0, appeared: appeared, reduceMotion: reduceMotion)
+            VStack(spacing: 0) {
+                onboardingHeader
+                    .padding(.horizontal, 22)
+                    .padding(.top, 14)
 
-                    MoonPoolView()
-                        .welcomeEntrance(index: 1, appeared: appeared, reduceMotion: reduceMotion)
-
-                    Card {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("先从一句问候开始")
-                                .font(.title2.weight(.semibold))
-                            Text("健康记录、每日安排和想说的话，都可以慢慢告诉我。")
-                                .font(.body)
-                                .foregroundStyle(CX.muted)
-                        }
-
-                        TextField("希望常曦怎么称呼你", text: $name)
-                            .textContentType(.nickname)
-                            .submitLabel(.done)
-                            .padding(.horizontal, 16)
-                            .frame(minHeight: 52)
-                            .background(CX.raisedSurface, in: .rect(cornerRadius: 14, style: .continuous))
-
-                        Toggle("我已阅读并了解体验说明", isOn: $accepted)
-
-                        HStack {
-                            NavigationLink("体验说明") {
-                                InfoView(
-                                    title: "体验说明",
-                                    text: "这是常曦的前端体验版本。健康数据、医生消息、预约和对话回复均为示例，不提供真实诊疗、医生通信或挂号服务。你可以不登录直接体验，所有操作保存在此设备。"
-                                )
-                            }
-                            Spacer()
-                            NavigationLink("隐私说明") { PrivacyView() }
-                        }
-                        .font(.subheadline)
-
-                        Button("开始与常曦相伴", action: begin)
-                            .buttonStyle(PrimaryButton())
-                            .disabled(!accepted)
-
-                        if !accepted {
-                            Text("阅读说明并开启上方开关后即可开始")
-                                .font(.footnote)
-                                .foregroundStyle(CX.muted)
-                                .frame(maxWidth: .infinity)
-                        }
-                    }
-                    .welcomeEntrance(index: 2, appeared: appeared, reduceMotion: reduceMotion)
-
-                    DemoLabel()
-                        .frame(maxWidth: .infinity)
-                        .welcomeEntrance(index: 3, appeared: appeared, reduceMotion: reduceMotion)
+                TabView(selection: $stage) {
+                    welcomePage.tag(0)
+                    assistantPage.tag(1)
+                    connectionPage.tag(2)
+                    privacyPage.tag(3)
+                    setupPage.tag(4)
                 }
-                .frame(maxWidth: 620)
-                .padding(.horizontal, 20)
-                .padding(.top, 28)
-                .padding(.bottom, 40)
-                .frame(maxWidth: .infinity)
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                .animation(reduceMotion ? nil : .smooth(duration: 0.38), value: stage)
+
+                onboardingControls
+                    .padding(.horizontal, 22)
+                    .padding(.bottom, 18)
             }
         }
         .foregroundStyle(CX.ink)
         .toolbarVisibility(.hidden, for: .navigationBar)
-        .onAppear { appeared = true }
+        .onAppear {
+            useLargeText = store.data.largeText
+        }
     }
 
-    private var welcomeHeader: some View {
-        VStack(alignment: .leading, spacing: 10) {
+    private var onboardingHeader: some View {
+        HStack {
             Label("常曦", systemImage: "moonphase.waxing.crescent")
                 .font(.headline)
                 .foregroundStyle(CX.blue)
 
-            Text("有月光陪伴的日子，\n也是更健康的日子。")
-                .font(.largeTitle.weight(.semibold))
-                .fontDesign(.serif)
-                .fixedSize(horizontal: false, vertical: true)
+            Spacer()
 
-            Text("把照顾自己，变成每天都做得到的小事。")
-                .font(.body)
+            Text("\(stage + 1) / \(stageCount)")
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(CX.muted)
+                .monospacedDigit()
+        }
+        .frame(minHeight: 44)
+    }
+
+    private var welcomePage: some View {
+        onboardingScroll {
+            MoonPoolView(state: .idle, character: false)
+                .frame(maxWidth: 520)
+
+            VStack(spacing: 10) {
+                Text("欢迎来到常曦")
+                    .font(.largeTitle.weight(.semibold))
+                    .fontDesign(.serif)
+                    .multilineTextAlignment(.center)
+
+                Text("你的日常健康陪伴者，也是连接家人、家庭医生与服务的入口。")
+                    .font(.body)
+                    .foregroundStyle(CX.muted)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(5)
+                    .frame(maxWidth: 420)
+            }
+        }
+    }
+
+    private var assistantPage: some View {
+        onboardingScroll {
+            onboardingSymbol("sparkles", tint: CX.blue)
+
+            VStack(spacing: 10) {
+                Text("先从每天都用得上的事开始")
+                    .font(.title.weight(.semibold))
+                    .fontDesign(.serif)
+                    .multilineTextAlignment(.center)
+
+                Text("常曦把对话、健康记录与报告整理放在同一个入口里。")
+                    .font(.body)
+                    .foregroundStyle(CX.muted)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(5)
+                    .frame(maxWidth: 430)
+            }
+
+            Card {
+                OnboardingFeatureRow(
+                    icon: "bubble.left.and.text.bubble.right",
+                    title: "说出来就可以",
+                    subtitle: "文字或语音描述近况，不必先学复杂操作。"
+                )
+                Divider().overlay(CX.separator.opacity(0.16))
+                OnboardingFeatureRow(
+                    icon: "waveform.path.ecg",
+                    title: "记录每天的变化",
+                    subtitle: "血压、体重、用药和每日计划逐步沉淀。"
+                )
+                Divider().overlay(CX.separator.opacity(0.16))
+                OnboardingFeatureRow(
+                    icon: "doc.text.magnifyingglass",
+                    title: "把报告变得更容易理解",
+                    subtitle: "导入、整理并持续回看你的健康资料。"
+                )
+            }
+            .frame(maxWidth: 520)
+        }
+    }
+
+    private var connectionPage: some View {
+        onboardingScroll {
+            onboardingSymbol("person.2.wave.2", tint: CX.teal)
+
+            VStack(spacing: 10) {
+                Text("健康照护，从来不只属于一个人")
+                    .font(.title.weight(.semibold))
+                    .fontDesign(.serif)
+                    .multilineTextAlignment(.center)
+
+                Text("常曦希望把家人、家庭医生和服务连接起来，让提醒与任务真正有人接住。")
+                    .font(.body)
+                    .foregroundStyle(CX.muted)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(5)
+                    .frame(maxWidth: 450)
+            }
+
+            HStack(spacing: 0) {
+                OnboardingConnectionNode(icon: "person.fill", title: "你")
+                connectionLine
+                OnboardingConnectionNode(icon: "figure.2.and.child.holdinghands", title: "家人")
+                connectionLine
+                OnboardingConnectionNode(icon: "stethoscope", title: "家医")
+            }
+            .frame(maxWidth: 500)
+
+            Text("从一次提醒，到一次随访，再到一次服务协同，都保留清晰的下一步。")
+                .font(.subheadline)
+                .foregroundStyle(CX.muted)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 440)
+        }
+    }
+
+    private var privacyPage: some View {
+        onboardingScroll {
+            ZStack {
+                Circle()
+                    .fill(CX.blue.opacity(0.08))
+                    .frame(width: 148, height: 148)
+                Circle()
+                    .stroke(CX.moonlight.opacity(0.20), lineWidth: 1)
+                    .frame(width: 176, height: 176)
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 58, weight: .light))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(CX.blue)
+            }
+            .padding(.vertical, 10)
+
+            VStack(spacing: 10) {
+                Text("你的健康信息，由你决定怎么使用")
+                    .font(.title.weight(.semibold))
+                    .fontDesign(.serif)
+                    .multilineTextAlignment(.center)
+
+                Text("体验版数据默认保存在本机。需要语音、通知或其他权限时，常曦会在真正需要它的那一步再向你说明。")
+                    .font(.body)
+                    .foregroundStyle(CX.muted)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(5)
+                    .frame(maxWidth: 460)
+            }
+
+            Card {
+                OnboardingFeatureRow(
+                    icon: "iphone",
+                    title: "本机优先",
+                    subtitle: "示例数据与操作先保留在当前设备。"
+                )
+                Divider().overlay(CX.separator.opacity(0.16))
+                OnboardingFeatureRow(
+                    icon: "hand.raised.fill",
+                    title: "按需授权",
+                    subtitle: "权限不在第一次打开时一次性索取。"
+                )
+            }
+            .frame(maxWidth: 520)
+        }
+    }
+
+    private var setupPage: some View {
+        onboardingScroll {
+            onboardingSymbol("moon.stars.fill", tint: CX.blue)
+
+            VStack(spacing: 10) {
+                Text("最后，让常曦先认识你一点")
+                    .font(.title.weight(.semibold))
+                    .fontDesign(.serif)
+                    .multilineTextAlignment(.center)
+
+                Text("这些设置以后都可以在“我的”里修改。")
+                    .font(.body)
+                    .foregroundStyle(CX.muted)
+                    .multilineTextAlignment(.center)
+            }
+
+            Card {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("希望常曦怎么称呼你")
+                        .font(.subheadline.weight(.semibold))
+
+                    TextField("例如：张阿姨", text: $name)
+                        .textContentType(.nickname)
+                        .submitLabel(.done)
+                        .padding(.horizontal, 16)
+                        .frame(minHeight: 52)
+                        .background(CX.raisedSurface, in: .rect(cornerRadius: 14, style: .continuous))
+                }
+
+                Toggle(isOn: $useLargeText) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("大字模式")
+                            .font(.headline)
+                        Text("需要更大的阅读尺寸时可以直接开启")
+                            .font(.caption)
+                            .foregroundStyle(CX.muted)
+                    }
+                }
+
+                Divider().overlay(CX.separator.opacity(0.16))
+
+                Toggle("我已阅读并了解体验说明", isOn: $accepted)
+
+                HStack {
+                    NavigationLink("体验说明") {
+                        InfoView(
+                            title: "体验说明",
+                            text: "这是常曦的前端体验版本。健康数据、医生消息、预约和对话回复均可能包含示例内容，不提供真实诊疗、医生通信或挂号服务。你可以不登录直接体验。"
+                        )
+                    }
+                    Spacer()
+                    NavigationLink("隐私说明") { PrivacyView() }
+                }
+                .font(.subheadline)
+            }
+            .frame(maxWidth: 540)
+        }
+    }
+
+    private var onboardingControls: some View {
+        VStack(spacing: 14) {
+            HStack(spacing: 7) {
+                ForEach(0..<stageCount, id: \.self) { index in
+                    Capsule()
+                        .fill(index == stage ? CX.blue : CX.blue.opacity(0.14))
+                        .frame(width: index == stage ? 24 : 7, height: 7)
+                        .animation(reduceMotion ? nil : .smooth(duration: 0.26), value: stage)
+                }
+            }
+
+            HStack(spacing: 12) {
+                if stage > 0 {
+                    Button {
+                        move(to: stage - 1)
+                    } label: {
+                        Label("上一步", systemImage: "chevron.left")
+                            .font(.headline)
+                            .frame(minHeight: 52)
+                            .padding(.horizontal, 16)
+                    }
+                    .buttonStyle(.plain)
+                    .cxInteractiveGlass(cornerRadius: 18)
+                }
+
+                if stage < stageCount - 1 {
+                    Button {
+                        move(to: stage + 1)
+                    } label: {
+                        HStack {
+                            Text(stage == 0 ? "开始了解" : "继续")
+                            Spacer()
+                            Image(systemName: "arrow.right")
+                        }
+                    }
+                    .buttonStyle(PrimaryButton())
+                } else {
+                    Button("开始与常曦相伴", action: begin)
+                        .buttonStyle(PrimaryButton())
+                        .disabled(!accepted)
+                        .accessibilityIdentifier("finish-onboarding")
+                }
+            }
+            .frame(maxWidth: 560)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var connectionLine: some View {
+        Capsule()
+            .fill(
+                LinearGradient(
+                    colors: [CX.moonlight.opacity(0.10), CX.blue.opacity(0.32), CX.moonlight.opacity(0.10)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .frame(maxWidth: 54, minHeight: 1, maxHeight: 1)
+            .padding(.horizontal, 6)
+    }
+
+    private func onboardingSymbol(_ name: String, tint: Color) -> some View {
+        ZStack {
+            Circle()
+                .fill(tint.opacity(0.07))
+                .frame(width: 150, height: 150)
+            Circle()
+                .stroke(tint.opacity(0.12), lineWidth: 1)
+                .frame(width: 178, height: 178)
+            Image(systemName: name)
+                .font(.system(size: 56, weight: .light))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(tint)
+        }
+        .padding(.vertical, 8)
+    }
+
+    private func onboardingScroll<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        ScrollView {
+            VStack(spacing: 26) {
+                content()
+            }
+            .frame(maxWidth: 620)
+            .padding(.horizontal, 22)
+            .padding(.top, 18)
+            .padding(.bottom, 24)
+            .frame(maxWidth: .infinity)
+        }
+        .scrollIndicators(.hidden)
+    }
+
+    private func move(to nextStage: Int) {
+        guard (0..<stageCount).contains(nextStage) else { return }
+        if reduceMotion {
+            stage = nextStage
+        } else {
+            withAnimation(.smooth(duration: 0.36)) {
+                stage = nextStage
+            }
         }
     }
 
@@ -638,8 +906,61 @@ struct WelcomeView: View {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         store.data.name = trimmedName.isEmpty ? "朋友" : trimmedName
         store.data.person = "\(store.data.name)（本人）"
+        store.data.largeText = useLargeText
         store.data.onboarded = true
         MoonHaptics.shared.play(success: true, enabled: store.data.haptics)
+    }
+}
+
+private struct OnboardingFeatureRow: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.title3.weight(.medium))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(CX.blue)
+                .frame(width: 42, height: 42)
+                .background(CX.blue.opacity(0.055), in: Circle())
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.headline)
+                Text(subtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(CX.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 0)
+        }
+    }
+}
+
+private struct OnboardingConnectionNode: View {
+    let icon: String
+    let title: String
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.title2.weight(.medium))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(CX.blue)
+                .frame(width: 58, height: 58)
+                .background(.thinMaterial, in: Circle())
+                .overlay {
+                    Circle().strokeBorder(.white.opacity(0.58), lineWidth: 0.7)
+                }
+
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(CX.muted)
+        }
+        .frame(width: 74)
     }
 }
 
