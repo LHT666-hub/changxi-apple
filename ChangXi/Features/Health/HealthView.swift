@@ -134,7 +134,7 @@ private struct BMISummaryTile: View {
         }
         .frame(maxWidth: .infinity, minHeight: 112, alignment: .leading)
         .padding(16)
-        .cxInteractiveGlass(cornerRadius: 18)
+        .cxContentSurface(cornerRadius: CXRadius.md)
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilitySummary)
@@ -359,7 +359,7 @@ private struct MetricSummaryTile: View {
         }
         .frame(maxWidth: .infinity, minHeight: 112, alignment: .leading)
         .padding(16)
-        .cxInteractiveGlass(cornerRadius: 18)
+        .cxContentSurface(cornerRadius: CXRadius.md)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
     }
