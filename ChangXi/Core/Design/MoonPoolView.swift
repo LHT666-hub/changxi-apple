@@ -313,16 +313,23 @@ struct MoonPoolView: View {
                 let drift = paused ? 0 : time * (0.26 + depth * 0.10)
 
                 var line = Path()
+                var hasPreviousPoint = false
                 for step in 0...52 {
                     let p = Double(step) / 52
                     let x = center.x - halfWidth + 2 * halfWidth * p
                     let wave = sin(p * .pi * 4.2 + drift + Double(row) * 0.52) * (0.32 + depth * 0.74)
-                    let broken = sin(p * .pi * 9 + Double(row)) > -0.72
-                    guard broken else { continue }
-                    if line.isEmpty {
-                        line.move(to: CGPoint(x: x, y: y + wave))
-                    } else {
+                    let visible = sin(p * .pi * 9 + Double(row)) > -0.72
+
+                    guard visible else {
+                        hasPreviousPoint = false
+                        continue
+                    }
+
+                    if hasPreviousPoint {
                         line.addLine(to: CGPoint(x: x, y: y + wave))
+                    } else {
+                        line.move(to: CGPoint(x: x, y: y + wave))
+                        hasPreviousPoint = true
                     }
                 }
 
