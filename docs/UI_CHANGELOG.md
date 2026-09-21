@@ -102,6 +102,23 @@
   - `c47aa07d16289ea72a37b92441bd7386ee5452a0` Shiyang 残留 serif
 - 已直接读取 main 核验：Root / Home / Health / HealthPortrait / Constitution / Shiyang / Chat / Services / Pain / DesignSystem 的 `fontDesign(.serif)` 均为 0。
 
+### 高频页面语义色迁移
+- Commits:
+  - `fc00a12a38086f0a9dc2174b72c0720210c57c93` Home
+  - `7900027e6669f2214051f10f57ca3b867141c7fc` Health
+  - `b68d5604c4a41584f65e6c96484afca4125e2c7f` Services
+  - `bc84b9773c26eaf0a64fd612b410188d69ebb878` Chat
+- 这些高频页面从 CX.blue / teal / coral / gold 等旧别名开始迁移到 actionPrimary / statusPositive / statusCritical / statusWarning。
+- 目的不是“换名字”，而是为后续减少蓝色使用、区分品牌色 / 操作色 / 状态色打基础。
+
+### 内容层退出 Glass
+- Commits:
+  - `79a6299bfa1efe54766966acc275cb26d17f32d3` 新增 cxContentSurface
+  - `bb1b783f17fe9da78fd3f5f165df7925c5c274b7` Health tiles
+  - `32b8fa83ff59e18fb518c8b0161f79a6a74a0e7a` Service tiles
+  - `c51f866df3a6a4c2beb6093d916b0feb51f4c4e8` HealthPortrait tiles
+- 原则：内容卡采用月白/白色 surface；Glass 保留给导航、Tab Bar、悬浮控制和输入控制。
+
 ### 当前 V3 状态
 - 字体：基础 Token 已建立，主要高频页面已完成首轮迁移。
 - 配色：全局背景已转月白；旧颜色别名仍存在，下一步继续按语义迁移。
