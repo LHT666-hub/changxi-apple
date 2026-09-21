@@ -123,7 +123,7 @@ struct ChatView: View {
                         }
                         if store.data.messages.isEmpty && !isStreaming {
                             VStack(alignment: .leading, spacing: 18) {
-                                Text("此刻，想聊些什么？").font(.title2.weight(.medium)).fontDesign(.serif)
+                                Text("此刻，想聊些什么？").font(CXTypography.title)
                                 Text("一段心事，一次记录，或一个小小的疑问。")
                                     .font(.subheadline).foregroundStyle(CX.muted)
                                 ForEach(starterPrompts) { prompt in
