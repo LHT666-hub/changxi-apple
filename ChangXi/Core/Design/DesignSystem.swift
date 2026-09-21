@@ -483,6 +483,28 @@ struct QuietPressButton: ButtonStyle {
     }
 }
 
+private struct CXContentSurfaceModifier: ViewModifier {
+    let cornerRadius: CGFloat
+    @Environment(\.colorScheme) private var colorScheme
+
+    func body(content: Content) -> some View {
+        content
+            .background(CX.surface, in: .rect(cornerRadius: cornerRadius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(
+                        CX.separator.opacity(colorScheme == .dark ? 0.18 : 0.10),
+                        lineWidth: 0.5
+                    )
+            }
+            .shadow(
+                color: .black.opacity(colorScheme == .dark ? 0.12 : 0.025),
+                radius: colorScheme == .dark ? 12 : 8,
+                y: colorScheme == .dark ? 5 : 3
+            )
+    }
+}
+
 private struct CXInteractiveGlassModifier: ViewModifier {
     let cornerRadius: CGFloat
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
@@ -543,6 +565,10 @@ extension View {
     /// layer shares the same safe-area coordinate space.
     func cxMoonScreenBackground(illustrated: Bool = false) -> some View {
         modifier(CXMoonScreenBackgroundModifier(illustrated: illustrated))
+    }
+
+    func cxContentSurface(cornerRadius: CGFloat = CXRadius.lg) -> some View {
+        modifier(CXContentSurfaceModifier(cornerRadius: cornerRadius))
     }
 
     func cxInteractiveGlass(cornerRadius: CGFloat) -> some View {
