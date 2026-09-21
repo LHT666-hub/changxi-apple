@@ -21,9 +21,13 @@ struct HomeView: View {
             MoonBackground(illustrated: true)
 
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 24) {
-                    HomeHeader(name: store.data.name, greeting: greeting, hasUnreadMessage: !store.data.doctorMessageRead)
-                        .entrance(index: 0, appeared: appeared, reduceMotion: reduceMotion)
+                LazyVStack(alignment: .leading, spacing: 22) {
+                    HomeHeader(
+                        name: store.data.name,
+                        greeting: greeting,
+                        hasUnreadMessage: !store.data.doctorMessageRead
+                    )
+                    .entrance(index: 0, appeared: appeared, reduceMotion: reduceMotion)
 
                     moonPool
                         .entrance(index: 1, appeared: appeared, reduceMotion: reduceMotion)
@@ -31,36 +35,55 @@ struct HomeView: View {
                     talkButton
                         .entrance(index: 2, appeared: appeared, reduceMotion: reduceMotion)
 
-                    ShiyangEntryCard()
+                    SectionEyebrow(title: "常用")
                         .entrance(index: 3, appeared: appeared, reduceMotion: reduceMotion)
 
-                    ConstitutionEntryCard()
+                    HomeQuickActions()
                         .entrance(index: 4, appeared: appeared, reduceMotion: reduceMotion)
+
+                    SectionEyebrow(
+                        title: "今天",
+                        action: Date.now.formatted(
+                            .dateTime
+                                .locale(Locale(identifier: "zh_CN"))
+                                .month()
+                                .day()
+                                .weekday(.abbreviated)
+                        )
+                    )
+                    .entrance(index: 5, appeared: appeared, reduceMotion: reduceMotion)
+
+                    TodaySummaryCard(nextPlan: nextPlan)
+                        .entrance(index: 6, appeared: appeared, reduceMotion: reduceMotion)
 
                     NavigationLink { RefinedMoonRhythmDetailView() } label: {
                         RefinedMoonPhaseCard()
                             .padding(16)
-                            .cxInteractiveGlass(cornerRadius: 20)
+                            .cxInteractiveGlass(cornerRadius: 22)
                     }
                     .buttonStyle(.plain)
-                    .entrance(index: 5, appeared: appeared, reduceMotion: reduceMotion)
+                    .entrance(index: 7, appeared: appeared, reduceMotion: reduceMotion)
 
-                    SectionEyebrow(title: "今天", action: Date.now.formatted(.dateTime.locale(Locale(identifier: "zh_CN")).month().day().weekday(.abbreviated)))
-                        .entrance(index: 6, appeared: appeared, reduceMotion: reduceMotion)
+                    SectionEyebrow(title: "更多照护")
+                        .entrance(index: 8, appeared: appeared, reduceMotion: reduceMotion)
 
-                    TodaySummaryCard(nextPlan: nextPlan)
-                        .entrance(index: 7, appeared: appeared, reduceMotion: reduceMotion)
+                    ShiyangEntryCard()
+                        .entrance(index: 9, appeared: appeared, reduceMotion: reduceMotion)
+
+                    ConstitutionEntryCard()
+                        .entrance(index: 10, appeared: appeared, reduceMotion: reduceMotion)
 
                     DemoLabel()
                         .frame(maxWidth: .infinity)
-                        .entrance(index: 8, appeared: appeared, reduceMotion: reduceMotion)
+                        .entrance(index: 11, appeared: appeared, reduceMotion: reduceMotion)
                 }
-                .frame(maxWidth: 680)
+                .frame(maxWidth: 700)
                 .padding(.horizontal, 20)
-                .padding(.top, 18)
-                .padding(.bottom, 32)
+                .padding(.top, 16)
+                .padding(.bottom, 34)
                 .frame(maxWidth: .infinity)
             }
+            .scrollIndicators(.hidden)
         }
         .foregroundStyle(CX.ink)
         .toolbarVisibility(.hidden, for: .navigationBar)
@@ -72,12 +95,13 @@ struct HomeView: View {
         }
     }
 
-    @ViewBuilder private var moonPool: some View {
+    @ViewBuilder
+    private var moonPool: some View {
         if store.data.doctorMessageRead {
-            MoonPoolView(state: .idle)
+            MoonPoolView(state: .idle, character: false)
         } else {
             NavigationLink { DoctorMessageView() } label: {
-                MoonPoolView(state: .doctorReply)
+                MoonPoolView(state: .doctorReply, character: false)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -95,6 +119,7 @@ struct HomeView: View {
                 Image(systemName: "waveform")
                     .font(.title2.weight(.semibold))
                     .symbolRenderingMode(.hierarchical)
+
                 VStack(alignment: .leading, spacing: 3) {
                     Text("和常曦说说")
                         .font(.headline)
@@ -102,7 +127,9 @@ struct HomeView: View {
                         .font(.subheadline)
                         .opacity(0.82)
                 }
+
                 Spacer()
+
                 Image(systemName: "arrow.up.right")
                     .font(.subheadline.weight(.semibold))
             }
@@ -124,6 +151,7 @@ private struct HomeHeader: View {
                     Image(systemName: "moonphase.waxing.crescent")
                         .symbolRenderingMode(.hierarchical)
                         .foregroundStyle(CX.blue)
+
                     Text("常曦")
                         .font(.headline)
                         .foregroundStyle(CX.muted)
@@ -135,7 +163,7 @@ private struct HomeHeader: View {
                     .minimumScaleFactor(0.82)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text("今天也慢慢来。")
+                Text("照顾自己，不用一次做很多。")
                     .font(.body)
                     .foregroundStyle(CX.muted)
             }
@@ -159,18 +187,116 @@ private struct HomeHeader: View {
     }
 }
 
+private struct HomeQuickActions: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    var body: some View {
+        LazyVGrid(
+            columns: CXLayout.adaptiveColumns(
+                minimum: dynamicTypeSize.isAccessibilitySize ? 230 : 150,
+                spacing: 12,
+                dynamicTypeSize: dynamicTypeSize
+            ),
+            spacing: 12
+        ) {
+            NavigationLink {
+                MetricDetailView(kind: .pressure)
+            } label: {
+                HomeQuickActionTile(
+                    icon: "heart.text.square",
+                    title: "记健康",
+                    subtitle: "血压与日常记录",
+                    tint: CX.coral
+                )
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink {
+                ReportImportView()
+            } label: {
+                HomeQuickActionTile(
+                    icon: "doc.viewfinder",
+                    title: "导入报告",
+                    subtitle: "拍照或选择文件",
+                    tint: CX.blue
+                )
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink {
+                DoctorMessageView()
+            } label: {
+                HomeQuickActionTile(
+                    icon: "stethoscope",
+                    title: "医生消息",
+                    subtitle: "查看回复与建议",
+                    tint: CX.teal
+                )
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink {
+                PlanView()
+            } label: {
+                HomeQuickActionTile(
+                    icon: "calendar.badge.checkmark",
+                    title: "今日计划",
+                    subtitle: "用药与日常安排",
+                    tint: CX.gold
+                )
+            }
+            .buttonStyle(.plain)
+        }
+    }
+}
+
+private struct HomeQuickActionTile: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+    let tint: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Image(systemName: icon)
+                    .font(.title3.weight(.medium))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(tint)
+                    .frame(width: 42, height: 42)
+                    .background(tint.opacity(0.07), in: Circle())
+
+                Spacer()
+
+                Image(systemName: "arrow.up.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(CX.faint)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.headline)
+
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(CX.muted)
+                    .lineLimit(2)
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: 118, alignment: .leading)
+        .padding(16)
+        .cxInteractiveGlass(cornerRadius: 20)
+        .contentShape(Rectangle())
+    }
+}
 
 private struct RefinedMoonPhaseCard: View {
     private let phase = LunarPhase.today
 
     var body: some View {
         HStack(spacing: 16) {
-            RefinedMoonDisc(
-                phase: normalizedPhase,
-                size: 58,
-                showsOrbit: false
-            )
-            .frame(width: 66, height: 66)
+            HomeMoonBadge(phase: normalizedPhase)
+                .frame(width: 68, height: 68)
 
             VStack(alignment: .leading, spacing: 5) {
                 HStack(spacing: 7) {
@@ -211,37 +337,69 @@ private struct RefinedMoonPhaseCard: View {
     }
 }
 
+private struct HomeMoonBadge: View {
+    let phase: Double
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var breathing = false
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [
+                            .white.opacity(0.32),
+                            CX.moonlight.opacity(0.14),
+                            .clear
+                        ],
+                        center: .center,
+                        startRadius: 4,
+                        endRadius: 40
+                    )
+                )
+                .scaleEffect(reduceMotion ? 1 : (breathing ? 1.06 : 0.94))
+                .blur(radius: 4)
+
+            MoonDisc(phase: phase)
+                .frame(width: 52, height: 52)
+                .shadow(color: CX.moonlight.opacity(0.18), radius: 9, y: 4)
+        }
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 4.6).repeatForever(autoreverses: true)) {
+                breathing = true
+            }
+        }
+        .accessibilityHidden(true)
+    }
+}
+
 private struct RefinedMoonRhythmDetailView: View {
     private let phase = LunarPhase.today
 
     var body: some View {
         Page(illustrated: true) {
-            VStack(spacing: 18) {
-                RefinedMoonDisc(
-                    phase: normalizedPhase,
-                    size: 190,
-                    showsOrbit: true
-                )
-                .frame(height: 230)
+            MoonDetailHero(phase: normalizedPhase)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 8)
 
-                VStack(spacing: 6) {
-                    Text(phase.phaseName)
-                        .font(.largeTitle.weight(.semibold))
-                        .fontDesign(.serif)
+            VStack(spacing: 6) {
+                Text(phase.phaseName)
+                    .font(.largeTitle.weight(.semibold))
+                    .fontDesign(.serif)
 
-                    Text("\(phase.dateLabel) · \(phase.rhythmLabel)")
-                        .font(.body)
-                        .foregroundStyle(CX.muted)
-                }
-
-                HStack(spacing: 10) {
-                    MoonFactPill(icon: "calendar", text: "农历 \(phase.dateLabel)")
-                    MoonFactPill(icon: phase.symbol, text: phase.rhythmLabel)
-                }
+                Text("\(phase.dateLabel) · \(phase.rhythmLabel)")
+                    .font(.body)
+                    .foregroundStyle(CX.muted)
             }
             .frame(maxWidth: .infinity)
-            .padding(.top, 8)
-            .padding(.bottom, 12)
+
+            HStack(spacing: 10) {
+                MoonFactPill(icon: "calendar", text: "农历 \(phase.dateLabel)")
+                MoonFactPill(icon: phase.symbol, text: phase.rhythmLabel)
+            }
+            .frame(maxWidth: .infinity)
 
             Card {
                 Text("月相节律")
@@ -262,6 +420,69 @@ private struct RefinedMoonRhythmDetailView: View {
     }
 }
 
+private struct MoonDetailHero: View {
+    let phase: Double
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var breathing = false
+    @State private var rotation = -22.0
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [
+                            .white.opacity(0.34),
+                            CX.moonlight.opacity(0.15),
+                            .clear
+                        ],
+                        center: .center,
+                        startRadius: 10,
+                        endRadius: 132
+                    )
+                )
+                .frame(width: 270, height: 270)
+                .blur(radius: 10)
+                .scaleEffect(reduceMotion ? 1 : (breathing ? 1.04 : 0.97))
+
+            Circle()
+                .stroke(
+                    AngularGradient(
+                        colors: [
+                            .clear,
+                            .white.opacity(0.60),
+                            CX.moonlight.opacity(0.24),
+                            .clear
+                        ],
+                        center: .center
+                    ),
+                    style: StrokeStyle(lineWidth: 1, lineCap: .round)
+                )
+                .frame(width: 232, height: 232)
+                .rotationEffect(.degrees(rotation))
+
+            MoonDisc(phase: phase)
+                .frame(width: 180, height: 180)
+                .shadow(color: .white.opacity(0.24), radius: 14, y: -2)
+                .shadow(color: CX.moonlight.opacity(0.22), radius: 24, y: 10)
+        }
+        .frame(height: 250)
+        .onAppear {
+            guard !reduceMotion else { return }
+
+            withAnimation(.easeInOut(duration: 4.8).repeatForever(autoreverses: true)) {
+                breathing = true
+            }
+
+            withAnimation(.linear(duration: 30).repeatForever(autoreverses: false)) {
+                rotation = 338
+            }
+        }
+        .accessibilityHidden(true)
+    }
+}
+
 private struct MoonFactPill: View {
     let icon: String
     let text: String
@@ -277,251 +498,6 @@ private struct MoonFactPill: View {
                 Capsule()
                     .strokeBorder(CX.blue.opacity(0.08), lineWidth: 0.5)
             }
-    }
-}
-
-private struct RefinedMoonDisc: View {
-    let phase: Double
-    let size: CGFloat
-    var showsOrbit = true
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    @Environment(\.colorScheme) private var colorScheme
-
-    @State private var breathing = false
-    @State private var orbitAngle = 0.0
-
-    private var normalizedPhase: Double {
-        let value = phase.truncatingRemainder(dividingBy: 1)
-        return value < 0 ? value + 1 : value
-    }
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            .white.opacity(reduceTransparency ? 0.03 : 0.30),
-                            CX.moonlight.opacity(reduceTransparency ? 0.02 : 0.16),
-                            CX.blue.opacity(reduceTransparency ? 0.01 : 0.05),
-                            .clear
-                        ],
-                        center: .center,
-                        startRadius: size * 0.10,
-                        endRadius: size * 0.72
-                    )
-                )
-                .frame(width: size * 1.44, height: size * 1.44)
-                .blur(radius: size * 0.055)
-                .scaleEffect(reduceMotion ? 1 : (breathing ? 1.045 : 0.98))
-                .blendMode(.plusLighter)
-
-            if showsOrbit {
-                ZStack {
-                    Circle()
-                        .stroke(CX.moonlight.opacity(0.08), lineWidth: 0.7)
-
-                    Circle()
-                        .trim(from: 0.08, to: 0.72)
-                        .stroke(
-                            AngularGradient(
-                                colors: [.clear, .white.opacity(0.70), CX.moonlight.opacity(0.30), .clear],
-                                center: .center
-                            ),
-                            style: StrokeStyle(lineWidth: 1.05, lineCap: .round)
-                        )
-                        .rotationEffect(.degrees(orbitAngle))
-
-                    Circle()
-                        .fill(.white.opacity(0.72))
-                        .frame(width: 3.2, height: 3.2)
-                        .shadow(color: .white.opacity(0.65), radius: 4)
-                        .offset(y: -size * 0.60)
-                        .rotationEffect(.degrees(orbitAngle * 0.72 + 34))
-                }
-                .frame(width: size * 1.22, height: size * 1.22)
-            }
-
-            moonBody
-                .scaleEffect(reduceMotion ? 1 : (breathing ? 1.018 : 0.992))
-        }
-        .frame(width: size * 1.46, height: size * 1.46)
-        .onAppear {
-            guard !reduceMotion else { return }
-
-            withAnimation(.easeInOut(duration: 4.8).repeatForever(autoreverses: true)) {
-                breathing = true
-            }
-
-            withAnimation(.linear(duration: 28).repeatForever(autoreverses: false)) {
-                orbitAngle = 360
-            }
-        }
-        .accessibilityHidden(true)
-    }
-
-    private var moonBody: some View {
-        ZStack {
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            Color(.displayP3, red: 0.22, green: 0.29, blue: 0.40)
-                                .opacity(colorScheme == .dark ? 0.95 : 0.84),
-                            Color(.displayP3, red: 0.08, green: 0.12, blue: 0.20)
-                                .opacity(0.98)
-                        ],
-                        center: .topLeading,
-                        startRadius: 0,
-                        endRadius: size * 0.72
-                    )
-                )
-
-            RefinedMoonIllumination(phase: normalizedPhase)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color(.displayP3, red: 1.00, green: 0.995, blue: 0.965),
-                            Color(.displayP3, red: 0.94, green: 0.96, blue: 0.995),
-                            Color(.displayP3, red: 0.78, green: 0.85, blue: 0.94)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-
-            MoonSurfaceTexture()
-                .mask(RefinedMoonIllumination(phase: normalizedPhase))
-                .blendMode(.multiply)
-                .opacity(colorScheme == .dark ? 0.48 : 0.38)
-
-            RefinedMoonIllumination(phase: normalizedPhase)
-                .fill(
-                    RadialGradient(
-                        colors: [.white.opacity(0.58), .white.opacity(0.08), .clear],
-                        center: UnitPoint(x: 0.28, y: 0.22),
-                        startRadius: 0,
-                        endRadius: size * 0.78
-                    )
-                )
-                .blendMode(.screen)
-
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [.clear, Color.black.opacity(0.04), Color.black.opacity(0.18)],
-                        center: .center,
-                        startRadius: size * 0.28,
-                        endRadius: size * 0.58
-                    )
-                )
-                .blendMode(.multiply)
-
-            Circle()
-                .strokeBorder(
-                    LinearGradient(
-                        colors: [.white.opacity(0.86), .white.opacity(0.20), CX.moonlight.opacity(0.16), .clear],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: max(0.7, size * 0.006)
-                )
-        }
-        .frame(width: size, height: size)
-        .clipShape(Circle())
-        .shadow(color: .white.opacity(colorScheme == .dark ? 0.18 : 0.30), radius: size * 0.07, y: -size * 0.01)
-        .shadow(color: CX.moonlight.opacity(0.24), radius: size * 0.14, y: size * 0.05)
-        .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.28 : 0.16), radius: size * 0.12, y: size * 0.10)
-    }
-}
-
-private struct MoonSurfaceTexture: View {
-    var body: some View {
-        Canvas { context, size in
-            let craters: [(Double, Double, Double, Double)] = [
-                (0.26, 0.30, 0.17, 0.10),
-                (0.62, 0.25, 0.10, 0.08),
-                (0.72, 0.54, 0.19, 0.07),
-                (0.40, 0.63, 0.12, 0.08),
-                (0.24, 0.73, 0.08, 0.06),
-                (0.54, 0.46, 0.055, 0.055),
-                (0.78, 0.76, 0.065, 0.05),
-                (0.46, 0.18, 0.045, 0.045)
-            ]
-
-            for crater in craters {
-                let diameter = size.width * crater.2
-                let rect = CGRect(
-                    x: size.width * crater.0 - diameter / 2,
-                    y: size.height * crater.1 - diameter / 2,
-                    width: diameter,
-                    height: diameter
-                )
-
-                context.fill(
-                    Path(ellipseIn: rect),
-                    with: .radialGradient(
-                        Gradient(colors: [
-                            Color.black.opacity(crater.3),
-                            Color.black.opacity(crater.3 * 0.28),
-                            .clear
-                        ]),
-                        center: CGPoint(
-                            x: rect.midX - diameter * 0.10,
-                            y: rect.midY - diameter * 0.12
-                        ),
-                        startRadius: 0,
-                        endRadius: diameter * 0.58
-                    )
-                )
-            }
-        }
-    }
-}
-
-private struct RefinedMoonIllumination: Shape {
-    var phase: Double
-
-    var animatableData: Double {
-        get { phase }
-        set { phase = newValue }
-    }
-
-    func path(in rect: CGRect) -> Path {
-        let normalized = max(0, min(phase, 1))
-        let radius = min(rect.width, rect.height) / 2
-        let waxing = normalized < 0.5
-        let terminator = cos(normalized * 2 * .pi)
-        let samples = 96
-
-        var path = Path()
-
-        for index in 0...samples {
-            let unitY = -1 + (2 * Double(index) / Double(samples))
-            let span = sqrt(max(0, 1 - unitY * unitY)) * radius
-            let x = rect.midX + (waxing ? span : -span)
-            let y = rect.midY + unitY * radius
-            let point = CGPoint(x: x, y: y)
-
-            if index == 0 {
-                path.move(to: point)
-            } else {
-                path.addLine(to: point)
-            }
-        }
-
-        for index in (0...samples).reversed() {
-            let unitY = -1 + (2 * Double(index) / Double(samples))
-            let span = sqrt(max(0, 1 - unitY * unitY)) * radius
-            let x = rect.midX + (waxing ? terminator : -terminator) * span
-            let y = rect.midY + unitY * radius
-            path.addLine(to: CGPoint(x: x, y: y))
-        }
-
-        path.closeSubpath()
-        return path
     }
 }
 
@@ -554,7 +530,7 @@ private struct TodaySummaryCard: View {
                 }
             }
 
-            Divider().overlay(CX.separator.opacity(0.22))
+            Divider().overlay(CX.separator.opacity(0.18))
 
             NavigationLink {
                 MetricDetailView(kind: .pressure)
@@ -567,7 +543,7 @@ private struct TodaySummaryCard: View {
                 )
             }
 
-            Divider().overlay(CX.separator.opacity(0.22))
+            Divider().overlay(CX.separator.opacity(0.18))
 
             NavigationLink {
                 DoctorMessageView()
