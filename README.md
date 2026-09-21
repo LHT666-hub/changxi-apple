@@ -4,6 +4,10 @@
 
 原生 SwiftUI 健康陪伴应用，使用 Xcode 26 / iOS 26 SDK 构建，支持 iPhone / iPad，最低 iOS 26。导航与悬浮操作使用玻璃材质，内容卡片保持清晰的阅读层次。
 
+视觉系统与迭代记录：
+- [Visual System V3](docs/VISUAL_SYSTEM_V3.md)
+- [UI / Visual Change Log](docs/UI_CHANGELOG.md)
+
 **月相表达过程，数据表达健康。** 月池是实时交互组件，人物、环境与数据各自承担清晰的职责。
 
 ## 运行
