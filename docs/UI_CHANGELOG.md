@@ -97,6 +97,10 @@
 - 主要业务页面停止把 serif 当默认标题字体。
 - largeTitle / title2 等核心层级开始统一映射到 CXTypography。
 - 体质等局部较小标题保留系统 title3 尺寸，但移除 serif design。
+- 补充清理：
+  - `d4e8d194338d9f94cf046e045138a0c2fb5ba64d` Constitution 残留 serif
+  - `c47aa07d16289ea72a37b92441bd7386ee5452a0` Shiyang 残留 serif
+- 已直接读取 main 核验：Root / Home / Health / HealthPortrait / Constitution / Shiyang / Chat / Services / Pain / DesignSystem 的 `fontDesign(.serif)` 均为 0。
 
 ### 当前 V3 状态
 - 字体：基础 Token 已建立，主要高频页面已完成首轮迁移。
