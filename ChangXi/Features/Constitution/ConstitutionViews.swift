@@ -85,7 +85,7 @@ struct ConstitutionHomeView: View {
             VStack(alignment: .leading, spacing: 22) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("认识自己的体质")
-                        .font(.largeTitle.weight(.semibold)).fontDesign(.serif)
+                        .font(CXTypography.display)
                     Text("从日常感受出发，了解身体相对稳定的特点，再与家庭医生一起核对。")
                         .foregroundStyle(CX.muted).lineSpacing(5)
                 }
@@ -127,7 +127,7 @@ private struct ConstitutionCard: View {
             ConstitutionArtwork(constitution: constitution)
                 .frame(height: 132).clipped()
             VStack(alignment: .leading, spacing: 7) {
-                Text(constitution.rawValue).font(.title3.weight(.semibold)).fontDesign(.serif)
+                Text(constitution.rawValue).font(.title3.weight(.semibold))
                 Text(constitution.shortDescription)
                     .font(.caption)
                     .foregroundStyle(CX.muted)
@@ -451,7 +451,7 @@ private struct ConstitutionHero: View {
             LinearGradient(colors: [.clear, CX.ink.opacity(0.72)], startPoint: .center, endPoint: .bottom)
             VStack(alignment: .leading, spacing: 5) {
                 Text(eyebrow).font(.caption).foregroundStyle(.white.opacity(0.86))
-                Text(constitution.rawValue).font(.largeTitle.weight(.semibold)).fontDesign(.serif).foregroundStyle(.white)
+                Text(constitution.rawValue).font(CXTypography.display).foregroundStyle(.white)
                 Text(constitution.shortDescription).foregroundStyle(.white.opacity(0.9))
             }.padding(20)
         }.clipShape(.rect(cornerRadius: 28)).shadow(color: constitution.tint.opacity(0.18), radius: 22, y: 10)
@@ -546,7 +546,7 @@ struct ConstitutionDoctorReviewView: View {
     @State private var showRequest = false
     var body: some View {
         Page {
-            Text("请家庭医生一起确认").font(.largeTitle.weight(.semibold)).fontDesign(.serif)
+            Text("请家庭医生一起确认").font(CXTypography.display)
             Text("常曦会整理初测结果和作答时间。发送前，您可以先核对将共享的内容。")
                 .foregroundStyle(CX.muted)
             if let result = store.result {
@@ -582,7 +582,7 @@ struct ConstitutionCarePlanView: View {
     private var tasks: [String] { [constitution.suggestions[0], constitution.suggestions[1], "记下今天的感受"] }
     var body: some View {
         Page {
-            Text("从今天的一小步开始").font(.largeTitle.weight(.semibold)).fontDesign(.serif)
+            Text("从今天的一小步开始").font(CXTypography.display)
             Text("根据 \(constitution.rawValue) 的常见特点整理，您可以按自己的体力调整。")
                 .foregroundStyle(CX.muted)
             Card {
