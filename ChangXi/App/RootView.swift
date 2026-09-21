@@ -89,18 +89,17 @@ struct RootView: View {
         }
         // 真实认证状态与既有 `demoSignedIn` 布尔量保持同步，令依赖它的旧界面无需改动。
         .onChange(of: auth.isAuthenticated) { _, isAuthenticated in store.data.demoSignedIn = isAuthenticated }
-        // 启动时尝试用 Keychain 中的 JWT 恢复会话；视觉启动页与网络恢复并行。
+        // 启动时尝试用 Keychain 中的 JWT 恢复会话；视觉启动页独立计时，不等待网络。
         .task {
-            async let restore: Void = auth.restoreSession()
-
+            await auth.restoreSession()
+        }
+        .task {
             if showLaunchExperience {
                 try? await Task.sleep(nanoseconds: 1_650_000_000)
                 withAnimation(.easeOut(duration: 0.42)) {
                     showLaunchExperience = false
                 }
             }
-
-            _ = await restore
         }
         .safeAreaInset(edge: .top) {
             if let error = store.storageError {
