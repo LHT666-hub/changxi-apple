@@ -2,19 +2,102 @@ import SwiftUI
 import CoreHaptics
 
 enum CX {
+    // MARK: Semantic surfaces
+    static let canvas = adaptive(
+        light: UIColor(red: 247 / 255, green: 246 / 255, blue: 242 / 255, alpha: 1),
+        dark: UIColor(red: 15 / 255, green: 20 / 255, blue: 29 / 255, alpha: 1)
+    )
+    static let surface = adaptive(
+        light: UIColor(red: 252 / 255, green: 252 / 255, blue: 250 / 255, alpha: 1),
+        dark: UIColor(red: 22 / 255, green: 28 / 255, blue: 38 / 255, alpha: 1)
+    )
+    static let raisedSurface = adaptive(
+        light: .white,
+        dark: UIColor(red: 27 / 255, green: 35 / 255, blue: 48 / 255, alpha: 1)
+    )
+
+    // MARK: Semantic text
     static let ink = Color.primary
     static let muted = Color(uiColor: .secondaryLabel)
     static let faint = Color(uiColor: .tertiaryLabel)
-    static let blue = Color(.displayP3, red: 0.16, green: 0.38, blue: 0.72)
-    static let moonlight = Color(.displayP3, red: 0.42, green: 0.68, blue: 0.96)
-    static let moonIvory = Color(.displayP3, red: 0.985, green: 0.975, blue: 0.94)
-    static let mist = Color(uiColor: .systemGroupedBackground)
-    static let surface = Color(uiColor: .secondarySystemGroupedBackground)
-    static let raisedSurface = Color(uiColor: .tertiarySystemGroupedBackground)
     static let separator = Color(uiColor: .separator)
-    static let teal = Color(.displayP3, red: 0.05, green: 0.48, blue: 0.44)
-    static let coral = Color(.displayP3, red: 0.78, green: 0.24, blue: 0.28)
-    static let gold = Color(.displayP3, red: 0.91, green: 0.66, blue: 0.20)
+
+    // MARK: Brand and interaction
+    static let actionPrimary = adaptive(
+        light: UIColor(red: 53 / 255, green: 104 / 255, blue: 200 / 255, alpha: 1),
+        dark: UIColor(red: 105 / 255, green: 151 / 255, blue: 232 / 255, alpha: 1)
+    )
+    static let actionPrimarySoft = adaptive(
+        light: UIColor(red: 220 / 255, green: 232 / 255, blue: 250 / 255, alpha: 1),
+        dark: UIColor(red: 32 / 255, green: 50 / 255, blue: 78 / 255, alpha: 1)
+    )
+    static let brandMoonlight = adaptive(
+        light: UIColor(red: 183 / 255, green: 202 / 255, blue: 226 / 255, alpha: 1),
+        dark: UIColor(red: 132 / 255, green: 162 / 255, blue: 201 / 255, alpha: 1)
+    )
+    static let brandIvory = adaptive(
+        light: UIColor(red: 232 / 255, green: 220 / 255, blue: 192 / 255, alpha: 1),
+        dark: UIColor(red: 176 / 255, green: 159 / 255, blue: 126 / 255, alpha: 1)
+    )
+
+    // MARK: State colors
+    static let statusPositive = adaptive(
+        light: UIColor(red: 47 / 255, green: 128 / 255, blue: 111 / 255, alpha: 1),
+        dark: UIColor(red: 90 / 255, green: 171 / 255, blue: 151 / 255, alpha: 1)
+    )
+    static let statusWarning = adaptive(
+        light: UIColor(red: 183 / 255, green: 131 / 255, blue: 59 / 255, alpha: 1),
+        dark: UIColor(red: 224 / 255, green: 174 / 255, blue: 94 / 255, alpha: 1)
+    )
+    static let statusCritical = adaptive(
+        light: UIColor(red: 192 / 255, green: 93 / 255, blue: 93 / 255, alpha: 1),
+        dark: UIColor(red: 231 / 255, green: 132 / 255, blue: 132 / 255, alpha: 1)
+    )
+
+    // Compatibility aliases while the rest of the app migrates to semantic names.
+    static let blue = actionPrimary
+    static let moonlight = brandMoonlight
+    static let moonIvory = brandIvory
+    static let mist = canvas
+    static let teal = statusPositive
+    static let coral = statusCritical
+    static let gold = statusWarning
+
+    private static func adaptive(light: UIColor, dark: UIColor) -> Color {
+        Color(uiColor: UIColor { traits in
+            traits.userInterfaceStyle == .dark ? dark : light
+        })
+    }
+}
+
+enum CXTypography {
+    static let brandTitle = Font.system(size: 31, weight: .semibold, design: .default)
+    static let display = Font.system(.largeTitle, design: .default, weight: .semibold)
+    static let title = Font.system(.title2, design: .default, weight: .semibold)
+    static let section = Font.system(.headline, design: .default, weight: .semibold)
+    static let body = Font.body
+    static let supporting = Font.subheadline
+    static let meta = Font.footnote
+    static let micro = Font.caption
+    static let numeric = Font.system(.title, design: .rounded, weight: .semibold)
+}
+
+enum CXSpacing {
+    static let micro: CGFloat = 4
+    static let xs: CGFloat = 8
+    static let sm: CGFloat = 12
+    static let md: CGFloat = 16
+    static let lg: CGFloat = 20
+    static let xl: CGFloat = 24
+    static let section: CGFloat = 32
+    static let hero: CGFloat = 40
+    static let page: CGFloat = 20
+}
+
+enum CXRadius {
+    static let sm: CGFloat = 12
+    static let md: CGFloat = 18
+    static let lg: CGFloat = 24
 }
 
 enum CXLayout {
@@ -147,12 +230,12 @@ struct Page<Content: View>: View {
             MoonBackground(illustrated: illustrated)
 
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 20) {
+                LazyVStack(alignment: .leading, spacing: CXSpacing.lg) {
                     content
                 }
                 .frame(maxWidth: 720)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 24)
+                .padding(.horizontal, CXSpacing.page)
+                .padding(.vertical, CXSpacing.xl)
                 .frame(maxWidth: .infinity)
             }
         }
@@ -164,51 +247,28 @@ struct Page<Content: View>: View {
 
 struct Card<Content: View>: View {
     @ViewBuilder let content: Content
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorScheme) private var colorScheme
 
-    private let cornerRadius: CGFloat = 24
+    private let cornerRadius: CGFloat = CXRadius.lg
 
     var body: some View {
-        let card = VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: CXSpacing.md) {
             content
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(20)
-
-        if reduceTransparency {
-            card
-                .background(CX.surface, in: .rect(cornerRadius: cornerRadius, style: .continuous))
-                .overlay { border }
-        } else {
-            card
-                .background(.regularMaterial, in: .rect(cornerRadius: cornerRadius, style: .continuous))
-                .overlay { border }
-                .overlay { topHighlight }
-                .shadow(
-                    color: .black.opacity(colorScheme == .dark ? 0.16 : 0.045),
-                    radius: 18,
-                    y: 8
-                )
-                .shadow(color: CX.blue.opacity(0.025), radius: 8, y: 3)
-        }
+        .padding(CXSpacing.lg)
+        .background(CX.surface, in: .rect(cornerRadius: cornerRadius, style: .continuous))
+        .overlay { border }
+        .shadow(
+            color: .black.opacity(colorScheme == .dark ? 0.14 : 0.035),
+            radius: colorScheme == .dark ? 16 : 12,
+            y: colorScheme == .dark ? 7 : 5
+        )
     }
 
     private var border: some View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .strokeBorder(CX.separator.opacity(0.14), lineWidth: 0.5)
-    }
-
-    private var topHighlight: some View {
-        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .strokeBorder(
-                LinearGradient(
-                    colors: [.white.opacity(0.54), .white.opacity(0.05), .clear],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ),
-                lineWidth: 0.7
-            )
+            .strokeBorder(CX.separator.opacity(colorScheme == .dark ? 0.18 : 0.10), lineWidth: 0.5)
     }
 }
 
@@ -235,7 +295,7 @@ struct RowLabel: View {
     var chevron = true
 
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: CXSpacing.sm) {
             Image(systemName: icon.replacingOccurrences(of: ".fill", with: ""))
                 .font(.title3.weight(.regular))
                 .symbolRenderingMode(.monochrome)
@@ -244,10 +304,10 @@ struct RowLabel: View {
                 .background(tint.opacity(0.05), in: Circle())
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(title).font(.headline)
+                Text(title).font(CXTypography.section)
                 if !subtitle.isEmpty {
                     Text(subtitle)
-                        .font(.subheadline)
+                        .font(CXTypography.supporting)
                         .foregroundStyle(CX.muted)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -282,36 +342,53 @@ struct PrimaryButton: ButtonStyle {
 
         label
             .background(
-                LinearGradient(
-                    colors: reduceTransparency
-                        ? [CX.blue, CX.blue]
-                        : [
-                            Color(.displayP3, red: 0.29, green: 0.51, blue: 0.82),
-                            CX.blue,
-                            Color(.displayP3, red: 0.12, green: 0.30, blue: 0.58)
-                        ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ),
-                in: .rect(cornerRadius: 19, style: .continuous)
+                CX.actionPrimary,
+                in: .rect(cornerRadius: CXRadius.md, style: .continuous)
             )
             .overlay {
-                RoundedRectangle(cornerRadius: 19, style: .continuous)
-                    .strokeBorder(
-                        LinearGradient(
-                            colors: [.white.opacity(0.52), .white.opacity(0.08), .clear],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        ),
-                        lineWidth: 0.7
-                    )
+                RoundedRectangle(cornerRadius: CXRadius.md, style: .continuous)
+                    .strokeBorder(.white.opacity(reduceTransparency ? 0 : 0.16), lineWidth: 0.6)
             }
             .shadow(
-                color: CX.blue.opacity(isEnabled ? 0.14 : 0),
-                radius: configuration.isPressed ? 3 : 10,
-                y: configuration.isPressed ? 1 : 5
+                color: CX.actionPrimary.opacity(isEnabled ? 0.12 : 0),
+                radius: configuration.isPressed ? 2 : 7,
+                y: configuration.isPressed ? 1 : 3
             )
             .offset(y: configuration.isPressed && !reduceMotion ? 1 : 0)
+    }
+}
+
+struct LunarGlyph: View {
+    var size: CGFloat = 56
+    var tint: Color = CX.actionPrimary
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(tint.opacity(0.14), lineWidth: 0.8)
+                .frame(width: size, height: size)
+
+            Circle()
+                .trim(from: 0.10, to: 0.64)
+                .stroke(
+                    tint,
+                    style: StrokeStyle(lineWidth: max(1.2, size * 0.035), lineCap: .round)
+                )
+                .frame(width: size * 0.72, height: size * 0.72)
+                .rotationEffect(.degrees(-28))
+
+            Circle()
+                .fill(CX.brandIvory)
+                .frame(width: max(4, size * 0.09), height: max(4, size * 0.09))
+                .offset(x: size * 0.25, y: -size * 0.18)
+
+            Capsule()
+                .fill(CX.brandMoonlight.opacity(0.48))
+                .frame(width: size * 0.62, height: max(1, size * 0.018))
+                .offset(y: size * 0.34)
+        }
+        .frame(width: size, height: size)
+        .accessibilityHidden(true)
     }
 }
 
