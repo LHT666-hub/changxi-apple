@@ -134,7 +134,7 @@ struct MoonBackground: View {
                 ],
                 colors: meshColors
             )
-            .opacity(reduceTransparency ? 0 : 0.72)
+            .opacity(reduceTransparency ? 0 : 0.50)
             .ignoresSafeArea()
 
             if illustrated {
@@ -143,7 +143,7 @@ struct MoonBackground: View {
                     .scaledToFill()
                     .frame(height: 520)
                     .clipped()
-                    .opacity(colorScheme == .dark ? 0.10 : 0.12)
+                    .opacity(colorScheme == .dark ? 0.08 : 0.055)
                     .mask(
                         LinearGradient(
                             stops: [
@@ -161,10 +161,14 @@ struct MoonBackground: View {
             }
 
             RadialGradient(
-                colors: [CX.moonlight.opacity(colorScheme == .dark ? 0.20 : 0.12), .clear],
+                colors: [
+                    CX.brandMoonlight.opacity(colorScheme == .dark ? 0.15 : 0.095),
+                    CX.brandIvory.opacity(colorScheme == .dark ? 0.025 : 0.045),
+                    .clear
+                ],
                 center: .topTrailing,
-                startRadius: 20,
-                endRadius: 420
+                startRadius: 24,
+                endRadius: 460
             )
             .mask(topEdgeFade)
             .ignoresSafeArea()
@@ -173,19 +177,19 @@ struct MoonBackground: View {
     }
 
     private var meshColors: [Color] {
-        // The mesh begins at the safe-area boundary. Matching its first row to
-        // the color extended behind the status bar removes the hard join.
+        // V3 keeps the content plane moon-white. Cool blue only appears as a quiet
+        // atmospheric tint around the hero, rather than filling the whole screen.
         if colorScheme == .dark {
             return [
                 backgroundTopColor,
                 backgroundTopColor,
                 backgroundTopColor,
-                Color(.displayP3, red: 0.04, green: 0.07, blue: 0.13),
-                Color(.displayP3, red: 0.07, green: 0.12, blue: 0.21),
-                Color(.displayP3, red: 0.04, green: 0.08, blue: 0.15),
-                Color(.displayP3, red: 0.025, green: 0.04, blue: 0.075),
-                Color(.displayP3, red: 0.04, green: 0.07, blue: 0.12),
-                Color(.displayP3, red: 0.025, green: 0.045, blue: 0.08)
+                Color(.displayP3, red: 0.055, green: 0.072, blue: 0.10),
+                Color(.displayP3, red: 0.075, green: 0.095, blue: 0.14),
+                Color(.displayP3, red: 0.055, green: 0.075, blue: 0.11),
+                Color(.displayP3, red: 0.045, green: 0.058, blue: 0.082),
+                Color(.displayP3, red: 0.055, green: 0.070, blue: 0.095),
+                Color(.displayP3, red: 0.045, green: 0.058, blue: 0.082)
             ]
         }
 
@@ -193,19 +197,17 @@ struct MoonBackground: View {
             backgroundTopColor,
             backgroundTopColor,
             backgroundTopColor,
-            Color(.displayP3, red: 0.97, green: 0.98, blue: 1.0),
-            Color(.displayP3, red: 0.91, green: 0.95, blue: 0.99),
-            Color(.displayP3, red: 0.96, green: 0.97, blue: 1.0),
-            Color(.displayP3, red: 0.98, green: 0.98, blue: 0.99),
-            Color(.displayP3, red: 0.96, green: 0.97, blue: 0.99),
-            Color(.displayP3, red: 0.98, green: 0.98, blue: 1.0)
+            Color(.displayP3, red: 0.982, green: 0.978, blue: 0.958),
+            Color(.displayP3, red: 0.952, green: 0.965, blue: 0.978),
+            Color(.displayP3, red: 0.978, green: 0.972, blue: 0.952),
+            Color(.displayP3, red: 0.972, green: 0.968, blue: 0.952),
+            Color(.displayP3, red: 0.965, green: 0.972, blue: 0.982),
+            Color(.displayP3, red: 0.978, green: 0.973, blue: 0.958)
         ]
     }
 
     private var backgroundTopColor: Color {
-        colorScheme == .dark
-            ? Color(.displayP3, red: 0.035, green: 0.055, blue: 0.10)
-            : Color(.displayP3, red: 0.91, green: 0.95, blue: 1.0)
+        CX.canvas
     }
 
     private var topEdgeFade: LinearGradient {
