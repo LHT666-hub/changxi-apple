@@ -15,7 +15,7 @@ struct ServicesView: View {
             Card {
                 NavigationLink { FamilyView() } label: { RowLabel(title: "我的家庭医生", subtitle: "当前服务对象：\(store.data.person)", icon: "house.fill") }.buttonStyle(.plain)
                 Divider()
-                NavigationLink { DoctorDetailView() } label: { RowLabel(title: "蒋医生", subtitle: "海湾镇社区卫生服务中心\n全科医生 · 示例服务团队", icon: "stethoscope", tint: CX.teal) }.buttonStyle(.plain)
+                NavigationLink { DoctorDetailView() } label: { RowLabel(title: "蒋医生", subtitle: "海湾镇社区卫生服务中心\n全科医生 · 示例服务团队", icon: "stethoscope", tint: CX.statusPositive) }.buttonStyle(.plain)
                 NavigationLink("联系医生") { ConsultationView() }.buttonStyle(PrimaryButton())
             }
             Picker("服务分类", selection: $category) { ForEach(["医疗服务", "活动通知", "家医课堂"], id: \.self) { Text($0) } }.pickerStyle(.segmented)
@@ -84,12 +84,12 @@ struct ServiceItem: Identifiable {
     var icon: String
     var color: Color
     static let all = [
-        ServiceItem(title: "帮预约", subtitle: "门诊预约 省时省心", icon: "calendar.badge.plus", color: CX.blue),
-        ServiceItem(title: "家医咨询", subtitle: "健康问题 随时记录", icon: "bubble.left.and.bubble.right.fill", color: CX.teal),
+        ServiceItem(title: "帮预约", subtitle: "门诊预约 省时省心", icon: "calendar.badge.plus", color: CX.actionPrimary),
+        ServiceItem(title: "家医咨询", subtitle: "健康问题 随时记录", icon: "bubble.left.and.bubble.right.fill", color: CX.statusPositive),
         ServiceItem(title: "复诊随访", subtitle: "慢病管理 持续关爱", icon: "clock.arrow.circlepath", color: .orange),
         ServiceItem(title: "检查预约", subtitle: "安排检查 整理资料", icon: "testtube.2", color: .purple),
-        ServiceItem(title: "转诊协助", subtitle: "记录需求 协助转诊", icon: "arrow.left.arrow.right", color: CX.teal),
-        ServiceItem(title: "社区活动", subtitle: "健康讲座 便民活动", icon: "person.3.fill", color: CX.coral)
+        ServiceItem(title: "转诊协助", subtitle: "记录需求 协助转诊", icon: "arrow.left.arrow.right", color: CX.statusPositive),
+        ServiceItem(title: "社区活动", subtitle: "健康讲座 便民活动", icon: "person.3.fill", color: CX.statusCritical)
     ]
 }
 
@@ -97,7 +97,7 @@ struct DoctorDetailView: View {
     var body: some View {
         Page {
             Card {
-                Image(systemName: "person.crop.circle.fill.badge.checkmark").font(.system(size: 64)).foregroundStyle(CX.blue).frame(maxWidth: .infinity)
+                Image(systemName: "person.crop.circle.fill.badge.checkmark").font(.system(size: 64)).foregroundStyle(CX.actionPrimary).frame(maxWidth: .infinity)
                 Text("蒋医生").font(.title.bold()).frame(maxWidth: .infinity)
                 Text("全科医生 · 海湾镇社区卫生服务中心").foregroundStyle(CX.muted)
                 Text("服务方向：日常健康管理、慢病随访、报告沟通。此医生资料为产品演示示例。")
@@ -133,7 +133,7 @@ struct ServiceDetailView: View {
                     saved = true
                     MoonHaptics.shared.play(success: true, enabled: store.data.haptics)
                 }.buttonStyle(PrimaryButton()).disabled(saved)
-                if saved { Label("尚未提交至医疗机构", systemImage: "checkmark.circle").foregroundStyle(CX.teal); NavigationLink("查看服务记录") { BookingsView() } }
+                if saved { Label("尚未提交至医疗机构", systemImage: "checkmark.circle").foregroundStyle(CX.statusPositive); NavigationLink("查看服务记录") { BookingsView() } }
             }
         }
         .navigationTitle(service.title)
