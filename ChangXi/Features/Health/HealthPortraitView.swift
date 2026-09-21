@@ -117,7 +117,7 @@ private struct HealthPortraitCard: View {
             Image(systemName: "chevron.right").font(.caption).foregroundStyle(CX.faint).frame(maxWidth: .infinity, alignment: .trailing)
         }
         .frame(maxWidth: .infinity, minHeight: 145, alignment: .leading)
-        .padding(16).cxInteractiveGlass(cornerRadius: 22)
+        .padding(16).cxContentSurface(cornerRadius: CXRadius.lg)
     }
 }
 
