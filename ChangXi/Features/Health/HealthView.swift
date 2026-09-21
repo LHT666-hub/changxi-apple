@@ -35,8 +35,7 @@ struct HealthView: View {
         Group {
             VStack(alignment: .leading, spacing: 8) {
                 Text("健康摘要")
-                    .font(.largeTitle.weight(.semibold))
-                    .fontDesign(.serif)
+                    .font(CXTypography.display)
                 Text("每一次记录，都让变化更容易被看见。")
                     .font(.body)
                     .foregroundStyle(CX.muted)
@@ -157,8 +156,7 @@ struct BMIDetailView: View {
         Page {
             VStack(alignment: .leading, spacing: 8) {
                 Text("体质指数")
-                    .font(.largeTitle.weight(.semibold))
-                    .fontDesign(.serif)
+                    .font(CXTypography.display)
                 Text("由最新体重和档案身高自动计算。")
                     .font(.body)
                     .foregroundStyle(CX.muted)
