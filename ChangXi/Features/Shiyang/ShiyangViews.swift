@@ -225,8 +225,7 @@ private struct ShiyangConsentView: View {
         ShiyangOnboardingPage(step: 1, total: 3, onBack: onBack) {
             VStack(alignment: .leading, spacing: 8) {
                 Text("让食养认识多少个你？")
-                    .font(.largeTitle.weight(.semibold))
-                    .fontDesign(.serif)
+                    .font(CXTypography.display)
                 Text("常曦不会默认读取全部信息。你可以分开授权，也可以暂时都不打开。")
                     .foregroundStyle(SY.muted)
                     .lineSpacing(5)
@@ -407,8 +406,7 @@ private struct ShiyangProfileSummaryView: View {
         ShiyangOnboardingPage(step: 3, total: 3, onBack: onEdit) {
             VStack(alignment: .leading, spacing: 7) {
                 Text("常曦这样理解你的饭桌")
-                    .font(.largeTitle.weight(.semibold))
-                    .fontDesign(.serif)
+                    .font(CXTypography.display)
                 Text("确认以后再生成第一顿，避免把写错的信息带进推荐。")
                     .foregroundStyle(SY.muted)
             }
@@ -474,8 +472,7 @@ private struct ShiyangQuestionBlock<Content: View>: View {
         VStack(alignment: .leading, spacing: 20) {
             VStack(alignment: .leading, spacing: 8) {
                 Text(title)
-                    .font(.largeTitle.weight(.semibold))
-                    .fontDesign(.serif)
+                    .font(CXTypography.display)
                 Text(detail)
                     .foregroundStyle(SY.muted)
                     .lineSpacing(5)
@@ -569,8 +566,7 @@ private struct ShiyangBrowseView: View {
             VStack(alignment: .leading, spacing: 22) {
                 VStack(alignment: .leading, spacing: 7) {
                     Text("先随便看看")
-                        .font(.largeTitle.weight(.semibold))
-                        .fontDesign(.serif)
+                        .font(CXTypography.display)
                     Text("不建立档案也可以读。这里的内容不会自动变成你的个人建议。")
                         .foregroundStyle(SY.muted)
                 }
@@ -650,8 +646,7 @@ private struct ShiyangProfileSettingsView: View {
             VStack(alignment: .leading, spacing: 22) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("食养档案与授权")
-                        .font(.largeTitle.weight(.semibold))
-                        .fontDesign(.serif)
+                        .font(CXTypography.display)
                     Text("你可以随时修改。关闭某一类授权后，之后的推荐不会再读取那部分信息。")
                         .foregroundStyle(SY.muted)
                         .lineSpacing(4)
@@ -736,8 +731,7 @@ private struct ShiyangWelcomeView: View {
                             .font(.headline)
                             .foregroundStyle(SY.apricot)
                         Text("常曦有了一个新能力：食养")
-                            .font(.largeTitle.weight(.semibold))
-                            .fontDesign(.serif)
+                            .font(CXTypography.display)
                         Text("结合你生活的地方、当下时节、饮食习惯和需要注意的健康情况，陪你把每天的饭吃得更适合自己。")
                             .font(.body)
                             .foregroundStyle(SY.muted)
@@ -972,8 +966,7 @@ private struct ShiyangHomeView: View {
                     .font(.headline)
                     .foregroundStyle(SY.apricot)
                 Text("今天，也好好吃饭。")
-                    .font(.largeTitle.weight(.semibold))
-                    .fontDesign(.serif)
+                    .font(CXTypography.display)
                 Text("\(store.data.shiyangCity) · \(ShiyangSeason.currentSolarTerm)  ·  按你的饭桌现配")
                     .font(.subheadline)
                     .foregroundStyle(SY.muted)
@@ -1148,8 +1141,7 @@ private struct ShiyangPantryView: View {
             VStack(alignment: .leading, spacing: 22) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("家里现在有什么？")
-                        .font(.largeTitle.weight(.semibold))
-                        .fontDesign(.serif)
+                        .font(CXTypography.display)
                     Text("选你确定有的就好，缺少的食材稍后都能替换。")
                         .foregroundStyle(SY.muted)
                 }
@@ -1518,8 +1510,7 @@ private struct ShiyangRecipeDetailView: View {
                             .overlay(alignment: .bottomLeading) {
                                 VStack(alignment: .leading, spacing: 6) {
                                     Text(recipe.title)
-                                        .font(.title.weight(.semibold))
-                                        .fontDesign(.serif)
+                                        .font(CXTypography.title)
                                     Text(recipe.subtitle).font(.subheadline)
                                 }
                                 .foregroundStyle(.white)
@@ -1765,8 +1756,7 @@ private struct ShiyangCookingGuideView: View {
 
             VStack(alignment: .leading, spacing: 9) {
                 Text(personalized(step.title))
-                    .font(.title.weight(.semibold))
-                    .fontDesign(.serif)
+                    .font(CXTypography.title)
                 Text(personalized(step.detail))
                     .font(.body)
                     .foregroundStyle(SY.muted)
