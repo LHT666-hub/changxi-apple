@@ -310,10 +310,10 @@ private struct RefinedMoonPhaseCard: View {
 
                     Text("今日月相")
                         .font(.caption2.weight(.semibold))
-                        .foregroundStyle(CX.blue)
+                        .foregroundStyle(CX.actionPrimary)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
-                        .background(CX.blue.opacity(0.08), in: Capsule())
+                        .background(CX.actionPrimary.opacity(0.08), in: Capsule())
                 }
 
                 Text("\(phase.dateLabel) · \(phase.rhythmLabel)")
@@ -497,10 +497,10 @@ private struct MoonFactPill: View {
             .foregroundStyle(CX.muted)
             .padding(.horizontal, 12)
             .frame(minHeight: 34)
-            .background(CX.blue.opacity(0.055), in: Capsule())
+            .background(CX.actionPrimary.opacity(0.055), in: Capsule())
             .overlay {
                 Capsule()
-                    .strokeBorder(CX.blue.opacity(0.08), lineWidth: 0.5)
+                    .strokeBorder(CX.actionPrimary.opacity(0.08), lineWidth: 0.5)
             }
     }
 }
@@ -529,7 +529,7 @@ private struct TodaySummaryCard: View {
                         title: "今天的安排已完成",
                         subtitle: "给自己留一点轻松的时间",
                         icon: "checkmark.circle.fill",
-                        tint: CX.teal
+                        tint: CX.statusPositive
                     )
                 }
             }
@@ -543,7 +543,7 @@ private struct TodaySummaryCard: View {
                     title: store.latest(.pressure)?.display ?? "还没有记录",
                     subtitle: "最近一次血压 · mmHg",
                     icon: "heart.fill",
-                    tint: CX.coral
+                    tint: CX.statusCritical
                 )
             }
 
@@ -556,7 +556,7 @@ private struct TodaySummaryCard: View {
                     title: "蒋医生",
                     subtitle: store.data.doctorMessageRead ? "查看上次回复" : "有一条新回复",
                     icon: "stethoscope",
-                    tint: CX.teal
+                    tint: CX.statusPositive
                 )
             }
         }
