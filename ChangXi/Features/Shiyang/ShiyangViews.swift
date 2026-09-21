@@ -1006,8 +1006,7 @@ private struct ShiyangHomeView: View {
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(SY.apricot)
                         Text(current.recipe.title)
-                            .font(.title2.weight(.semibold))
-                            .fontDesign(.serif)
+                            .font(CXTypography.title)
                     }
                     Spacer(minLength: 8)
                     Button("换一道", systemImage: "arrow.triangle.2.circlepath") { cycleRecipe() }
@@ -1540,8 +1539,7 @@ private struct ShiyangRecipeDetailView: View {
                 VStack(alignment: .leading, spacing: 14) {
                     HStack {
                         Text("食材")
-                            .font(.title2.weight(.semibold))
-                            .fontDesign(.serif)
+                            .font(CXTypography.title)
                         Spacer()
                         Text("按\(store.data.shiyangServings)人份")
                             .font(.subheadline)
@@ -1620,8 +1618,7 @@ private struct ShiyangCookingGuideView: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(recipe.title)
-                            .font(.title2.weight(.semibold))
-                            .fontDesign(.serif)
+                            .font(CXTypography.title)
                         Text(showingIngredients ? "先把食材请上桌" : "第 \(stepIndex + 1) 步 · 共 \(recipe.steps.count) 步")
                             .font(.subheadline)
                             .foregroundStyle(SY.muted)
