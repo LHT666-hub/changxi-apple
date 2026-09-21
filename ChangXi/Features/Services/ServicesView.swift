@@ -8,8 +8,7 @@ struct ServicesView: View {
         Page {
             VStack(alignment: .leading, spacing: 8) {
                 Text("家庭医生服务")
-                    .font(.largeTitle.weight(.semibold))
-                    .fontDesign(.serif)
+                    .font(CXTypography.display)
                 Text("从日常记录，到需要时有人回应。")
                     .foregroundStyle(CX.muted)
             }
