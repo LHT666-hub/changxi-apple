@@ -313,7 +313,7 @@ private struct ConstitutionResultSummary: View {
             VStack(alignment: .leading, spacing: 7) {
                 Text("当前体质画像").font(.caption).foregroundStyle(CX.muted)
                 Text("\(result.primary.rawValue)倾向")
-                    .font(.title2.weight(.semibold)).fontDesign(.serif)
+                    .font(CXTypography.title)
                 Label(result.status.rawValue, systemImage: result.status == .pending ? "clock" : "sparkles")
                     .font(.caption).foregroundStyle(result.primary.tint)
                 Text("查看结果与下一步").font(.caption).foregroundStyle(CX.muted)
@@ -346,7 +346,7 @@ struct ConstitutionQuestionnaireView: View {
                     HStack(alignment: .top, spacing: 12) {
                         Image("ChangXiCharacter").resizable().scaledToFit().frame(width: 62, height: 62)
                         Text(question.text)
-                            .font(.title2.weight(.semibold)).fontDesign(.serif).lineSpacing(5)
+                            .font(CXTypography.title).lineSpacing(5)
                     }
                     VStack(spacing: 10) {
                         ForEach(choices, id: \.0) { score, label in
@@ -407,7 +407,7 @@ struct ConstitutionResultView: View {
                     if let secondary = result.secondary, secondary != .balanced {
                         Card {
                             Text("同时呈现一些 \(secondary.rawValue) 特征")
-                                .font(.headline).fontDesign(.serif)
+                                .font(CXTypography.section)
                             Text(secondary.shortDescription).foregroundStyle(CX.muted)
                         }
                     }
