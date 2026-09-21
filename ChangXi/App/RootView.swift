@@ -7,6 +7,7 @@ struct RootView: View {
     @State private var selectedTab = RootTab.home
     @State private var showGeneralChat = false
     @State private var isKeyboardVisible = false
+    @State private var showLaunchExperience = !AppConfiguration.isUITesting
     /// 认证会话：与 `store` 同为 `@MainActor @Observable`，在此创建并注入环境，
     /// 供 `DemoAuthView` / `ChatView` / `ProfileView` 等下游视图通过
     /// `@Environment(AuthSession.self)` 读取。
@@ -15,7 +16,8 @@ struct RootView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
-        Group {
+        ZStack {
+            Group {
             if store.data.onboarded {
                 ZStack(alignment: .bottomTrailing) {
                     ZStack {
@@ -59,6 +61,13 @@ struct RootView: View {
             } else {
                 NavigationStack { WelcomeView() }
             }
+
+            if showLaunchExperience {
+                ChangXiLaunchExperience()
+                    .transition(.opacity)
+                    .zIndex(100)
+                    .allowsHitTesting(true)
+            }
         }
         .environment(store)
         .environment(auth)
@@ -80,8 +89,19 @@ struct RootView: View {
         }
         // 真实认证状态与既有 `demoSignedIn` 布尔量保持同步，令依赖它的旧界面无需改动。
         .onChange(of: auth.isAuthenticated) { _, isAuthenticated in store.data.demoSignedIn = isAuthenticated }
-        // 启动时尝试用 Keychain 中的 JWT 恢复会话（离线 / UI 测试下内部直接跳过网络）。
-        .task { await auth.restoreSession() }
+        // 启动时尝试用 Keychain 中的 JWT 恢复会话；视觉启动页与网络恢复并行。
+        .task {
+            async let restore: Void = auth.restoreSession()
+
+            if showLaunchExperience {
+                try? await Task.sleep(nanoseconds: 1_650_000_000)
+                withAnimation(.easeOut(duration: 0.42)) {
+                    showLaunchExperience = false
+                }
+            }
+
+            _ = await restore
+        }
         .safeAreaInset(edge: .top) {
             if let error = store.storageError {
                 Label(error, systemImage: "exclamationmark.triangle.fill")
@@ -115,6 +135,117 @@ struct RootView: View {
             .opacity(selectedTab == tab ? 1 : 0)
             .allowsHitTesting(selectedTab == tab)
             .accessibilityHidden(selectedTab != tab)
+    }
+}
+
+
+private struct ChangXiLaunchExperience: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
+
+    @State private var revealed = false
+    @State private var displayedPhase = 0.02
+    @State private var haloRotation = -18.0
+
+    private var todayPhase: Double {
+        min(max(Double(LunarPhase.today.lunarDay - 1) / 29.53, 0), 1)
+    }
+
+    var body: some View {
+        ZStack {
+            MoonBackground()
+
+            RadialGradient(
+                colors: [
+                    .white.opacity(colorScheme == .dark ? 0.05 : 0.42),
+                    CX.moonlight.opacity(colorScheme == .dark ? 0.08 : 0.15),
+                    .clear
+                ],
+                center: .center,
+                startRadius: 6,
+                endRadius: 250
+            )
+            .scaleEffect(revealed ? 1.12 : 0.62)
+            .opacity(revealed ? 1 : 0.18)
+            .blur(radius: 10)
+            .ignoresSafeArea()
+
+            VStack(spacing: 28) {
+                Spacer()
+
+                ZStack {
+                    Circle()
+                        .stroke(
+                            AngularGradient(
+                                colors: [
+                                    .clear,
+                                    .white.opacity(0.66),
+                                    CX.moonlight.opacity(0.32),
+                                    .clear
+                                ],
+                                center: .center
+                            ),
+                            style: StrokeStyle(lineWidth: 1.1, lineCap: .round)
+                        )
+                        .frame(width: 188, height: 188)
+                        .scaleEffect(revealed ? 1 : 0.72)
+                        .opacity(revealed ? 0.76 : 0)
+                        .rotationEffect(.degrees(haloRotation))
+
+                    Circle()
+                        .stroke(.white.opacity(0.10), lineWidth: 0.7)
+                        .frame(width: 164, height: 164)
+                        .scaleEffect(revealed ? 1 : 0.84)
+
+                    MoonDisc(phase: displayedPhase)
+                        .frame(width: 126, height: 126)
+                        .scaleEffect(revealed ? 1 : 0.82)
+                        .opacity(revealed ? 1 : 0.28)
+                        .shadow(color: .white.opacity(0.22), radius: 14, y: -2)
+                        .shadow(color: CX.moonlight.opacity(0.26), radius: 26, y: 10)
+                }
+
+                VStack(spacing: 8) {
+                    Text("常曦")
+                        .font(.system(size: 31, weight: .semibold, design: .serif))
+                        .tracking(2.6)
+
+                    Text("让每一个平凡的日子，都有月光相伴")
+                        .font(.subheadline)
+                        .foregroundStyle(CX.muted)
+                }
+                .opacity(revealed ? 1 : 0)
+                .offset(y: revealed || reduceMotion ? 0 : 8)
+
+                Spacer()
+                Spacer()
+            }
+            .padding(.horizontal, 28)
+            .padding(.bottom, 30)
+        }
+        .foregroundStyle(CX.ink)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("常曦正在启动")
+        .onAppear {
+            guard !reduceMotion else {
+                revealed = true
+                displayedPhase = todayPhase
+                haloRotation = 22
+                return
+            }
+
+            withAnimation(.easeOut(duration: 0.72)) {
+                revealed = true
+            }
+
+            withAnimation(.easeInOut(duration: 1.15)) {
+                displayedPhase = todayPhase
+            }
+
+            withAnimation(.easeInOut(duration: 1.45)) {
+                haloRotation = 34
+            }
+        }
     }
 }
 
