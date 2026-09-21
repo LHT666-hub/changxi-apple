@@ -72,7 +72,7 @@ struct RootView: View {
         .environment(store)
         .environment(auth)
         .environment(assistant)
-        .tint(CX.blue)
+        .tint(CX.actionPrimary)
         .transformEnvironment(\.dynamicTypeSize) { size in
             if store.data.largeText && size < .xxxLarge {
                 size = .xxxLarge
@@ -157,7 +157,7 @@ private struct ChangXiLaunchExperience: View {
             RadialGradient(
                 colors: [
                     .white.opacity(colorScheme == .dark ? 0.05 : 0.42),
-                    CX.moonlight.opacity(colorScheme == .dark ? 0.08 : 0.15),
+                    CX.brandMoonlight.opacity(colorScheme == .dark ? 0.08 : 0.15),
                     .clear
                 ],
                 center: .center,
@@ -179,7 +179,7 @@ private struct ChangXiLaunchExperience: View {
                                 colors: [
                                     .clear,
                                     .white.opacity(0.66),
-                                    CX.moonlight.opacity(0.32),
+                                    CX.brandMoonlight.opacity(0.32),
                                     .clear
                                 ],
                                 center: .center
@@ -201,16 +201,16 @@ private struct ChangXiLaunchExperience: View {
                         .scaleEffect(revealed ? 1 : 0.82)
                         .opacity(revealed ? 1 : 0.28)
                         .shadow(color: .white.opacity(0.22), radius: 14, y: -2)
-                        .shadow(color: CX.moonlight.opacity(0.26), radius: 26, y: 10)
+                        .shadow(color: CX.brandMoonlight.opacity(0.26), radius: 26, y: 10)
                 }
 
                 VStack(spacing: 8) {
                     Text("常曦")
-                        .font(.system(size: 31, weight: .semibold, design: .serif))
+                        .font(CXTypography.brandTitle)
                         .tracking(2.6)
 
                     Text("让每一个平凡的日子，都有月光相伴")
-                        .font(.subheadline)
+                        .font(CXTypography.supporting)
                         .foregroundStyle(CX.muted)
                 }
                 .opacity(revealed ? 1 : 0)
@@ -323,7 +323,7 @@ private struct PersistentTabBar: View {
                                     .contentTransition(.symbolEffect(.replace))
                                 Text(tab.rawValue).font(.caption2.weight(.semibold))
                             }
-                            .foregroundStyle(isSelected ? CX.blue : CX.ink.opacity(0.70))
+                            .foregroundStyle(isSelected ? CX.actionPrimary : CX.ink.opacity(0.70))
                             .frame(maxWidth: .infinity, minHeight: itemHeight)
                             .contentShape(Rectangle())
                         }
@@ -371,7 +371,7 @@ private struct PersistentTabBar: View {
             Capsule()
                 .fill(.clear)
                 .glassEffect(
-                    .regular.tint(CX.blue.opacity(0.10)),
+                    .regular.tint(CX.actionPrimary.opacity(0.10)),
                     in: .capsule
                 )
                 .allowsHitTesting(false)
@@ -450,7 +450,7 @@ private struct PersistentTabBar: View {
             .overlay {
                 Capsule().strokeBorder(
                     LinearGradient(
-                        colors: [Color.white.opacity(0.94), CX.blue.opacity(0.10)],
+                        colors: [Color.white.opacity(0.94), CX.actionPrimary.opacity(0.10)],
                         startPoint: .top,
                         endPoint: .bottom
                     ),
@@ -555,8 +555,8 @@ struct WelcomeView: View {
 
             VStack(spacing: 0) {
                 onboardingHeader
-                    .padding(.horizontal, 22)
-                    .padding(.top, 14)
+                    .padding(.horizontal, CXSpacing.xl)
+                    .padding(.top, CXSpacing.sm)
 
                 TabView(selection: $stage) {
                     welcomePage.tag(0)
@@ -569,8 +569,8 @@ struct WelcomeView: View {
                 .animation(reduceMotion ? nil : .smooth(duration: 0.38), value: stage)
 
                 onboardingControls
-                    .padding(.horizontal, 22)
-                    .padding(.bottom, 18)
+                    .padding(.horizontal, CXSpacing.xl)
+                    .padding(.bottom, CXSpacing.md)
             }
         }
         .foregroundStyle(CX.ink)
@@ -582,14 +582,17 @@ struct WelcomeView: View {
 
     private var onboardingHeader: some View {
         HStack {
-            Label("常曦", systemImage: "moonphase.waxing.crescent")
-                .font(.headline)
-                .foregroundStyle(CX.blue)
+            HStack(spacing: CXSpacing.xs) {
+                LunarGlyph(size: 22, tint: CX.actionPrimary)
+                Text("常曦")
+                    .font(CXTypography.section)
+                    .foregroundStyle(CX.muted)
+            }
 
             Spacer()
 
             Text("\(stage + 1) / \(stageCount)")
-                .font(.caption.weight(.semibold))
+                .font(CXTypography.micro.weight(.semibold))
                 .foregroundStyle(CX.muted)
                 .monospacedDigit()
         }
@@ -601,14 +604,13 @@ struct WelcomeView: View {
             MoonPoolView(state: .idle, character: false)
                 .frame(maxWidth: 520)
 
-            VStack(spacing: 10) {
+            VStack(spacing: CXSpacing.sm) {
                 Text("欢迎来到常曦")
-                    .font(.largeTitle.weight(.semibold))
-                    .fontDesign(.serif)
+                    .font(CXTypography.display)
                     .multilineTextAlignment(.center)
 
                 Text("你的日常健康陪伴者，也是连接家人、家庭医生与服务的入口。")
-                    .font(.body)
+                    .font(CXTypography.body)
                     .foregroundStyle(CX.muted)
                     .multilineTextAlignment(.center)
                     .lineSpacing(5)
@@ -619,16 +621,15 @@ struct WelcomeView: View {
 
     private var assistantPage: some View {
         onboardingScroll {
-            onboardingSymbol("sparkles", tint: CX.blue)
+            onboardingSymbol("sparkles", tint: CX.actionPrimary)
 
-            VStack(spacing: 10) {
+            VStack(spacing: CXSpacing.sm) {
                 Text("先从每天都用得上的事开始")
-                    .font(.title.weight(.semibold))
-                    .fontDesign(.serif)
+                    .font(CXTypography.title)
                     .multilineTextAlignment(.center)
 
                 Text("常曦把对话、健康记录与报告整理放在同一个入口里。")
-                    .font(.body)
+                    .font(CXTypography.body)
                     .foregroundStyle(CX.muted)
                     .multilineTextAlignment(.center)
                     .lineSpacing(5)
@@ -660,16 +661,15 @@ struct WelcomeView: View {
 
     private var connectionPage: some View {
         onboardingScroll {
-            onboardingSymbol("person.2.wave.2", tint: CX.teal)
+            onboardingSymbol("person.2.wave.2", tint: CX.statusPositive)
 
-            VStack(spacing: 10) {
+            VStack(spacing: CXSpacing.sm) {
                 Text("健康照护，从来不只属于一个人")
-                    .font(.title.weight(.semibold))
-                    .fontDesign(.serif)
+                    .font(CXTypography.title)
                     .multilineTextAlignment(.center)
 
                 Text("常曦希望把家人、家庭医生和服务连接起来，让提醒与任务真正有人接住。")
-                    .font(.body)
+                    .font(CXTypography.body)
                     .foregroundStyle(CX.muted)
                     .multilineTextAlignment(.center)
                     .lineSpacing(5)
@@ -686,7 +686,7 @@ struct WelcomeView: View {
             .frame(maxWidth: 500)
 
             Text("从一次提醒，到一次随访，再到一次服务协同，都保留清晰的下一步。")
-                .font(.subheadline)
+                .font(CXTypography.supporting)
                 .foregroundStyle(CX.muted)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 440)
@@ -697,26 +697,25 @@ struct WelcomeView: View {
         onboardingScroll {
             ZStack {
                 Circle()
-                    .fill(CX.blue.opacity(0.08))
+                    .fill(CX.actionPrimary.opacity(0.08))
                     .frame(width: 148, height: 148)
                 Circle()
-                    .stroke(CX.moonlight.opacity(0.20), lineWidth: 1)
+                    .stroke(CX.brandMoonlight.opacity(0.20), lineWidth: 1)
                     .frame(width: 176, height: 176)
                 Image(systemName: "lock.shield.fill")
                     .font(.system(size: 58, weight: .light))
                     .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(CX.blue)
+                    .foregroundStyle(CX.actionPrimary)
             }
             .padding(.vertical, 10)
 
-            VStack(spacing: 10) {
+            VStack(spacing: CXSpacing.sm) {
                 Text("你的健康信息，由你决定怎么使用")
-                    .font(.title.weight(.semibold))
-                    .fontDesign(.serif)
+                    .font(CXTypography.title)
                     .multilineTextAlignment(.center)
 
                 Text("体验版数据默认保存在本机。需要语音、通知或其他权限时，常曦会在真正需要它的那一步再向你说明。")
-                    .font(.body)
+                    .font(CXTypography.body)
                     .foregroundStyle(CX.muted)
                     .multilineTextAlignment(.center)
                     .lineSpacing(5)
@@ -742,16 +741,15 @@ struct WelcomeView: View {
 
     private var setupPage: some View {
         onboardingScroll {
-            onboardingSymbol("moon.stars.fill", tint: CX.blue)
+            onboardingSymbol("moon.stars.fill", tint: CX.actionPrimary)
 
-            VStack(spacing: 10) {
+            VStack(spacing: CXSpacing.sm) {
                 Text("最后，让常曦先认识你一点")
-                    .font(.title.weight(.semibold))
-                    .fontDesign(.serif)
+                    .font(CXTypography.title)
                     .multilineTextAlignment(.center)
 
                 Text("这些设置以后都可以在“我的”里修改。")
-                    .font(.body)
+                    .font(CXTypography.body)
                     .foregroundStyle(CX.muted)
                     .multilineTextAlignment(.center)
             }
@@ -766,7 +764,7 @@ struct WelcomeView: View {
                         .submitLabel(.done)
                         .padding(.horizontal, 16)
                         .frame(minHeight: 52)
-                        .background(CX.raisedSurface, in: .rect(cornerRadius: 14, style: .continuous))
+                        .background(CX.raisedSurface, in: .rect(cornerRadius: CXRadius.sm, style: .continuous))
                 }
 
                 Toggle(isOn: $useLargeText) {
@@ -793,7 +791,7 @@ struct WelcomeView: View {
                     Spacer()
                     NavigationLink("隐私说明") { PrivacyView() }
                 }
-                .font(.subheadline)
+                .font(CXTypography.supporting)
             }
             .frame(maxWidth: 540)
         }
@@ -804,7 +802,7 @@ struct WelcomeView: View {
             HStack(spacing: 7) {
                 ForEach(0..<stageCount, id: \.self) { index in
                     Capsule()
-                        .fill(index == stage ? CX.blue : CX.blue.opacity(0.14))
+                        .fill(index == stage ? CX.actionPrimary : CX.actionPrimary.opacity(0.14))
                         .frame(width: index == stage ? 24 : 7, height: 7)
                         .animation(reduceMotion ? nil : .smooth(duration: 0.26), value: stage)
                 }
@@ -821,7 +819,7 @@ struct WelcomeView: View {
                             .padding(.horizontal, 16)
                     }
                     .buttonStyle(.plain)
-                    .cxInteractiveGlass(cornerRadius: 18)
+                    .cxInteractiveGlass(cornerRadius: CXRadius.md)
                 }
 
                 if stage < stageCount - 1 {
@@ -851,7 +849,7 @@ struct WelcomeView: View {
         Capsule()
             .fill(
                 LinearGradient(
-                    colors: [CX.moonlight.opacity(0.10), CX.blue.opacity(0.32), CX.moonlight.opacity(0.10)],
+                    colors: [CX.brandMoonlight.opacity(0.10), CX.actionPrimary.opacity(0.32), CX.brandMoonlight.opacity(0.10)],
                     startPoint: .leading,
                     endPoint: .trailing
                 )
@@ -878,13 +876,13 @@ struct WelcomeView: View {
 
     private func onboardingScroll<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         ScrollView {
-            VStack(spacing: 26) {
+            VStack(spacing: CXSpacing.xl) {
                 content()
             }
             .frame(maxWidth: 620)
-            .padding(.horizontal, 22)
-            .padding(.top, 18)
-            .padding(.bottom, 24)
+            .padding(.horizontal, CXSpacing.xl)
+            .padding(.top, CXSpacing.md)
+            .padding(.bottom, CXSpacing.xl)
             .frame(maxWidth: .infinity)
         }
         .scrollIndicators(.hidden)
@@ -921,15 +919,15 @@ private struct OnboardingFeatureRow: View {
             Image(systemName: icon)
                 .font(.title3.weight(.medium))
                 .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(CX.blue)
+                .foregroundStyle(CX.actionPrimary)
                 .frame(width: 42, height: 42)
-                .background(CX.blue.opacity(0.055), in: Circle())
+                .background(CX.actionPrimary.opacity(0.055), in: Circle())
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.headline)
                 Text(subtitle)
-                    .font(.subheadline)
+                    .font(CXTypography.supporting)
                     .foregroundStyle(CX.muted)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -948,7 +946,7 @@ private struct OnboardingConnectionNode: View {
             Image(systemName: icon)
                 .font(.title2.weight(.medium))
                 .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(CX.blue)
+                .foregroundStyle(CX.actionPrimary)
                 .frame(width: 58, height: 58)
                 .background(.thinMaterial, in: Circle())
                 .overlay {
