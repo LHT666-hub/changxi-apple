@@ -131,9 +131,9 @@ struct ChatView: View {
                                         HStack(spacing: 12) {
                                             Image(systemName: prompt.systemImage)
                                                 .font(.subheadline.weight(.semibold))
-                                                .foregroundStyle(CX.blue)
+                                                .foregroundStyle(CX.actionPrimary)
                                                 .frame(width: 32, height: 32)
-                                                .background(CX.blue.opacity(0.09), in: Circle())
+                                                .background(CX.actionPrimary.opacity(0.09), in: Circle())
                                             VStack(alignment: .leading, spacing: 2) {
                                                 Text(prompt.title).font(.subheadline.weight(.semibold))
                                                 Text(prompt.subtitle)
@@ -166,7 +166,7 @@ struct ChatView: View {
                             ThinkingRibbon(isEnriching: isEnriching) { cancelRequest() }
                         }
                         if let badge = lastMetadata?.badge { metadataBanner(badge) }
-                        if let error { Card { Text(error).foregroundStyle(CX.coral); Button("重试") { requestReply(pendingText) } } }
+                        if let error { Card { Text(error).foregroundStyle(CX.statusCritical); Button("重试") { requestReply(pendingText) } } }
                         if let error = speech.error { Card { Text(error).foregroundStyle(CX.muted); Button("使用键盘") { keyboard = true } } }
                         Color.clear.frame(height: 1).id("bottom")
                     }.frame(maxWidth: 720).padding(20).frame(maxWidth: .infinity)
@@ -265,7 +265,7 @@ struct ChatView: View {
                         Image(systemName: isVoiceMode ? "keyboard" : "mic")
                             .font(.headline.weight(.medium))
                             .frame(width: 44, height: 44)
-                            .foregroundStyle(isVoiceMode ? CX.blue : CX.ink)
+                            .foregroundStyle(isVoiceMode ? CX.actionPrimary : CX.ink)
                     }
                     .disabled(isBusy)
                     .accessibilityLabel(isVoiceMode ? "切换到键盘输入" : "切换到语音输入")
@@ -299,9 +299,9 @@ struct ChatView: View {
             Text(speech.isStarting ? "正在准备麦克风…" : speech.isRecording ? "松开转成文字" : "长按发言")
                 .font(.body.weight(.medium))
         }
-        .foregroundStyle(speech.isRecording ? CX.blue : CX.ink)
+        .foregroundStyle(speech.isRecording ? CX.actionPrimary : CX.ink)
         .frame(maxWidth: .infinity, minHeight: 44)
-        .background(speech.isRecording ? CX.blue.opacity(0.10) : .clear, in: Capsule())
+        .background(speech.isRecording ? CX.actionPrimary.opacity(0.10) : .clear, in: Capsule())
         .contentShape(Rectangle())
         .gesture(
             DragGesture(minimumDistance: 0)
@@ -361,8 +361,8 @@ struct ChatView: View {
             Spacer()
         }
         .padding(12)
-        .background((urgent ? CX.coral : CX.muted).opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
-        .foregroundStyle(urgent ? CX.coral : CX.muted)
+        .background((urgent ? CX.statusCritical : CX.muted).opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
+        .foregroundStyle(urgent ? CX.statusCritical : CX.muted)
         .accessibilityIdentifier("reply-metadata-banner")
     }
 
@@ -597,10 +597,10 @@ private struct ConversationTurnView: View {
                 }
                 .padding(.horizontal, 17)
                 .padding(.vertical, 14)
-                .background(CX.blue.opacity(0.12), in: .rect(cornerRadius: 21, style: .continuous))
+                .background(CX.actionPrimary.opacity(0.12), in: .rect(cornerRadius: 21, style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: 21, style: .continuous)
-                        .strokeBorder(CX.moonlight.opacity(0.20), lineWidth: 0.5)
+                        .strokeBorder(CX.brandMoonlight.opacity(0.20), lineWidth: 0.5)
                 }
             }
         } else {
@@ -619,10 +619,10 @@ private struct AssistantAnswerCard: View {
             VStack(alignment: .leading, spacing: 14) {
                 HStack(spacing: 9) {
                     ZStack {
-                        Circle().fill(CX.blue.opacity(0.11))
+                        Circle().fill(CX.actionPrimary.opacity(0.11))
                         Image(systemName: "moonphase.waning.crescent")
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(CX.blue)
+                            .foregroundStyle(CX.actionPrimary)
                     }
                     .frame(width: 28, height: 28)
                     Text("常曦")
@@ -631,10 +631,10 @@ private struct AssistantAnswerCard: View {
                     if isStreaming {
                         Text("正在回答")
                             .font(.caption2.weight(.medium))
-                            .foregroundStyle(CX.blue)
+                            .foregroundStyle(CX.actionPrimary)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
-                            .background(CX.blue.opacity(0.09), in: Capsule())
+                            .background(CX.actionPrimary.opacity(0.09), in: Capsule())
                     }
                     Spacer()
                 }
@@ -654,7 +654,7 @@ private struct AssistantAnswerCard: View {
                         } label: {
                             HStack(spacing: 10) {
                                 Image(systemName: "books.vertical.fill")
-                                    .foregroundStyle(CX.blue)
+                                    .foregroundStyle(CX.actionPrimary)
                                 let citedCount = detail.references.filter { $0.cited == true }.count
                                 Text(citedCount > 0
                                      ? "回答引用 \(citedCount) 篇"
@@ -666,7 +666,7 @@ private struct AssistantAnswerCard: View {
                                         Text("\(index + 1)")
                                             .font(.caption2.weight(.bold))
                                             .frame(width: 22, height: 22)
-                                            .background(CX.blue.opacity(0.10), in: Circle())
+                                            .background(CX.actionPrimary.opacity(0.10), in: Circle())
                                     }
                                 }
                                 Image(systemName: "chevron.right")
@@ -690,7 +690,7 @@ private struct AssistantAnswerCard: View {
                 Capsule()
                     .fill(
                         LinearGradient(
-                            colors: [CX.moonlight.opacity(0.75), CX.blue.opacity(0.18)],
+                            colors: [CX.brandMoonlight.opacity(0.75), CX.actionPrimary.opacity(0.18)],
                             startPoint: .top,
                             endPoint: .bottom
                         )
@@ -702,7 +702,7 @@ private struct AssistantAnswerCard: View {
                 RoundedRectangle(cornerRadius: 24, style: .continuous)
                     .strokeBorder(.white.opacity(0.30), lineWidth: 0.6)
             }
-            .shadow(color: CX.blue.opacity(0.055), radius: 18, y: 8)
+            .shadow(color: CX.actionPrimary.opacity(0.055), radius: 18, y: 8)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("assistant-response")
             Spacer(minLength: 28)
@@ -736,9 +736,9 @@ private struct ThinkingRibbon: View {
     var body: some View {
         HStack(spacing: 12) {
             ZStack {
-                Circle().fill(CX.blue.opacity(0.10))
+                Circle().fill(CX.actionPrimary.opacity(0.10))
                 Image(systemName: isEnriching ? "doc.text.magnifyingglass" : "sparkles")
-                    .foregroundStyle(CX.blue)
+                    .foregroundStyle(CX.actionPrimary)
                     .symbolEffect(.pulse, options: .repeating, isActive: !reduceMotion)
             }
             .frame(width: 34, height: 34)
@@ -759,7 +759,7 @@ private struct ThinkingRibbon: View {
         .background(.thinMaterial, in: .rect(cornerRadius: 18, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .strokeBorder(CX.moonlight.opacity(0.16), lineWidth: 0.5)
+                .strokeBorder(CX.brandMoonlight.opacity(0.16), lineWidth: 0.5)
         }
         .accessibilityElement(children: .combine)
     }
@@ -791,7 +791,7 @@ private struct WorkOrderSummary: View {
                     Spacer()
                     Text("需你确认")
                         .font(.caption.weight(.medium))
-                        .foregroundStyle(CX.blue)
+                        .foregroundStyle(CX.actionPrimary)
                 }
                 Text("以下安排会进入你的照护计划，请选择是否需要。")
                     .font(.caption)
@@ -808,7 +808,7 @@ private struct WorkOrderSummary: View {
                     Spacer()
                     Text("\(activeOrders.count) 项")
                         .font(.caption.weight(.medium))
-                        .foregroundStyle(CX.teal)
+                        .foregroundStyle(CX.statusPositive)
                 }
                 ForEach(activeOrders.prefix(3)) { order in
                     NavigationLink {
@@ -816,12 +816,12 @@ private struct WorkOrderSummary: View {
                     } label: {
                         HStack(spacing: 11) {
                             Circle()
-                                .fill(order.priority == "high" ? CX.coral.opacity(0.14) : CX.teal.opacity(0.12))
+                                .fill(order.priority == "high" ? CX.statusCritical.opacity(0.14) : CX.statusPositive.opacity(0.12))
                                 .frame(width: 30, height: 30)
                                 .overlay {
                                     Image(systemName: order.priority == "high" ? "bell.badge.fill" : "checkmark")
                                         .font(.caption.weight(.bold))
-                                        .foregroundStyle(order.priority == "high" ? CX.coral : CX.teal)
+                                        .foregroundStyle(order.priority == "high" ? CX.statusCritical : CX.statusPositive)
                                 }
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(order.title).font(.subheadline.weight(.medium))
@@ -840,7 +840,7 @@ private struct WorkOrderSummary: View {
                 }
             }
             if let error {
-                Text(error).font(.caption).foregroundStyle(CX.coral)
+                Text(error).font(.caption).foregroundStyle(CX.statusCritical)
             }
         }
         .accessibilityIdentifier("work-order-summary")
@@ -873,7 +873,7 @@ private struct WorkOrderSummary: View {
         .padding(13)
         .background {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(CX.blue.opacity(0.055))
+                .fill(CX.actionPrimary.opacity(0.055))
         }
         .accessibilityElement(children: .contain)
     }
@@ -910,14 +910,14 @@ private struct ReferenceLibraryView: View {
                         HStack(alignment: .top, spacing: 13) {
                             Text("\(index + 1)")
                                 .font(.caption.weight(.bold))
-                                .foregroundStyle(CX.blue)
+                                .foregroundStyle(CX.actionPrimary)
                                 .frame(width: 28, height: 28)
-                                .background(CX.blue.opacity(0.10), in: Circle())
+                                .background(CX.actionPrimary.opacity(0.10), in: Circle())
                             VStack(alignment: .leading, spacing: 6) {
                                 Text(reference.title).font(.body.weight(.semibold))
                                 Text(reference.cited == true ? "回答已引用" : "相关资料")
                                     .font(.caption2.weight(.medium))
-                                    .foregroundStyle(reference.cited == true ? CX.teal : CX.blue)
+                                    .foregroundStyle(reference.cited == true ? CX.statusPositive : CX.actionPrimary)
                                 Text(reference.source)
                                     .font(.caption2)
                                     .foregroundStyle(CX.muted)
@@ -959,9 +959,9 @@ private struct ReferenceDetailView: View {
             HStack(spacing: 12) {
                 Text("\(number)")
                     .font(.headline.weight(.bold))
-                    .foregroundStyle(CX.blue)
+                    .foregroundStyle(CX.actionPrimary)
                     .frame(width: 38, height: 38)
-                    .background(CX.blue.opacity(0.10), in: Circle())
+                    .background(CX.actionPrimary.opacity(0.10), in: Circle())
                 VStack(alignment: .leading, spacing: 3) {
                     Text(reference.title).font(.title3.weight(.semibold))
                     Text(reference.source).font(.caption).foregroundStyle(CX.muted)
