@@ -21,7 +21,7 @@ struct HomeView: View {
             MoonBackground(illustrated: true)
 
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 22) {
+                LazyVStack(alignment: .leading, spacing: CXSpacing.xl) {
                     HomeHeader(
                         name: store.data.name,
                         greeting: greeting,
@@ -58,8 +58,12 @@ struct HomeView: View {
 
                     NavigationLink { RefinedMoonRhythmDetailView() } label: {
                         RefinedMoonPhaseCard()
-                            .padding(16)
-                            .cxInteractiveGlass(cornerRadius: 22)
+                            .padding(CXSpacing.md)
+                            .background(CX.surface, in: .rect(cornerRadius: CXRadius.lg, style: .continuous))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: CXRadius.lg, style: .continuous)
+                                    .strokeBorder(CX.separator.opacity(0.10), lineWidth: 0.5)
+                            }
                     }
                     .buttonStyle(.plain)
                     .entrance(index: 7, appeared: appeared, reduceMotion: reduceMotion)
@@ -78,9 +82,9 @@ struct HomeView: View {
                         .entrance(index: 11, appeared: appeared, reduceMotion: reduceMotion)
                 }
                 .frame(maxWidth: 700)
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
-                .padding(.bottom, 34)
+                .padding(.horizontal, CXSpacing.page)
+                .padding(.top, CXSpacing.md)
+                .padding(.bottom, CXSpacing.section)
                 .frame(maxWidth: .infinity)
             }
             .scrollIndicators(.hidden)
@@ -117,14 +121,14 @@ struct HomeView: View {
         } label: {
             HStack(spacing: 14) {
                 Image(systemName: "waveform")
-                    .font(.title2.weight(.semibold))
+                    .font(CXTypography.title)
                     .symbolRenderingMode(.hierarchical)
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text("和常曦说说")
-                        .font(.headline)
+                        .font(CXTypography.section)
                     Text("语音或文字都可以")
-                        .font(.subheadline)
+                        .font(CXTypography.supporting)
                         .opacity(0.82)
                 }
 
@@ -147,24 +151,21 @@ private struct HomeHeader: View {
     var body: some View {
         HStack(alignment: .top, spacing: 16) {
             VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 8) {
-                    Image(systemName: "moonphase.waxing.crescent")
-                        .symbolRenderingMode(.hierarchical)
-                        .foregroundStyle(CX.blue)
+                HStack(spacing: CXSpacing.xs) {
+                    LunarGlyph(size: 22, tint: CX.actionPrimary)
 
                     Text("常曦")
-                        .font(.headline)
+                        .font(CXTypography.section)
                         .foregroundStyle(CX.muted)
                 }
 
                 Text("\(greeting)，\(name)")
-                    .font(.largeTitle.weight(.semibold))
-                    .fontDesign(.serif)
+                    .font(CXTypography.display)
                     .minimumScaleFactor(0.82)
                     .fixedSize(horizontal: false, vertical: true)
 
                 Text("照顾自己，不用一次做很多。")
-                    .font(.body)
+                    .font(CXTypography.body)
                     .foregroundStyle(CX.muted)
             }
 
@@ -176,7 +177,7 @@ private struct HomeHeader: View {
                 Image(systemName: hasUnreadMessage ? "envelope.badge.fill" : "envelope.fill")
                     .font(.title3.weight(.semibold))
                     .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(CX.blue)
+                    .foregroundStyle(CX.actionPrimary)
                     .frame(width: 46, height: 46)
                     .contentTransition(.symbolEffect(.replace))
                     .cxInteractiveGlassCircle()
@@ -206,7 +207,7 @@ private struct HomeQuickActions: View {
                     icon: "heart.text.square",
                     title: "记健康",
                     subtitle: "血压与日常记录",
-                    tint: CX.coral
+                    tint: CX.statusCritical
                 )
             }
             .buttonStyle(.plain)
@@ -218,7 +219,7 @@ private struct HomeQuickActions: View {
                     icon: "doc.viewfinder",
                     title: "导入报告",
                     subtitle: "拍照或选择文件",
-                    tint: CX.blue
+                    tint: CX.actionPrimary
                 )
             }
             .buttonStyle(.plain)
@@ -230,7 +231,7 @@ private struct HomeQuickActions: View {
                     icon: "stethoscope",
                     title: "医生消息",
                     subtitle: "查看回复与建议",
-                    tint: CX.teal
+                    tint: CX.statusPositive
                 )
             }
             .buttonStyle(.plain)
@@ -242,7 +243,7 @@ private struct HomeQuickActions: View {
                     icon: "calendar.badge.checkmark",
                     title: "今日计划",
                     subtitle: "用药与日常安排",
-                    tint: CX.gold
+                    tint: CX.statusWarning
                 )
             }
             .buttonStyle(.plain)
@@ -278,14 +279,18 @@ private struct HomeQuickActionTile: View {
                     .font(.headline)
 
                 Text(subtitle)
-                    .font(.caption)
+                    .font(CXTypography.micro)
                     .foregroundStyle(CX.muted)
                     .lineLimit(2)
             }
         }
         .frame(maxWidth: .infinity, minHeight: 118, alignment: .leading)
-        .padding(16)
-        .cxInteractiveGlass(cornerRadius: 20)
+        .padding(CXSpacing.md)
+        .background(CX.surface, in: .rect(cornerRadius: CXRadius.md, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: CXRadius.md, style: .continuous)
+                .strokeBorder(CX.separator.opacity(0.10), lineWidth: 0.5)
+        }
         .contentShape(Rectangle())
     }
 }
@@ -350,7 +355,7 @@ private struct HomeMoonBadge: View {
                     RadialGradient(
                         colors: [
                             .white.opacity(0.32),
-                            CX.moonlight.opacity(0.14),
+                            CX.brandMoonlight.opacity(0.14),
                             .clear
                         ],
                         center: .center,
@@ -363,7 +368,7 @@ private struct HomeMoonBadge: View {
 
             MoonDisc(phase: phase)
                 .frame(width: 52, height: 52)
-                .shadow(color: CX.moonlight.opacity(0.18), radius: 9, y: 4)
+                .shadow(color: CX.brandMoonlight.opacity(0.18), radius: 9, y: 4)
         }
         .onAppear {
             guard !reduceMotion else { return }
@@ -386,8 +391,7 @@ private struct RefinedMoonRhythmDetailView: View {
 
             VStack(spacing: 6) {
                 Text(phase.phaseName)
-                    .font(.largeTitle.weight(.semibold))
-                    .fontDesign(.serif)
+                    .font(CXTypography.display)
 
                 Text("\(phase.dateLabel) · \(phase.rhythmLabel)")
                     .font(.body)
@@ -434,7 +438,7 @@ private struct MoonDetailHero: View {
                     RadialGradient(
                         colors: [
                             .white.opacity(0.34),
-                            CX.moonlight.opacity(0.15),
+                            CX.brandMoonlight.opacity(0.15),
                             .clear
                         ],
                         center: .center,
@@ -452,7 +456,7 @@ private struct MoonDetailHero: View {
                         colors: [
                             .clear,
                             .white.opacity(0.60),
-                            CX.moonlight.opacity(0.24),
+                            CX.brandMoonlight.opacity(0.24),
                             .clear
                         ],
                         center: .center
@@ -465,7 +469,7 @@ private struct MoonDetailHero: View {
             MoonDisc(phase: phase)
                 .frame(width: 180, height: 180)
                 .shadow(color: .white.opacity(0.24), radius: 14, y: -2)
-                .shadow(color: CX.moonlight.opacity(0.22), radius: 24, y: 10)
+                .shadow(color: CX.brandMoonlight.opacity(0.22), radius: 24, y: 10)
         }
         .frame(height: 250)
         .onAppear {
