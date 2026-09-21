@@ -963,15 +963,3 @@ private struct OnboardingConnectionNode: View {
     }
 }
 
-private extension View {
-    func welcomeEntrance(index: Int, appeared: Bool, reduceMotion: Bool) -> some View {
-        opacity(appeared ? 1 : 0)
-            .offset(y: appeared || reduceMotion ? 0 : 14)
-            .animation(
-                reduceMotion
-                    ? .easeOut(duration: 0.18)
-                    : .spring(duration: 0.52, bounce: 0.08).delay(Double(index) * 0.055),
-                value: appeared
-            )
-    }
-}
