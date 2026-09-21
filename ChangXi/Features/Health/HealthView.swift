@@ -47,7 +47,7 @@ struct HealthView: View {
                         title: "我的健康画像",
                         subtitle: "整体较稳定 · 有 2 项值得关注",
                         icon: "circle.hexagongrid.fill",
-                        tint: CX.blue
+                        tint: CX.actionPrimary
                     )
                 }
             }
@@ -84,7 +84,7 @@ struct HealthView: View {
                         title: "疼痛位置记录",
                         subtitle: "选择身体区域，并在体表图上标注具体位置",
                         icon: "figure.stand",
-                        tint: CX.coral
+                        tint: CX.statusCritical
                     )
                 }
             }
@@ -109,7 +109,7 @@ private struct BMISummaryTile: View {
             HStack {
                 Image(systemName: "figure.arms.open")
                     .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(CX.teal)
+                    .foregroundStyle(CX.statusPositive)
                 Text("BMI")
                     .font(.subheadline.weight(.semibold))
                 Spacer()
@@ -225,7 +225,7 @@ struct BMIDetailView: View {
                         title: latestWeight.map { "体重 \($0.display) kg" } ?? "添加体重记录",
                         subtitle: latestWeight.map { "更新于 \($0.date.formatted(date: .abbreviated, time: .shortened))" } ?? "BMI 需要最新体重",
                         icon: "scalemass",
-                        tint: CX.blue
+                        tint: CX.actionPrimary
                     )
                 }
                 .buttonStyle(.plain)
@@ -237,7 +237,7 @@ struct BMIDetailView: View {
                         title: "身高 \(heightDisplay) cm",
                         subtitle: "身高变化或资料有误时，请在这里修改",
                         icon: "ruler",
-                        tint: CX.teal
+                        tint: CX.statusPositive
                     )
                 }
                 .buttonStyle(.plain)
@@ -302,10 +302,10 @@ private struct BMIRangeRow: View {
 private extension BMIClassification {
     var tint: Color {
         switch self {
-        case .underweight: CX.blue
-        case .normal: CX.teal
-        case .overweight: CX.gold
-        case .obesity: CX.coral
+        case .underweight: CX.actionPrimary
+        case .normal: CX.statusPositive
+        case .overweight: CX.statusWarning
+        case .obesity: CX.statusCritical
         }
     }
 
@@ -325,9 +325,9 @@ private struct MetricSummaryTile: View {
 
     private var tint: Color {
         switch kind {
-        case .pressure: CX.coral
-        case .glucose: CX.gold
-        case .weight: CX.blue
+        case .pressure: CX.statusCritical
+        case .glucose: CX.statusWarning
+        case .weight: CX.actionPrimary
         }
     }
 
@@ -396,7 +396,7 @@ struct HealthChart: View {
                     }
                 }
             }
-            .chartForegroundStyleScale(range: [CX.coral, CX.blue])
+            .chartForegroundStyleScale(range: [CX.statusCritical, CX.actionPrimary])
             .chartYScale(domain: .automatic(includesZero: false))
             .chartXAxis { AxisMarks(values: .automatic(desiredCount: 4)) { _ in AxisGridLine(); AxisValueLabel(format: .dateTime.month().day()) } }
             .frame(height: 215)
@@ -439,7 +439,7 @@ struct MetricDetailView: View {
                                             .font(.caption2).buttonStyle(.bordered).controlSize(.mini)
                                     }
                                 }
-                                .foregroundStyle(sync == .failed ? CX.coral : sync == .synced ? CX.teal : CX.muted)
+                                .foregroundStyle(sync == .failed ? CX.statusCritical : sync == .synced ? CX.statusPositive : CX.muted)
                             }
                         }
                         Spacer()
@@ -478,7 +478,7 @@ struct RecordReadingView: View {
                 DatePicker("测量时间", selection: $date, in: ...Date.now)
                 TextField("备注，如晨起、餐前或餐后", text: $note, axis: .vertical)
             }
-            if let error { Section { Text(error).foregroundStyle(CX.coral) } }
+            if let error { Section { Text(error).foregroundStyle(CX.statusCritical) } }
             if submitting {
                 Section {
                     HStack(spacing: 10) {
