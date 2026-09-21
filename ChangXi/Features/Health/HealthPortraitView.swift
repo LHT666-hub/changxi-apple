@@ -9,7 +9,7 @@ struct HealthPortraitView: View {
             VStack(alignment: .leading, spacing: 22) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("我的健康画像")
-                        .font(.largeTitle.weight(.semibold)).fontDesign(.serif)
+                        .font(CXTypography.display)
                     Text("整体较稳定，有 2 项值得继续关注。")
                         .font(.title3).foregroundStyle(CX.muted)
                 }
@@ -145,7 +145,7 @@ private struct HealthDimensionDetailView: View {
     var body: some View {
         Page {
             Label(dimension.title, systemImage: dimension.symbol)
-                .font(.largeTitle.weight(.semibold)).fontDesign(.serif).foregroundStyle(dimension.tint)
+                .font(CXTypography.display).foregroundStyle(dimension.tint)
             Card {
                 Text("现在的状态").font(.headline)
                 Text(dimension.state).font(.title2.weight(.semibold))
