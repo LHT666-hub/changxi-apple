@@ -83,6 +83,28 @@
 - Header 使用 LunarGlyph。
 - 部分间距与圆角迁移到 V3 Token。
 
+
+### 全局字体收敛
+- Commits:
+  - `bef1d50fac564ef52d9660fced5c551345022772` HealthPortrait
+  - `db57659f1ed20898ca3ade11a42159a0752f9b85` Health
+  - `596d6c3a3924d999323495abeaa95a7c6463d804` Constitution
+  - `f5f573c8c64bdbc48e9c5fd4d1ed11fbd5981080` Shiyang
+  - `da827cc3c48c0a02bc79ee26c25c3d635f0077c8` Chat
+  - `a5518e6f580bf715c9c0aeb45e61f79db883cb7d` Services
+  - `e3900f1ba0fc8cb07c1068211008c4479cb70e62` Pain
+  - `590ac71ed2e9fd0a3174f28ea4b3e3bdfb2025c6` DesignSystem cleanup
+- 主要业务页面停止把 serif 当默认标题字体。
+- largeTitle / title2 等核心层级开始统一映射到 CXTypography。
+- 体质等局部较小标题保留系统 title3 尺寸，但移除 serif design。
+
+### 当前 V3 状态
+- 字体：基础 Token 已建立，主要高频页面已完成首轮迁移。
+- 配色：全局背景已转月白；旧颜色别名仍存在，下一步继续按语义迁移。
+- 网格：Home / Onboarding / Page / Card 已开始使用 CXSpacing / CXRadius。
+- 图形：LunarGlyph 已进入 Home / Onboarding 品牌位置。
+- Surface：共享 Card 已退出 regularMaterial；Glass 继续保留给导航和控制层。
+
 ---
 
 ## 下一步
