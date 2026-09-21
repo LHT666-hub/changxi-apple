@@ -7,6 +7,7 @@ enum CX {
     static let faint = Color(uiColor: .tertiaryLabel)
     static let blue = Color(.displayP3, red: 0.16, green: 0.38, blue: 0.72)
     static let moonlight = Color(.displayP3, red: 0.42, green: 0.68, blue: 0.96)
+    static let moonIvory = Color(.displayP3, red: 0.985, green: 0.975, blue: 0.94)
     static let mist = Color(uiColor: .systemGroupedBackground)
     static let surface = Color(uiColor: .secondarySystemGroupedBackground)
     static let raisedSurface = Color(uiColor: .tertiarySystemGroupedBackground)
@@ -164,6 +165,9 @@ struct Page<Content: View>: View {
 struct Card<Content: View>: View {
     @ViewBuilder let content: Content
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorScheme) private var colorScheme
+
+    private let cornerRadius: CGFloat = 24
 
     var body: some View {
         let card = VStack(alignment: .leading, spacing: 16) {
@@ -174,20 +178,37 @@ struct Card<Content: View>: View {
 
         if reduceTransparency {
             card
-                .background(CX.surface, in: .rect(cornerRadius: 22, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .strokeBorder(CX.separator.opacity(0.18), lineWidth: 0.5)
-                }
+                .background(CX.surface, in: .rect(cornerRadius: cornerRadius, style: .continuous))
+                .overlay { border }
         } else {
             card
-                .background(.regularMaterial, in: .rect(cornerRadius: 22, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .strokeBorder(CX.separator.opacity(0.18), lineWidth: 0.5)
-                }
-                .shadow(color: CX.blue.opacity(0.035), radius: 12, y: 5)
+                .background(.regularMaterial, in: .rect(cornerRadius: cornerRadius, style: .continuous))
+                .overlay { border }
+                .overlay { topHighlight }
+                .shadow(
+                    color: .black.opacity(colorScheme == .dark ? 0.16 : 0.045),
+                    radius: 18,
+                    y: 8
+                )
+                .shadow(color: CX.blue.opacity(0.025), radius: 8, y: 3)
         }
+    }
+
+    private var border: some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .strokeBorder(CX.separator.opacity(0.14), lineWidth: 0.5)
+    }
+
+    private var topHighlight: some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .strokeBorder(
+                LinearGradient(
+                    colors: [.white.opacity(0.54), .white.opacity(0.05), .clear],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ),
+                lineWidth: 0.7
+            )
     }
 }
 
@@ -252,25 +273,124 @@ struct PrimaryButton: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         let label = configuration.label
             .font(.headline)
-            .frame(maxWidth: .infinity, minHeight: 54)
+            .frame(maxWidth: .infinity, minHeight: 56)
             .padding(.horizontal, 20)
             .foregroundStyle(.white)
-            .opacity(isEnabled ? (configuration.isPressed ? 0.86 : 1) : 0.42)
-            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1)
+            .opacity(isEnabled ? (configuration.isPressed ? 0.88 : 1) : 0.42)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.975 : 1)
             .animation(.spring(duration: 0.18, bounce: 0), value: configuration.isPressed)
 
         label
             .background(
-                LinearGradient(colors: reduceTransparency ? [CX.blue, CX.blue] :
-                    [Color(red: 0.30, green: 0.48, blue: 0.74), CX.blue, Color(red: 0.13, green: 0.29, blue: 0.54)],
-                    startPoint: .topLeading, endPoint: .bottomTrailing),
-                in: .rect(cornerRadius: 18, style: .continuous))
+                LinearGradient(
+                    colors: reduceTransparency
+                        ? [CX.blue, CX.blue]
+                        : [
+                            Color(.displayP3, red: 0.29, green: 0.51, blue: 0.82),
+                            CX.blue,
+                            Color(.displayP3, red: 0.12, green: 0.30, blue: 0.58)
+                        ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ),
+                in: .rect(cornerRadius: 19, style: .continuous)
+            )
             .overlay {
-                RoundedRectangle(cornerRadius: 18).strokeBorder(
-                    LinearGradient(colors: [.white.opacity(0.42), .white.opacity(0.05)], startPoint: .top, endPoint: .bottom), lineWidth: 0.7)
+                RoundedRectangle(cornerRadius: 19, style: .continuous)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [.white.opacity(0.52), .white.opacity(0.08), .clear],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: 0.7
+                    )
             }
-            .shadow(color: CX.blue.opacity(isEnabled ? 0.16 : 0), radius: configuration.isPressed ? 2 : 8, y: configuration.isPressed ? 1 : 4)
+            .shadow(
+                color: CX.blue.opacity(isEnabled ? 0.14 : 0),
+                radius: configuration.isPressed ? 3 : 10,
+                y: configuration.isPressed ? 1 : 5
+            )
             .offset(y: configuration.isPressed && !reduceMotion ? 1 : 0)
+    }
+}
+
+struct MoonLoadingIndicator: View {
+    var label = "正在整理"
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var phase = 0.08
+    @State private var rotation = 0.0
+
+    var body: some View {
+        VStack(spacing: 14) {
+            ZStack {
+                Circle()
+                    .stroke(CX.moonlight.opacity(0.12), lineWidth: 0.8)
+                    .frame(width: 58, height: 58)
+
+                Circle()
+                    .trim(from: 0.08, to: 0.68)
+                    .stroke(
+                        AngularGradient(
+                            colors: [.clear, .white.opacity(0.72), CX.moonlight.opacity(0.34), .clear],
+                            center: .center
+                        ),
+                        style: StrokeStyle(lineWidth: 1.2, lineCap: .round)
+                    )
+                    .frame(width: 58, height: 58)
+                    .rotationEffect(.degrees(rotation))
+
+                MoonDisc(phase: phase)
+                    .frame(width: 40, height: 40)
+            }
+
+            Text(label)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(CX.muted)
+        }
+        .onAppear {
+            guard !reduceMotion else { return }
+
+            withAnimation(.linear(duration: 7).repeatForever(autoreverses: false)) {
+                rotation = 360
+            }
+
+            withAnimation(.easeInOut(duration: 3.2).repeatForever(autoreverses: true)) {
+                phase = 0.18
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(label)
+    }
+}
+
+struct MoonEmptyState: View {
+    let title: String
+    let message: String
+    var symbol = "moon.stars"
+
+    var body: some View {
+        VStack(spacing: 14) {
+            Image(systemName: symbol)
+                .font(.system(size: 34, weight: .light))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(CX.blue)
+                .frame(width: 70, height: 70)
+                .background(CX.blue.opacity(0.055), in: Circle())
+
+            Text(title)
+                .font(.headline)
+
+            Text(message)
+                .font(.subheadline)
+                .foregroundStyle(CX.muted)
+                .multilineTextAlignment(.center)
+                .lineSpacing(4)
+                .frame(maxWidth: 320)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 28)
     }
 }
 
