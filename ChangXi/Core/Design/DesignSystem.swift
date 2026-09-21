@@ -731,7 +731,7 @@ struct MoonRhythmDetailView: View {
             VStack(spacing: 12) {
                 MoonDisc(phase: Double(phase.lunarDay - 1) / 29.53)
                     .frame(width: 108, height: 108).padding(12)
-                Text(phase.phaseName).font(.largeTitle.weight(.semibold)).fontDesign(.serif)
+                Text(phase.phaseName).font(CXTypography.display)
                 Text("\(phase.dateLabel) · \(phase.rhythmLabel)").foregroundStyle(CX.muted)
             }
             .frame(maxWidth: .infinity)
