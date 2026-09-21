@@ -72,7 +72,7 @@ private struct ServiceTile: View {
         }
         .frame(maxWidth: .infinity, minHeight: 164, alignment: .leading)
         .padding(16)
-        .cxInteractiveGlass(cornerRadius: 20)
+        .cxContentSurface(cornerRadius: CXRadius.md)
         .contentShape(Rectangle())
     }
 }
