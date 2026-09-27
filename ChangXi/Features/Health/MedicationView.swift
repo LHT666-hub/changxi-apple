@@ -5,53 +5,188 @@ struct MedicationView: View {
     @State private var adding = false
     @State private var editing: Medication?
     @State private var removing: Medication?
+
     var body: some View {
-        Page {
-            Card {
-                Text("把用药安排，记得清清楚楚").font(.title2.bold())
-                Text("请按本人的处方或药品说明填写，不确定的用法先向医生或药师核对。").foregroundStyle(CX.muted)
-                Button { adding = true } label: { Label("添加用药计划", systemImage: "plus") }.buttonStyle(PrimaryButton())
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("用药")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.statusPositive)
+                    .tracking(0.6)
+                Text("把用药安排记得清楚")
+                    .font(CXTypography.display)
+                Text("只记录本人处方或药品说明中的用法；不确定时先向医生或药师核对。")
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
             }
+
+            Button {
+                adding = true
+            } label: {
+                Label("添加用药计划", systemImage: "plus")
+            }
+            .buttonStyle(PrimaryButton())
+
             if store.data.medications.isEmpty {
-                ContentUnavailableView("还没有添加药品", systemImage: "pills", description: Text("添加药名、处方剂量与时间后，可以记录服药或漏服。"))
-            }
-            ForEach(store.data.medications) { medication in
-                Card {
-                    RowLabel(title: medication.name, subtitle: "\(medication.dosage) · \(String(format: "%02d:%02d", medication.hour, medication.minute))", icon: "pills.fill", chevron: false)
-                    if !medication.instructions.isEmpty { Text(medication.instructions).foregroundStyle(CX.muted) }
-                    if let record = todayRecord(medication.id) {
-                        Label(record.taken ? "今天已记录服药" : "今天已记录漏服", systemImage: record.taken ? "checkmark.circle" : "minus.circle").foregroundStyle(record.taken ? CX.teal : CX.coral)
-                        Button("撤销今天的记录") { store.data.doseHistory.removeAll { $0.id == record.id } }.frame(minHeight: 44)
-                    } else {
-                        HStack {
-                            Button("已服药") { record(medication, taken: true) }.buttonStyle(.borderedProminent).frame(minHeight: 44)
-                            Button("记录漏服") { record(medication, taken: false) }.frame(minHeight: 44)
-                        }
-                    }
-                    HStack {
-                        Button("修改计划") { editing = medication }.frame(minHeight: 44)
-                        Spacer()
-                        Button("删除药品", role: .destructive) { removing = medication }.frame(minHeight: 44)
-                    }
+                CXEmptyState(
+                    title: "还没有添加药品",
+                    message: "添加药名、处方剂量与时间后，就可以记录每天是否服药。",
+                    icon: "pills"
+                )
+            } else {
+                SectionEyebrow(title: "今天", action: "\(store.data.medications.count) 项计划")
+
+                ForEach(store.data.medications) { medication in
+                    medicationCard(medication)
                 }
             }
-            NavigationLink { DoseHistoryView() } label: { Card { RowLabel(title: "服药历史", subtitle: "\(store.data.doseHistory.count) 条记录", icon: "clock.arrow.circlepath") } }.buttonStyle(.plain)
-            Card {
-                Text("如果漏服了").font(.title2.bold())
-                Text("漏服处理因药物而异。先核对说明书或联系医生、药师确认，本应用不会自动补记或调整剂量。")
-                NavigationLink("整理给医生的问题") { ConsultationView() }
+
+            SectionEyebrow(title: "记录")
+            NavigationLink { DoseHistoryView() } label: {
+                HStack(spacing: CXSpacing.md) {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .foregroundStyle(CX.actionPrimary)
+                        .frame(width: 42, height: 42)
+                        .background(CX.actionPrimary.opacity(0.08), in: Circle())
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("服药历史")
+                            .font(CXTypography.section)
+                        Text("\(store.data.doseHistory.count) 条记录")
+                            .font(CXTypography.supporting)
+                            .foregroundStyle(CX.muted)
+                    }
+
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(CX.faint)
+                }
+                .padding(CXSpacing.md)
+                .cxContentSurface(cornerRadius: CXRadius.md)
             }
-        }.navigationTitle("用药管理")
-        .sheet(isPresented: $adding) { NavigationStack { MedicationEditor() } }
-        .sheet(item: $editing) { medication in NavigationStack { MedicationEditor(medication: medication) } }
-        .confirmationDialog("删除这项用药计划？既往记录将保留。", isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }), titleVisibility: .visible) {
-            Button("删除计划", role: .destructive) { if let id = removing?.id { store.data.medications.removeAll { $0.id == id } }; removing = nil }
+            .buttonStyle(QuietPressButton())
+
+            SectionEyebrow(title: "如果漏服了")
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                Text("漏服处理因药物而异。先核对说明书或联系医生、药师确认，本应用不会自动补记或调整剂量。")
+                    .font(CXTypography.supporting)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(4)
+
+                NavigationLink("整理给医生的问题") { ConsultationView() }
+                    .font(CXTypography.supporting.weight(.semibold))
+            }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+        }
+        .navigationTitle("用药管理")
+        .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $adding) {
+            NavigationStack { MedicationEditor() }
+        }
+        .sheet(item: $editing) { medication in
+            NavigationStack { MedicationEditor(medication: medication) }
+        }
+        .confirmationDialog(
+            "删除这项用药计划？既往记录将保留。",
+            isPresented: Binding(
+                get: { removing != nil },
+                set: { if !$0 { removing = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("删除计划", role: .destructive) {
+                if let id = removing?.id {
+                    store.data.medications.removeAll { $0.id == id }
+                }
+                removing = nil
+            }
         }
     }
-    private func todayRecord(_ id: UUID) -> DoseRecord? { store.data.doseHistory.first { $0.medicationID == id && Calendar.current.isDateInToday($0.date) } }
+
+    @ViewBuilder
+    private func medicationCard(_ medication: Medication) -> some View {
+        VStack(alignment: .leading, spacing: CXSpacing.md) {
+            HStack(spacing: CXSpacing.md) {
+                Image(systemName: "pills.fill")
+                    .font(.title3.weight(.medium))
+                    .foregroundStyle(CX.statusPositive)
+                    .frame(width: 44, height: 44)
+                    .background(CX.statusPositive.opacity(0.08), in: Circle())
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(medication.name)
+                        .font(CXTypography.title)
+                    Text("\(medication.dosage) · \(String(format: "%02d:%02d", medication.hour, medication.minute))")
+                        .font(CXTypography.supporting)
+                        .foregroundStyle(CX.muted)
+                }
+
+                Spacer()
+            }
+
+            if !medication.instructions.isEmpty {
+                Text(medication.instructions)
+                    .font(CXTypography.supporting)
+                    .foregroundStyle(CX.muted)
+            }
+
+            if let record = todayRecord(medication.id) {
+                Label(
+                    record.taken ? "今天已记录服药" : "今天已记录漏服",
+                    systemImage: record.taken ? "checkmark.circle.fill" : "minus.circle"
+                )
+                .font(CXTypography.supporting.weight(.semibold))
+                .foregroundStyle(record.taken ? CX.statusPositive : CX.statusCritical)
+
+                Button("撤销今天的记录") {
+                    store.data.doseHistory.removeAll { $0.id == record.id }
+                }
+                .font(CXTypography.meta.weight(.semibold))
+            } else {
+                HStack(spacing: CXSpacing.sm) {
+                    Button("已服药") {
+                        record(medication, taken: true)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+
+                    Button("记录漏服") {
+                        record(medication, taken: false)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                }
+            }
+
+            HStack {
+                Button("修改计划") { editing = medication }
+                    .font(CXTypography.meta.weight(.semibold))
+                Spacer()
+                Button("删除药品", role: .destructive) { removing = medication }
+                    .font(CXTypography.meta.weight(.semibold))
+            }
+        }
+        .padding(CXSpacing.lg)
+        .cxContentSurface(cornerRadius: CXRadius.lg)
+    }
+
+    private func todayRecord(_ id: UUID) -> DoseRecord? {
+        store.data.doseHistory.first {
+            $0.medicationID == id && Calendar.current.isDateInToday($0.date)
+        }
+    }
+
     private func record(_ medication: Medication, taken: Bool) {
         guard todayRecord(medication.id) == nil else { return }
-        store.data.doseHistory.append(DoseRecord(medicationID: medication.id, medicationName: medication.name, taken: taken))
+        store.data.doseHistory.append(
+            DoseRecord(
+                medicationID: medication.id,
+                medicationName: medication.name,
+                taken: taken
+            )
+        )
         MoonHaptics.shared.play(success: taken, enabled: store.data.haptics)
     }
 }
