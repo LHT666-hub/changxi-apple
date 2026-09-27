@@ -155,53 +155,135 @@ struct BackendConnectionView: View {
     @State private var connected = false
 
     var body: some View {
-        Page {
-            Card {
-                Label("常曦 × 玄同", systemImage: "network").font(.title2.weight(.medium))
-                Text("连接正在运行的玄同服务，让常曦调用家庭医生团队。")
-                    .font(.subheadline).foregroundStyle(CX.muted)
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("玄同连接")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .tracking(0.6)
+
+                Text("让常曦连接正在运行的玄同服务")
+                    .font(CXTypography.display)
+
+                Text("这里填写的是服务地址，不是代码仓库地址。连接成功后，常曦才能调用玄同提供的联网能力。")
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
+            }
+
+            SectionEyebrow(title: "服务地址")
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
                 TextField("https://你的服务器地址", text: $address)
-                    .textInputAutocapitalization(.never).autocorrectionDisabled()
-                    .keyboardType(.URL).padding(14)
-                    .background(CX.mist, in: .rect(cornerRadius: 14))
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .keyboardType(.URL)
+                    .padding(.horizontal, CXSpacing.md)
+                    .frame(minHeight: 54)
+                    .background(CX.raisedSurface, in: .rect(cornerRadius: CXRadius.sm, style: .continuous))
                     .accessibilityIdentifier("backend-address")
+
                 Button {
                     Task { await connect() }
                 } label: {
-                    HStack { if checking { ProgressView().tint(.white) }; Text(checking ? "正在连接…" : "检查并使用这个地址") }
-                }.buttonStyle(PrimaryButton()).disabled(checking)
-                    .accessibilityIdentifier("check-backend")
-                Label(status, systemImage: connected ? "checkmark.circle" : "info.circle")
-                    .font(.footnote).foregroundStyle(connected ? CX.teal : CX.muted)
-                    .accessibilityIdentifier("backend-status")
+                    HStack(spacing: 10) {
+                        if checking {
+                            ProgressView().tint(.white)
+                        }
+                        Text(checking ? "正在检查连接" : "检查并使用这个地址")
+                    }
+                }
+                .buttonStyle(PrimaryButton())
+                .disabled(checking)
+                .accessibilityIdentifier("check-backend")
             }
-            Card {
-                Text("当前可用的后端能力").font(.headline)
-                Text("对话事件、健康测量事件、照护任务与任务完成。")
-                Text("此版本尚未启用远程账户登录、文档归档和健康记录跨设备恢复。最新玄同接口仍需联调，资料目前保存在本机。")
-                    .font(.footnote).foregroundStyle(CX.muted)
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            HStack(alignment: .top, spacing: CXSpacing.md) {
+                Image(systemName: connected ? "checkmark.circle.fill" : "network")
+                    .font(.title3.weight(.medium))
+                    .foregroundStyle(connected ? CX.statusPositive : CX.actionPrimary)
+                    .frame(width: 44, height: 44)
+                    .background(
+                        (connected ? CX.statusPositive : CX.actionPrimary).opacity(0.08),
+                        in: Circle()
+                    )
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(connected ? "已连接" : "连接状态")
+                        .font(CXTypography.section)
+                    Text(status)
+                        .font(CXTypography.supporting)
+                        .foregroundStyle(connected ? CX.statusPositive : CX.muted)
+                        .lineSpacing(4)
+                }
+
+                Spacer(minLength: 0)
             }
-            Text("GitHub 是代码仓库地址，不是运行中的服务。真机请使用手机能访问的服务器地址；127.0.0.1 仅适用于在同一台 Mac 上运行的模拟器。")
-                .font(.footnote).foregroundStyle(CX.muted)
-        }.navigationTitle("玄同连接")
-        .onChange(of: address) { connected = false; status = "地址已更改，请重新检查" }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+            .accessibilityIdentifier("backend-status")
+
+            SectionEyebrow(title: "当前能力")
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                BackendCapabilityRow(
+                    icon: "bubble.left.and.text.bubble.right",
+                    title: "对话事件",
+                    subtitle: "把常曦对话发送给玄同处理"
+                )
+                BackendCapabilityRow(
+                    icon: "waveform.path.ecg",
+                    title: "健康测量事件",
+                    subtitle: "同步你主动保存的健康记录"
+                )
+                BackendCapabilityRow(
+                    icon: "checklist",
+                    title: "照护任务",
+                    subtitle: "读取和完成玄同生成的照护任务"
+                )
+            }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            HStack(alignment: .top, spacing: CXSpacing.sm) {
+                Image(systemName: "info.circle")
+                    .foregroundStyle(CX.actionPrimary)
+                Text("真机需要填写手机能够访问的服务器地址；127.0.0.1 只适用于同一台 Mac 上运行的模拟器。")
+                    .font(CXTypography.meta)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(4)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, CXSpacing.xs)
+        }
+        .navigationTitle("玄同连接")
+        .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: address) {
+            connected = false
+            status = "地址已更改，请重新检查"
+        }
     }
 
     @MainActor private func connect() async {
         guard let url = AppConfiguration.sanitizedURL(address),
               url.scheme == "https" || AppConfiguration.allowsInsecureHTTP(url) else {
-            status = "请输入服务的根地址，例如 https://api.example.com，不要填 GitHub 仓库地址。"; return
+            status = "请输入服务的根地址，例如 https://api.example.com，不要填 GitHub 仓库地址。"
+            return
         }
         #if !targetEnvironment(simulator)
         if AppConfiguration.isLocalDevelopment(url) {
-            status = "这个地址指向手机自己，请改为后端服务器地址。"; return
+            status = "这个地址指向手机自己，请改为后端服务器地址。"
+            return
         }
         #endif
-        checking = true; connected = false
+        checking = true
+        connected = false
         defer { checking = false }
         do {
             let probe = try await BackendProbe.check(url)
-            if url != AppConfiguration.apiBaseURL { auth.logout() }
+            if url != AppConfiguration.apiBaseURL {
+                auth.logout()
+            }
             UserDefaults.standard.set(url.absoluteString, forKey: "cx.backend.url")
             connected = true
             if probe.provider == "mock" {
@@ -217,6 +299,31 @@ struct BackendConnectionView: View {
     }
 }
 
+private struct BackendCapabilityRow: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: CXSpacing.md) {
+            Image(systemName: icon)
+                .foregroundStyle(CX.actionPrimary)
+                .frame(width: 38, height: 38)
+                .background(CX.actionPrimary.opacity(0.08), in: Circle())
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(CXTypography.section)
+                Text(subtitle)
+                    .font(CXTypography.meta)
+                    .foregroundStyle(CX.muted)
+            }
+
+            Spacer(minLength: 0)
+        }
+    }
+}
+
 private struct MemorySummaryCard: View {
     let confirmed: Int
     let pending: Int
@@ -225,7 +332,7 @@ private struct MemorySummaryCard: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Label("常曦记忆", systemImage: "moon.stars.fill")
-                    .font(.title2.weight(.semibold))
+                    .font(CXTypography.title)
                 Spacer()
                 Image(systemName: "arrow.up.right")
                     .font(.subheadline.weight(.semibold))
@@ -233,11 +340,11 @@ private struct MemorySummaryCard: View {
             }
 
             Text("记住了 \(confirmed) 条重要信息")
-                .font(.headline)
+                .font(CXTypography.section)
                 .monospacedDigit()
 
             Text(pending == 0 ? "没有待确认的记忆" : "还有 \(pending) 条等待你确认")
-                .font(.subheadline)
+                .font(CXTypography.supporting)
                 .foregroundStyle(.white.opacity(0.78))
                 .monospacedDigit()
         }
