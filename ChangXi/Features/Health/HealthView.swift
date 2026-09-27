@@ -670,47 +670,165 @@ struct MetricDetailView: View {
     @State private var days = 7
     @State private var showRecord = false
     @State private var deleteID: UUID?
+
     var body: some View {
-        Page {
-            Card {
-                Text("最近记录").foregroundStyle(CX.muted)
-                HStack(alignment: .firstTextBaseline) { Text(store.latest(kind)?.display ?? "—").font(.largeTitle.bold()); Text(kind.unit).foregroundStyle(CX.muted) }
-                if let date = store.latest(kind)?.date { Text(date.formatted(date: .abbreviated, time: .shortened)).font(.subheadline).foregroundStyle(CX.muted) }
-                Button("添加\(kind.rawValue)记录") { showRecord = true }.buttonStyle(PrimaryButton())
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("健康指标")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .tracking(0.6)
+                Text(kind.rawValue)
+                    .font(CXTypography.display)
+                Text("先看最近一次，再看一段时间里的变化。")
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
             }
-            Picker("时间范围", selection: $days) { Text("7天").tag(7); Text("30天").tag(30); Text("90天").tag(90) }.pickerStyle(.segmented)
-            Card { HealthChart(readings: store.readings(kind, days: days), kind: kind) }
-            Text("记录明细").font(.title2.bold())
-            Card {
-                ForEach(store.readings(kind, days: days).reversed()) { reading in
-                    HStack {
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text("\(reading.display) \(kind.unit)").font(.headline)
-                            Text(reading.date.formatted(date: .abbreviated, time: .shortened)).font(.caption).foregroundStyle(CX.muted)
-                            if !reading.note.isEmpty { Text(reading.note).font(.subheadline) }
-                            if let sync = reading.syncState {
-                                HStack(spacing: 6) {
-                                    Image(systemName: sync.systemImage).font(.caption2)
-                                    Text(sync.label).font(.caption2)
-                                    if sync == .failed || sync == .pending {
-                                        Button("重试") { HealthSyncService.shared.enqueueUpload(reading, store: store, patientID: PatientContext.effectiveID(auth)) }
-                                            .font(.caption2).buttonStyle(.bordered).controlSize(.mini)
-                                    }
+
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(store.latest(kind)?.display ?? "—")
+                        .font(CXTypography.display)
+                        .fontDesign(.rounded)
+                        .monospacedDigit()
+                    Text(kind.unit)
+                        .font(CXTypography.supporting)
+                        .foregroundStyle(CX.muted)
+                }
+
+                if let date = store.latest(kind)?.date {
+                    Text("最近记录 · \(date.formatted(date: .abbreviated, time: .shortened))")
+                        .font(CXTypography.meta)
+                        .foregroundStyle(CX.muted)
+                } else {
+                    Text("还没有记录")
+                        .font(CXTypography.meta)
+                        .foregroundStyle(CX.muted)
+                }
+
+                Button("添加\(kind.rawValue)记录") {
+                    showRecord = true
+                }
+                .buttonStyle(PrimaryButton())
+            }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            SectionEyebrow(title: "变化趋势")
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                Picker("时间范围", selection: $days) {
+                    Text("7天").tag(7)
+                    Text("30天").tag(30)
+                    Text("90天").tag(90)
+                }
+                .pickerStyle(.segmented)
+
+                HealthChart(
+                    readings: store.readings(kind, days: days),
+                    kind: kind
+                )
+            }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            SectionEyebrow(
+                title: "记录明细",
+                action: "\(store.readings(kind, days: days).count) 条"
+            )
+
+            if store.readings(kind, days: days).isEmpty {
+                CXEmptyState(
+                    title: "这段时间还没有记录",
+                    message: "添加一次测量后，记录会按时间出现在这里。",
+                    icon: "list.bullet.clipboard"
+                )
+            } else {
+                VStack(spacing: CXSpacing.sm) {
+                    ForEach(store.readings(kind, days: days).reversed()) { reading in
+                        HStack(alignment: .top, spacing: CXSpacing.md) {
+                            VStack(alignment: .leading, spacing: 5) {
+                                Text("\(reading.display) \(kind.unit)")
+                                    .font(CXTypography.section)
+                                    .monospacedDigit()
+
+                                Text(reading.date.formatted(date: .abbreviated, time: .shortened))
+                                    .font(CXTypography.micro)
+                                    .foregroundStyle(CX.muted)
+
+                                if !reading.note.isEmpty {
+                                    Text(reading.note)
+                                        .font(CXTypography.supporting)
+                                        .foregroundStyle(CX.muted)
                                 }
-                                .foregroundStyle(sync == .failed ? CX.statusCritical : sync == .synced ? CX.statusPositive : CX.muted)
+
+                                if let sync = reading.syncState {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: sync.systemImage)
+                                        Text(sync.label)
+                                        if sync == .failed || sync == .pending {
+                                            Button("重试") {
+                                                HealthSyncService.shared.enqueueUpload(
+                                                    reading,
+                                                    store: store,
+                                                    patientID: PatientContext.effectiveID(auth)
+                                                )
+                                            }
+                                            .buttonStyle(.bordered)
+                                            .controlSize(.mini)
+                                        }
+                                    }
+                                    .font(CXTypography.micro)
+                                    .foregroundStyle(
+                                        sync == .failed
+                                            ? CX.statusCritical
+                                            : sync == .synced
+                                                ? CX.statusPositive
+                                                : CX.muted
+                                    )
+                                }
                             }
+
+                            Spacer()
+
+                            Button(role: .destructive) {
+                                deleteID = reading.id
+                            } label: {
+                                Image(systemName: "trash")
+                                    .frame(width: 40, height: 40)
+                            }
+                            .accessibilityLabel("删除\(reading.display)的记录")
                         }
-                        Spacer()
-                        Button(role: .destructive) { deleteID = reading.id } label: { Image(systemName: "trash").frame(width: 44, height: 44) }.accessibilityLabel("删除\(reading.display)的记录")
+                        .padding(CXSpacing.md)
+                        .cxContentSurface(cornerRadius: CXRadius.md)
                     }
-                    Divider()
                 }
             }
-            Text("单次测量不能代替诊断。目标范围会因个人情况而不同，请以医生为你制定的计划为准。").font(.footnote).foregroundStyle(CX.muted)
-        }.navigationTitle(kind.rawValue)
-        .sheet(isPresented: $showRecord) { NavigationStack { RecordReadingView(kind: kind) } }
-        .confirmationDialog("删除这条测量记录？", isPresented: Binding(get: { deleteID != nil }, set: { if !$0 { deleteID = nil } }), titleVisibility: .visible) {
-            Button("删除记录", role: .destructive) { if let id = deleteID { store.data.readings.removeAll { $0.id == id } }; deleteID = nil }
+
+            Text("单次测量不能代替诊断。目标范围会因个人情况而不同，请以医生为你制定的计划为准。")
+                .font(CXTypography.meta)
+                .foregroundStyle(CX.muted)
+                .lineSpacing(4)
+        }
+        .navigationTitle(kind.rawValue)
+        .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showRecord) {
+            NavigationStack { RecordReadingView(kind: kind) }
+        }
+        .confirmationDialog(
+            "删除这条测量记录？",
+            isPresented: Binding(
+                get: { deleteID != nil },
+                set: { if !$0 { deleteID = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("删除记录", role: .destructive) {
+                if let id = deleteID {
+                    store.data.readings.removeAll { $0.id == id }
+                }
+                deleteID = nil
+            }
         }
     }
 }
