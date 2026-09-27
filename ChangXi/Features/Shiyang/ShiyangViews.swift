@@ -196,6 +196,11 @@ private struct ShiyangOnboardingFlow: View {
     }
 
     private func confirmProfile() {
+        print("[Shiyang] confirm profile tapped")
+
+        finished = true
+        onFinished()
+
         store.data.shiyangCity = draft.city.trimmingCharacters(in: .whitespacesAndNewlines)
         store.data.shiyangMealContext = draft.mealContext
         store.data.shiyangStaplePreference = draft.staplePreference
@@ -211,6 +216,7 @@ private struct ShiyangOnboardingFlow: View {
         let excluded = Set(store.data.shiyangExcludedIngredientIDs)
             .union(ShiyangCatalog.ingredientIDs(in: draft.avoidanceNote))
         store.data.shiyangExcludedIngredientIDs = excluded.sorted()
+
         let recommendations = ShiyangRecommendationEngine.recommendations(
             pantry: Set(store.data.shiyangPantryIngredientIDs),
             excluded: excluded,
@@ -221,10 +227,13 @@ private struct ShiyangOnboardingFlow: View {
             mealContext: draft.mealContext,
             goal: draft.goal
         )
-        if let first = recommendations.first { store.data.shiyangSelectedRecipeID = first.recipe.id }
+
+        if let first = recommendations.first {
+            store.data.shiyangSelectedRecipeID = first.recipe.id
+        }
+
         store.data.shiyangOnboarded = true
-        finished = true
-        onFinished()
+        print("[Shiyang] profile persisted and home requested")
         MoonHaptics.shared.play(success: true, enabled: store.data.haptics)
     }
 }
@@ -869,6 +878,12 @@ private struct ShiyangHomeView: View {
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 22) {
+                Color.clear
+                    .frame(height: 1)
+                    .accessibilityElement()
+                    .accessibilityLabel("食养首页")
+                    .accessibilityIdentifier("shiyang-home")
+
                 header
                 recommendationHero
 
@@ -992,7 +1007,6 @@ private struct ShiyangHomeView: View {
             NavigationStack { ChatView(initialPrompt: foodChatPrompt) }
         }
         .onAppear { selectFirstAvailableIfNeeded() }
-        .accessibilityIdentifier("shiyang-home")
     }
 
     private var header: some View {
