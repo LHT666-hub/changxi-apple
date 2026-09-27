@@ -62,8 +62,8 @@ enum PainDepthImpression: String, CaseIterable, Codable, Identifiable {
         switch self {
         case .surface: "circle"
         case .muscle: "waveform.path"
-        case .jointOrBone: "circle.hexagongrid"
-        case .deep: "dot.circle.and.hand.point.up.left.fill"
+        case .jointOrBone: "circle.grid.2x2"
+        case .deep: "circle.circle"
         case .unsure: "questionmark.circle"
         }
     }
