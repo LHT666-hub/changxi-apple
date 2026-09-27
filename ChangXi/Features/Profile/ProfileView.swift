@@ -353,32 +353,93 @@ struct AccountView: View {
     @State private var height = ""
     @State private var saved = false
     @State private var validationMessage: String?
+
     var body: some View {
-        Form {
-            Section {
-                TextField("称呼", text: $name)
-                TextField("身高（cm）", text: $height)
-                    .keyboardType(.decimalPad)
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("个人资料")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .tracking(0.6)
+                Text("让常曦更准确地认识你")
+                    .font(CXTypography.display)
+                Text("只保留真正会影响体验的信息，其余内容以后需要时再补。")
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
+            }
+
+            SectionEyebrow(title: "基本信息")
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                LabeledField(title: "常用称呼", hint: "例如：张阿姨") {
+                    TextField("称呼", text: $name)
+                        .textContentType(.nickname)
+                }
+
+                LabeledField(title: "身高", hint: "用于计算 BMI") {
+                    HStack(spacing: 8) {
+                        TextField("身高", text: $height)
+                            .keyboardType(.decimalPad)
+                        Text("cm")
+                            .font(CXTypography.supporting)
+                            .foregroundStyle(CX.muted)
+                    }
+                }
+
                 if let validationMessage {
                     Label(validationMessage, systemImage: "exclamationmark.circle.fill")
-                        .font(.footnote)
-                        .foregroundStyle(CX.coral)
+                        .font(CXTypography.meta)
+                        .foregroundStyle(CX.statusCritical)
                 }
-                Button(saved ? "已保存" : "保存资料", action: saveProfile)
-                    .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            } header: {
-                Text("个人资料")
-            } footer: {
-                Text("BMI 会根据这里的身高和健康页最新体重自动更新。")
             }
-            Section("账户") {
-                Label(store.data.demoSignedIn ? "演示账户已登录" : "访客体验", systemImage: "person.crop.circle")
-                if store.data.demoSignedIn { Button("退出演示账户") { store.data.demoSignedIn = false } }
-                else { NavigationLink("登录 / 注册体验") { DemoAuthView() } }
-                Text("真实短信验证与云端同步尚未接通，可继续以访客方式使用。").foregroundStyle(.secondary)
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            Button(saved ? "已保存" : "保存资料", action: saveProfile)
+                .buttonStyle(PrimaryButton())
+                .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+            if saved {
+                Label("资料已更新", systemImage: "checkmark.circle.fill")
+                    .font(CXTypography.supporting)
+                    .foregroundStyle(CX.statusPositive)
+                    .frame(maxWidth: .infinity, alignment: .center)
             }
+
+            SectionEyebrow(title: "体验账户")
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                HStack(spacing: CXSpacing.md) {
+                    Image(systemName: store.data.demoSignedIn ? "person.crop.circle.badge.checkmark" : "person.crop.circle")
+                        .foregroundStyle(CX.actionPrimary)
+                        .frame(width: 42, height: 42)
+                        .background(CX.actionPrimary.opacity(0.08), in: Circle())
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(store.data.demoSignedIn ? "演示账户已登录" : "访客体验")
+                            .font(CXTypography.section)
+                        Text("当前版本不依赖真实账户也可以完整体验。")
+                            .font(CXTypography.supporting)
+                            .foregroundStyle(CX.muted)
+                    }
+
+                    Spacer()
+                }
+
+                if store.data.demoSignedIn {
+                    Button("退出演示账户") {
+                        store.data.demoSignedIn = false
+                    }
+                    .font(CXTypography.supporting.weight(.semibold))
+                } else {
+                    NavigationLink("登录 / 注册体验") { DemoAuthView() }
+                        .font(CXTypography.supporting.weight(.semibold))
+                }
+            }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
         }
         .navigationTitle("个人资料")
+        .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             name = store.data.name
             height = store.data.heightCentimeters.formatted(.number.precision(.fractionLength(0...1)))
@@ -402,6 +463,37 @@ struct AccountView: View {
         height = heightValue.formatted(.number.precision(.fractionLength(0...1)))
         saved = true
         validationMessage = nil
+    }
+}
+
+private struct LabeledField<Content: View>: View {
+    let title: String
+    let hint: String
+    @ViewBuilder let content: Content
+
+    init(title: String, hint: String, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.hint = hint
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            HStack {
+                Text(title)
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.muted)
+                Spacer()
+                Text(hint)
+                    .font(CXTypography.micro)
+                    .foregroundStyle(CX.faint)
+            }
+
+            content
+                .padding(.horizontal, CXSpacing.md)
+                .frame(minHeight: 52)
+                .background(CX.raisedSurface, in: .rect(cornerRadius: CXRadius.sm, style: .continuous))
+        }
     }
 }
 
