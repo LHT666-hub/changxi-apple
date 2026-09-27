@@ -60,7 +60,7 @@ struct PainLocationView: View {
             .id(step)
         }
         .cxMoonScreenBackground(illustrated: true)
-        .navigationTitle("疼痛位置记录")
+        .navigationTitle("身体感受")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -866,7 +866,14 @@ struct PainLocationView: View {
                     Spacer()
                 }
 
-                HStack(spacing: CXSpacing.sm) {
+                LazyVGrid(
+                    columns: CXLayout.adaptiveColumns(
+                        minimum: 104,
+                        spacing: CXSpacing.sm,
+                        dynamicTypeSize: dynamicTypeSize
+                    ),
+                    spacing: CXSpacing.sm
+                ) {
                     PainReviewFact(
                         title: "部位",
                         value: draft.region.rawValue,
@@ -1645,7 +1652,7 @@ private struct PainHistoryView: View {
                 }
             }
         }
-        .navigationTitle("疼痛记录")
+        .navigationTitle("身体感受记录")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
