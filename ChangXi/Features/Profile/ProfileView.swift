@@ -274,36 +274,104 @@ struct MemoryView: View {
     @State private var filter = "待确认"
     @State private var editing: MemoryItem?
     @State private var deleting: MemoryItem?
+
     private var items: [MemoryItem] {
         store.data.memories.filter { item in
-            switch filter { case "待确认": !item.confirmed; case "已记住": item.confirmed; default: item.category == filter && item.confirmed }
+            switch filter {
+            case "待确认": !item.confirmed
+            case "已记住": item.confirmed
+            default: item.category == filter && item.confirmed
+            }
         }
     }
+
     var body: some View {
-        Page {
-            Text("我会记住你允许我记住的事").font(.title2)
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("常曦记忆")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .tracking(0.6)
+                Text("只记住你允许留下的事")
+                    .font(CXTypography.display)
+                Text("待确认、已记住、偏好和健康档案分开管理；你可以随时修改或删除。")
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
+            }
+
             MoonPoolView(character: true, compact: true)
-            if !store.data.rememberAllowed { Label("记忆已暂停。现有记忆仍可管理。", systemImage: "pause.circle").foregroundStyle(CX.muted) }
-            Picker("记忆分类", selection: $filter) { ForEach(["待确认", "已记住", "偏好", "健康档案"], id: \.self) { Text($0) } }.pickerStyle(.segmented)
-            if items.isEmpty { CXEmptyState(title: "这里暂时没有记忆", message: "只有你确认过的内容，才会留在常曦记忆里。", icon: "moon.stars") }
-            ForEach(items) { item in
-                Card {
-                    Label(item.title, systemImage: item.category == "偏好" ? "heart.text.clipboard" : "doc.text").font(.title2.bold())
-                    Text(item.text).lineSpacing(5)
-                    Text("来源：\(item.source)").font(.footnote).foregroundStyle(CX.muted)
-                    ViewThatFits(in: .horizontal) {
-                        HStack(spacing: 14) { actions(item) }
-                        VStack(alignment: .leading, spacing: 8) { actions(item) }
-                    }
+
+            if !store.data.rememberAllowed {
+                Label("记忆已暂停，现有内容仍可管理。", systemImage: "pause.circle")
+                    .font(CXTypography.supporting)
+                    .foregroundStyle(CX.muted)
+                    .padding(CXSpacing.md)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(CX.surface, in: .rect(cornerRadius: CXRadius.md, style: .continuous))
+            }
+
+            Picker("记忆分类", selection: $filter) {
+                ForEach(["待确认", "已记住", "偏好", "健康档案"], id: \.self) {
+                    Text($0)
                 }
             }
+            .pickerStyle(.segmented)
+
+            if items.isEmpty {
+                CXEmptyState(
+                    title: "这里暂时没有记忆",
+                    message: filter == "待确认"
+                        ? "没有等待确认的内容。"
+                        : "只有你确认过的内容，才会留在常曦记忆里。",
+                    icon: "moon.stars"
+                )
+            } else {
+                SectionEyebrow(title: filter, action: "\(items.count) 条")
+
+                ForEach(items) { item in
+                    VStack(alignment: .leading, spacing: CXSpacing.md) {
+                        HStack(spacing: CXSpacing.md) {
+                            Image(systemName: item.category == "偏好" ? "heart.text.clipboard" : "doc.text")
+                                .foregroundStyle(CX.actionPrimary)
+                                .frame(width: 42, height: 42)
+                                .background(CX.actionPrimary.opacity(0.08), in: Circle())
+
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(item.title)
+                                    .font(CXTypography.section)
+                                Text(item.category)
+                                    .font(CXTypography.micro.weight(.semibold))
+                                    .foregroundStyle(CX.muted)
+                            }
+
+                            Spacer()
+                        }
+
+                        Text(item.text)
+                            .font(CXTypography.body)
+                            .lineSpacing(5)
+
+                        Text("来源：\(item.source)")
+                            .font(CXTypography.micro)
+                            .foregroundStyle(CX.muted)
+
+                        ViewThatFits(in: .horizontal) {
+                            HStack(spacing: 14) { actions(item) }
+                            VStack(alignment: .leading, spacing: 8) { actions(item) }
+                        }
+                    }
+                    .padding(CXSpacing.lg)
+                    .cxContentSurface(cornerRadius: CXRadius.lg)
+                }
+            }
+
             BrandFooter()
-        }.navigationTitle("常曦记忆")
-        .sheet(item: $editing) { item in NavigationStack { MemoryEditView(item: item) } }
-        .confirmationDialog("不再记住这条信息？", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }), titleVisibility: .visible) {
-            Button("删除记忆", role: .destructive) { if let item = deleting { store.data.memories.removeAll { $0.id == item.id } }; deleting = nil }
         }
+        .navigationTitle("常曦记忆")
+        .navigationBarTitleDisplayMode(.inline)
     }
+
     @ViewBuilder private func actions(_ item: MemoryItem) -> some View {
         if !item.confirmed {
             Button { if let i = store.data.memories.firstIndex(where: { $0.id == item.id }) { store.data.memories[i].confirmed = true }; MoonHaptics.shared.play(success: true, enabled: store.data.haptics); archiveMemory(item) } label: { Label("确认", systemImage: "checkmark") }.buttonStyle(.borderedProminent).disabled(!store.data.rememberAllowed).frame(minHeight: 44)
@@ -331,6 +399,7 @@ struct MemoryView: View {
         }
     }
 }
+
 
 struct MemoryEditView: View {
     var item: MemoryItem
