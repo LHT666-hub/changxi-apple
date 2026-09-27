@@ -143,9 +143,11 @@ private struct ChangXiLaunchExperience: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var colorScheme
 
-    @State private var revealed = false
+    @State private var moonRevealed = false
+    @State private var characterRevealed = false
+    @State private var brandRevealed = false
     @State private var displayedPhase = 0.02
-    @State private var haloRotation = -18.0
+    @State private var haloRotation = -16.0
 
     private var todayPhase: Double {
         min(max(Double(LunarPhase.today.lunarDay - 1) / 29.53, 0), 1)
@@ -157,97 +159,128 @@ private struct ChangXiLaunchExperience: View {
 
             RadialGradient(
                 colors: [
-                    .white.opacity(colorScheme == .dark ? 0.05 : 0.42),
-                    CX.brandMoonlight.opacity(colorScheme == .dark ? 0.08 : 0.15),
+                    .white.opacity(colorScheme == .dark ? 0.05 : 0.44),
+                    CX.brandMoonlight.opacity(colorScheme == .dark ? 0.08 : 0.16),
                     .clear
                 ],
-                center: .center,
-                startRadius: 6,
-                endRadius: 250
+                center: UnitPoint(x: 0.5, y: 0.42),
+                startRadius: 8,
+                endRadius: 290
             )
-            .scaleEffect(revealed ? 1.12 : 0.62)
-            .opacity(revealed ? 1 : 0.18)
-            .blur(radius: 10)
+            .scaleEffect(moonRevealed ? 1.08 : 0.64)
+            .opacity(moonRevealed ? 1 : 0.10)
+            .blur(radius: 12)
             .ignoresSafeArea()
 
-            VStack(spacing: 28) {
-                Spacer()
+            VStack(spacing: 22) {
+                Spacer(minLength: 54)
 
-                ZStack {
-                    Circle()
-                        .stroke(
-                            AngularGradient(
-                                colors: [
-                                    .clear,
-                                    .white.opacity(0.66),
-                                    CX.brandMoonlight.opacity(0.32),
-                                    .clear
-                                ],
-                                center: .center
-                            ),
-                            style: StrokeStyle(lineWidth: 1.1, lineCap: .round)
+                ZStack(alignment: .bottom) {
+                    ZStack {
+                        Circle()
+                            .stroke(
+                                AngularGradient(
+                                    colors: [
+                                        .clear,
+                                        .white.opacity(0.68),
+                                        CX.brandMoonlight.opacity(0.32),
+                                        .clear
+                                    ],
+                                    center: .center
+                                ),
+                                style: StrokeStyle(lineWidth: 1.05, lineCap: .round)
+                            )
+                            .frame(width: 196, height: 196)
+                            .rotationEffect(.degrees(haloRotation))
+
+                        Circle()
+                            .stroke(.white.opacity(0.10), lineWidth: 0.7)
+                            .frame(width: 168, height: 168)
+
+                        MoonDisc(phase: displayedPhase)
+                            .frame(width: 118, height: 118)
+                            .shadow(color: .white.opacity(0.24), radius: 14, y: -2)
+                            .shadow(color: CX.brandMoonlight.opacity(0.24), radius: 24, y: 8)
+                    }
+                    .offset(y: -62)
+                    .scaleEffect(moonRevealed ? 1 : 0.78)
+                    .opacity(moonRevealed ? 0.94 : 0.14)
+
+                    Image(decorative: "ChangXiCharacter")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 224)
+                        .opacity(characterRevealed ? 1 : 0)
+                        .scaleEffect(characterRevealed ? 1 : 0.94, anchor: .bottom)
+                        .offset(y: characterRevealed ? 0 : 12)
+                        .shadow(color: .white.opacity(colorScheme == .dark ? 0.08 : 0.28), radius: 10, y: -3)
+                        .shadow(color: CX.brandMoonlight.opacity(0.16), radius: 18, y: 8)
+
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [.clear, CX.brandMoonlight.opacity(0.34), .white.opacity(0.46), CX.brandMoonlight.opacity(0.26), .clear],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
                         )
-                        .frame(width: 188, height: 188)
-                        .scaleEffect(revealed ? 1 : 0.72)
-                        .opacity(revealed ? 0.76 : 0)
-                        .rotationEffect(.degrees(haloRotation))
-
-                    Circle()
-                        .stroke(.white.opacity(0.10), lineWidth: 0.7)
-                        .frame(width: 164, height: 164)
-                        .scaleEffect(revealed ? 1 : 0.84)
-
-                    MoonDisc(phase: displayedPhase)
-                        .frame(width: 126, height: 126)
-                        .scaleEffect(revealed ? 1 : 0.82)
-                        .opacity(revealed ? 1 : 0.28)
-                        .shadow(color: .white.opacity(0.22), radius: 14, y: -2)
-                        .shadow(color: CX.brandMoonlight.opacity(0.26), radius: 26, y: 10)
+                        .frame(width: 220, height: 1)
+                        .blur(radius: 0.6)
+                        .opacity(characterRevealed ? 0.84 : 0)
+                        .offset(y: 5)
                 }
+                .frame(height: 285)
 
-                VStack(spacing: 8) {
+                VStack(spacing: 7) {
                     Text("常曦")
                         .font(CXTypography.brandTitle)
-                        .tracking(2.6)
+                        .tracking(2.8)
 
-                    Text("让每一个平凡的日子，都有月光相伴")
+                    Text("让日常健康，有人一起慢慢照看")
                         .font(CXTypography.supporting)
                         .foregroundStyle(CX.muted)
                 }
-                .opacity(revealed ? 1 : 0)
-                .offset(y: revealed || reduceMotion ? 0 : 8)
+                .opacity(brandRevealed ? 1 : 0)
+                .offset(y: brandRevealed || reduceMotion ? 0 : 7)
 
                 Spacer()
                 Spacer()
             }
             .padding(.horizontal, 28)
-            .padding(.bottom, 30)
+            .padding(.bottom, 32)
         }
         .foregroundStyle(CX.ink)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("常曦正在启动")
         .onAppear {
             guard !reduceMotion else {
-                revealed = true
+                moonRevealed = true
+                characterRevealed = true
+                brandRevealed = true
                 displayedPhase = todayPhase
-                haloRotation = 22
+                haloRotation = 26
                 return
             }
 
-            withAnimation(.easeOut(duration: 0.72)) {
-                revealed = true
+            withAnimation(.easeOut(duration: 0.62)) {
+                moonRevealed = true
             }
-
-            withAnimation(.easeInOut(duration: 1.15)) {
+            withAnimation(.easeInOut(duration: 1.05)) {
                 displayedPhase = todayPhase
             }
-
-            withAnimation(.easeInOut(duration: 1.45)) {
-                haloRotation = 34
+            withAnimation(.easeInOut(duration: 1.35)) {
+                haloRotation = 30
+            }
+            withAnimation(.spring(duration: 0.70, bounce: 0.03).delay(0.16)) {
+                characterRevealed = true
+            }
+            withAnimation(.easeOut(duration: 0.46).delay(0.48)) {
+                brandRevealed = true
             }
         }
     }
 }
+
 
 private enum RootTab: String, CaseIterable, Identifiable {
     case home = "首页"
