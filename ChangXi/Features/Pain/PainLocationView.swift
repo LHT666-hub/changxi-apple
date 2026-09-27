@@ -39,7 +39,7 @@ struct PainLocationView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                if step != 1 { header }
+                if step == 1 { markingHeader } else { header }
                 if saved { success }
                 else {
                     switch step {
@@ -114,6 +114,45 @@ struct PainLocationView: View {
             assistant.register(id: assistantContextID, title: "身体感受记录", draft: draft.summary) { _ in false }
         }
         .onDisappear { assistant.unregister(id: assistantContextID) }
+    }
+
+    private var markingHeader: some View {
+        VStack(alignment: .leading, spacing: CXSpacing.md) {
+            HStack {
+                Button {
+                    advance(0)
+                } label: {
+                    Label(draft.region.rawValue, systemImage: "chevron.left")
+                        .font(CXTypography.supporting.weight(.semibold))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(CX.actionPrimary)
+
+                Spacer()
+
+                Text("2 / 4")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.muted)
+                    .monospacedDigit()
+            }
+
+            HStack(spacing: 6) {
+                ForEach(0..<4) { index in
+                    Capsule()
+                        .fill(index <= 1 ? CX.actionPrimary : CX.actionPrimary.opacity(0.10))
+                        .frame(height: 5)
+                }
+            }
+            .accessibilityLabel("第2步，共4步")
+
+            Text("把疼的位置标出来")
+                .font(CXTypography.display)
+
+            Text("先选视角，再选标记方式。只需要画出你感觉到的位置，不需要懂解剖。")
+                .font(CXTypography.body)
+                .foregroundStyle(CX.muted)
+                .lineSpacing(5)
+        }
     }
 
     private var header: some View {
@@ -311,49 +350,124 @@ struct PainLocationView: View {
     }
 
     private var location: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack(alignment: .center, spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(.title2.weight(.semibold))
-                    Text(kind.instruction)
-                        .font(.caption).foregroundStyle(CX.muted)
-                }
-                Spacer()
-                Button { voiceLocation = true } label: {
-                    Image(systemName: "waveform.badge.mic")
-                        .font(.headline)
-                        .frame(width: 44, height: 44)
-                        .cxInteractiveGlassCircle()
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("说给常曦听，再在图上确认")
-            }
+        VStack(alignment: .leading, spacing: CXSpacing.lg) {
             if let voiceHint {
-                Label("已按语音标出“\(voiceHint)”，还可以在图上调整", systemImage: "waveform.badge.mic")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(CX.blue)
-                    .padding(.horizontal, 12)
-                    .frame(minHeight: 42)
-                    .background(CX.moonlight.opacity(0.12), in: .rect(cornerRadius: 14))
+                HStack(alignment: .top, spacing: CXSpacing.sm) {
+                    Image(systemName: "waveform")
+                        .foregroundStyle(CX.actionPrimary)
+                        .frame(width: 34, height: 34)
+                        .background(CX.actionPrimary.opacity(0.08), in: Circle())
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("常曦先帮你标了“\(voiceHint)”")
+                            .font(CXTypography.supporting.weight(.semibold))
+                        Text("这只是建议位置，请在图上核对或调整。")
+                            .font(CXTypography.meta)
+                            .foregroundStyle(CX.muted)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+                .padding(CXSpacing.md)
+                .background(CX.actionPrimary.opacity(0.045), in: .rect(cornerRadius: CXRadius.md, style: .continuous))
             }
-            anglePicker
-            markToolPicker
-            PainMarkingSurface(region: draft.region, angle: angle, kind: kind, marks: $draft.marks)
+
+            VStack(alignment: .leading, spacing: CXSpacing.sm) {
+                HStack {
+                    SectionEyebrow(title: "从哪个方向看")
+
+                    Spacer()
+
+                    Button {
+                        voiceLocation = true
+                    } label: {
+                        Label("说位置", systemImage: "waveform")
+                            .font(CXTypography.meta.weight(.semibold))
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(CX.actionPrimary)
+                }
+
+                anglePicker
+            }
+
+            VStack(alignment: .leading, spacing: CXSpacing.sm) {
+                SectionEyebrow(title: "怎么标")
+
+                markToolPicker
+
+                Text(kind.instruction)
+                    .font(CXTypography.meta)
+                    .foregroundStyle(CX.muted)
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: kind)
+            }
+
+            VStack(alignment: .leading, spacing: CXSpacing.sm) {
+                HStack {
+                    SectionEyebrow(title: "标记位置", action: angle.rawValue)
+
+                    Spacer()
+
+                    Button {
+                        enlarged = true
+                    } label: {
+                        Image(systemName: "arrow.up.left.and.arrow.down.right")
+                            .frame(width: 38, height: 38)
+                            .background(CX.surface, in: Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(CX.actionPrimary)
+                    .accessibilityLabel("放大标记")
+                }
+
+                PainMarkingSurface(
+                    region: draft.region,
+                    angle: angle,
+                    kind: kind,
+                    marks: $draft.marks
+                )
                 .id(angle)
                 .transition(.opacity)
-                .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: angle)
-            HStack {
-                let count = draft.marks.filter { $0.angle == angle && !$0.hasSurfaceLocation }.count
-                Label(count == 0 ? "还没有标记" : "这个视角已标记 \(count) 处", systemImage: count == 0 ? "hand.draw" : "checkmark.circle.fill")
-                    .foregroundStyle(count == 0 ? CX.muted : CX.teal)
-                Spacer()
-                Button { enlarged = true } label: { Label("放大细标", systemImage: "arrow.up.left.and.arrow.down.right") }
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: angle)
             }
-            .font(CXTypography.supporting)
+
+            HStack(spacing: CXSpacing.sm) {
+                let count = draft.marks.filter { $0.angle == angle && !$0.hasSurfaceLocation }.count
+
+                Label(
+                    count == 0 ? "这个视角还没标记" : "已标记 \(count) 处",
+                    systemImage: count == 0 ? "hand.draw" : "checkmark.circle.fill"
+                )
+                .font(CXTypography.supporting.weight(.semibold))
+                .foregroundStyle(count == 0 ? CX.muted : CX.statusPositive)
+
+                Spacer()
+
+                if !draft.marks.isEmpty {
+                    Text("共 \(draft.marks.filter { !$0.hasSurfaceLocation }.count) 处")
+                        .font(CXTypography.micro)
+                        .foregroundStyle(CX.muted)
+                }
+            }
+
             markHistoryActions
-            if draft.region == .head { landmarks }
-            Text("以你自己的身体左右为准。标记只表达你感到疼的位置。")
-                .font(.footnote).foregroundStyle(CX.muted)
+
+            if draft.region == .head {
+                landmarks
+            }
+
+            HStack(alignment: .top, spacing: CXSpacing.sm) {
+                Image(systemName: "info.circle")
+                    .foregroundStyle(CX.actionPrimary)
+
+                Text("左右以你自己的身体为准。这里记录的是你感觉到的位置，不代表疼痛来源或诊断。")
+                    .font(CXTypography.meta)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(4)
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, CXSpacing.xs)
         }
     }
 
@@ -375,16 +489,16 @@ struct PainLocationView: View {
                             }
                         }
                         .padding(.horizontal, 12)
-                        .frame(minWidth: 128, minHeight: 56, alignment: .leading)
+                        .frame(minWidth: 124, minHeight: 58, alignment: .leading)
                         .background(
-                            kind == tool ? CX.moonlight.opacity(0.16) : CX.surface.opacity(0.82),
+                            kind == tool ? PainVisual.accentSoft : CX.surface.opacity(0.88),
                             in: .rect(cornerRadius: 16, style: .continuous)
                         )
                         .overlay {
                             RoundedRectangle(cornerRadius: 16, style: .continuous)
                                 .strokeBorder(
-                                    kind == tool ? CX.blue.opacity(0.45) : CX.separator.opacity(0.12),
-                                    lineWidth: kind == tool ? 1.2 : 0.5
+                                    kind == tool ? PainVisual.accent.opacity(0.36) : CX.separator.opacity(0.10),
+                                    lineWidth: kind == tool ? 1 : 0.5
                                 )
                         }
                     }
@@ -414,8 +528,10 @@ struct PainLocationView: View {
                 draft.marks.removeAll { $0.angle == angle && !$0.hasSurfaceLocation }
             } label: {
                 Label("清空此面", systemImage: "eraser")
+                    .font(CXTypography.supporting)
                     .frame(maxWidth: .infinity, minHeight: 44)
             }
+            .tint(CX.muted)
             .disabled(!draft.marks.contains(where: { $0.angle == angle && !$0.hasSurfaceLocation }))
         }
     }
@@ -686,25 +802,23 @@ private struct GentleBodyOverview: View {
 struct PainArtwork: View {
     let region: PainRegion
     let angle: PainAngle
+
     var body: some View {
         ZStack {
             LinearGradient(
-                colors: [Color.white.opacity(0.98), CX.moonlight.opacity(0.08)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
+                colors: [
+                    CX.surface.opacity(0.98),
+                    CX.moonlight.opacity(0.04)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
             )
-            PainAtlasCell(angle: angle, crop: crop)
-                .padding(10)
+
+            GentlePainFigure(region: region, angle: angle)
+                .padding(14)
         }
         .aspectRatio(1, contentMode: .fit)
         .accessibilityHidden(true)
-    }
-
-    private var crop: CGRect {
-        switch region {
-        case .head: CGRect(x: 0.34, y: 0.015, width: 0.32, height: 0.32)
-        default: region.crop
-        }
     }
 }
 
@@ -752,8 +866,8 @@ private struct GentlePainFigure: View {
                     part,
                     with: .linearGradient(
                         Gradient(colors: [
-                            Color(red: 0.88, green: 0.92, blue: 0.94),
-                            Color(red: 0.71, green: 0.79, blue: 0.83)
+                            PainVisual.bodyTop,
+                            PainVisual.bodyBottom
                         ]),
                         startPoint: CGPoint(x: 95, y: 80),
                         endPoint: CGPoint(x: 230, y: 560)
@@ -772,7 +886,7 @@ private struct GentlePainFigure: View {
                 guide.move(to: CGPoint(x: 168, y: 164))
                 guide.addCurve(to: CGPoint(x: 173, y: 315), control1: CGPoint(x: 180, y: 210), control2: CGPoint(x: 164, y: 270))
             }
-            drawing.stroke(guide, with: .color(CX.blue.opacity(0.18)), style: StrokeStyle(lineWidth: 2.2 / focus.scale, lineCap: .round))
+            drawing.stroke(guide, with: .color(PainVisual.guide), style: StrokeStyle(lineWidth: 2.2 / focus.scale, lineCap: .round))
         }
     }
 
