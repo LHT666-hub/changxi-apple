@@ -277,15 +277,15 @@ final class FlowTests: XCTestCase {
         XCTAssertFalse(app.segmentedControls.buttons["肌肉"].exists)
         capture("16-pain-head-clinical-surface")
         surface.coordinate(withNormalizedOffset: CGVector(dx: 0.50, dy: 0.32)).tap()
-        XCTAssertTrue(app.staticTexts["这个视角已标记 1 处"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["已标记 1 处"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.buttons["pain-primary-step"].isEnabled)
         capture("16-pain-head-marked")
         app.segmentedControls.buttons["右侧"].tap()
-        XCTAssertTrue(app.staticTexts["还没有标记"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["这个视角还没标记"].waitForExistence(timeout: 3))
         capture("17-pain-head-clinical-profile")
         app.buttons["上一步"].tap()
         let arms = app.buttons["pain-region-arms"]
-        XCTAssertTrue(arms.waitForExistence(timeout: 5))
+        scrollUpUntilHittable(arms, in: app)
         arms.tap()
         XCTAssertTrue(surface.waitForExistence(timeout: 5))
         capture("18-pain-arms-clinical-surface")
@@ -307,7 +307,9 @@ final class FlowTests: XCTestCase {
         let surface = app.descendants(matching: .any)["pain-marking-surface"].firstMatch
         XCTAssertTrue(surface.waitForExistence(timeout: 5))
         surface.coordinate(withNormalizedOffset: CGVector(dx: 0.50, dy: 0.32)).tap()
+        XCTAssertTrue(app.staticTexts["已标记 1 处"].waitForExistence(timeout: 3))
         let next = app.buttons["pain-primary-step"]
+        XCTAssertTrue(next.waitForExistence(timeout: 5))
         XCTAssertTrue(next.isEnabled)
         capture("22-pain-head-selection-confirmed")
         let areaTool = app.buttons["pain-tool-片状"]
