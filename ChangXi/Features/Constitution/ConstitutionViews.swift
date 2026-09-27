@@ -35,15 +35,9 @@ struct ConstitutionEntryCard: View {
                     }
 
                     if let result = constitutionStore.result {
-                        Text("当前倾向：\(result.primary.rawValue) · \(result.primary.gentlePhrase)")
+                        Text(result.primary.rawValue)
                             .font(.subheadline)
                             .foregroundStyle(CX.muted)
-                            .lineLimit(2)
-                    } else {
-                        Text("从 18 个生活化问题开始，约 3 分钟完成")
-                            .font(.subheadline)
-                            .foregroundStyle(CX.muted)
-                            .lineLimit(2)
                     }
                 }
 

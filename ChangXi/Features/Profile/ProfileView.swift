@@ -6,20 +6,8 @@ struct ProfileView: View {
 
     var body: some View {
         Page(illustrated: true) {
-            VStack(alignment: .leading, spacing: CXSpacing.xs) {
-                Text("我的")
-                    .font(CXTypography.micro.weight(.semibold))
-                    .foregroundStyle(CX.actionPrimary)
-                    .tracking(0.6)
-
-                Text(store.data.name)
-                    .font(CXTypography.display)
-
-                Text("健康资料、照护关系和常曦记忆都从这里管理。")
-                    .font(CXTypography.body)
-                    .foregroundStyle(CX.muted)
-                    .lineSpacing(5)
-            }
+            Text(store.data.name)
+                .font(CXTypography.display)
 
             NavigationLink { AccountView() } label: {
                 HStack(spacing: CXSpacing.md) {

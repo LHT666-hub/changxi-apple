@@ -7,24 +7,14 @@ struct HealthPortraitView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
-                VStack(alignment: .leading, spacing: CXSpacing.xs) {
-                    Text("健康画像")
-                        .font(CXTypography.micro.weight(.semibold))
-                        .foregroundStyle(CX.actionPrimary)
-                        .tracking(0.6)
-                    Text("把不同维度放在一起看")
-                        .font(CXTypography.display)
-                    Text("整体较稳定，目前有 2 个维度值得继续关注。")
-                        .font(CXTypography.body)
-                        .foregroundStyle(CX.muted)
-                        .lineSpacing(5)
-                }
+                Text("健康画像")
+                    .font(CXTypography.display)
 
                 portraitSummary
                     .padding(CXSpacing.lg)
                     .cxContentSurface(cornerRadius: CXRadius.lg)
 
-                SectionEyebrow(title: "六维画像", action: "事实 · 状态 · 需要 · 行动")
+                SectionEyebrow(title: "六维画像")
                 LazyVGrid(columns: CXLayout.adaptiveColumns(minimum: 155, dynamicTypeSize: dynamicTypeSize), spacing: 12) {
                     ForEach(dimensions) { dimension in
                         NavigationLink { destination(for: dimension) } label: {
@@ -33,17 +23,16 @@ struct HealthPortraitView: View {
                     }
                 }
 
-                SectionEyebrow(title: "常曦正在留意")
+                SectionEyebrow(title: "需要关注")
                 VStack(alignment: .leading, spacing: CXSpacing.md) {
                     HStack(alignment: .top, spacing: CXSpacing.md) {
                         Image(systemName: "sparkles")
                             .foregroundStyle(CX.statusWarning)
                             .frame(width: 40, height: 40)
                             .background(CX.statusWarning.opacity(0.08), in: Circle())
-                        Text("近期最大的变化是活动量下降。我想继续了解，是天气原因，还是腿脚最近不舒服？")
+                        Text("近期活动量有所下降")
                             .font(CXTypography.body)
                             .foregroundStyle(CX.ink)
-                            .lineSpacing(5)
                     }
 
                     NavigationLink("记录身体感受") { PainLocationView() }

@@ -45,10 +45,12 @@ struct ShiyangEntryCard: View {
                                 .background(SY.amber.opacity(0.24), in: Capsule())
                         }
                     }
-                    Text(store.data.shiyangOnboarded ? ShiyangCatalog.recipe(store.data.shiyangSelectedRecipeID).title : "今天吃什么，按你的生活来安排")
-                        .font(.subheadline)
-                        .foregroundStyle(CX.muted)
-                        .lineLimit(2)
+                    if store.data.shiyangOnboarded {
+                        Text(ShiyangCatalog.recipe(store.data.shiyangSelectedRecipeID).title)
+                            .font(.subheadline)
+                            .foregroundStyle(CX.muted)
+                            .lineLimit(1)
+                    }
                 }
 
                 Spacer(minLength: 8)

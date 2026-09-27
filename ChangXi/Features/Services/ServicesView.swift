@@ -7,20 +7,8 @@ struct ServicesView: View {
 
     var body: some View {
         Page(illustrated: true) {
-            VStack(alignment: .leading, spacing: CXSpacing.xs) {
-                Text("服务")
-                    .font(CXTypography.micro.weight(.semibold))
-                    .foregroundStyle(CX.actionPrimary)
-                    .tracking(0.6)
-
-                Text("需要的时候，有人接住下一步")
-                    .font(CXTypography.display)
-
-                Text("预约、咨询、随访和社区服务都放在这里，不必一次想清所有步骤。")
-                    .font(CXTypography.body)
-                    .foregroundStyle(CX.muted)
-                    .lineSpacing(5)
-            }
+            Text("服务")
+                .font(CXTypography.display)
 
             VStack(alignment: .leading, spacing: CXSpacing.md) {
                 HStack(spacing: CXSpacing.md) {
@@ -34,11 +22,8 @@ struct ServicesView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("蒋医生")
                             .font(CXTypography.title)
-                        Text("全科医生 · 示例家庭医生团队")
+                        Text("全科医生")
                             .font(CXTypography.supporting)
-                            .foregroundStyle(CX.muted)
-                        Text("当前服务对象：\(store.data.person)")
-                            .font(CXTypography.meta)
                             .foregroundStyle(CX.muted)
                     }
 

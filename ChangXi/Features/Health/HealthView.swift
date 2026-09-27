@@ -50,20 +50,8 @@ struct HealthView: View {
 
     private var overview: some View {
         Group {
-            VStack(alignment: .leading, spacing: CXSpacing.xs) {
-                Text("今天的健康")
-                    .font(CXTypography.micro.weight(.semibold))
-                    .foregroundStyle(CX.actionPrimary)
-                    .tracking(0.6)
-
-                Text("一眼看清最近的变化")
-                    .font(CXTypography.display)
-
-                Text("先看关键指标和身体感受，需要细看时再进入趋势、报告或计划。")
-                    .font(CXTypography.body)
-                    .foregroundStyle(CX.muted)
-                    .lineSpacing(5)
-            }
+            Text("健康概览")
+                .font(CXTypography.display)
 
             NavigationLink { HealthPortraitView() } label: {
                 HStack(alignment: .center, spacing: CXSpacing.md) {
@@ -81,9 +69,6 @@ struct HealthView: View {
                         Text("我的健康画像")
                             .font(CXTypography.title)
                             .foregroundStyle(CX.ink)
-                        Text("整体较稳定")
-                            .font(CXTypography.supporting)
-                            .foregroundStyle(CX.muted)
                     }
 
                     Spacer()
@@ -103,7 +88,7 @@ struct HealthView: View {
             .buttonStyle(QuietPressButton())
             .accessibilityIdentifier("open-health-portrait")
 
-            SectionEyebrow(title: "关键指标", action: "最近一次记录")
+            SectionEyebrow(title: "关键指标")
             CXGlassGroup(spacing: CXSpacing.sm) {
                 LazyVGrid(
                     columns: typeSize.isAccessibilitySize
@@ -130,7 +115,7 @@ struct HealthView: View {
                 }
             }
 
-            SectionEyebrow(title: "身体感受", action: "本机记录")
+            SectionEyebrow(title: "身体感受")
             NavigationLink { PainLocationView() } label: {
                 HStack(spacing: CXSpacing.md) {
                     Image(systemName: "figure.stand")
@@ -139,15 +124,9 @@ struct HealthView: View {
                         .frame(width: 46, height: 46)
                         .background(CX.statusCritical.opacity(0.08), in: Circle())
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("记录身体不舒服的位置")
-                            .font(CXTypography.section)
-                            .foregroundStyle(CX.ink)
-                        Text("选择身体区域，再在体表图上标注具体位置")
-                            .font(CXTypography.supporting)
-                            .foregroundStyle(CX.muted)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+                    Text("标注不舒服的位置")
+                        .font(CXTypography.section)
+                        .foregroundStyle(CX.ink)
 
                     Spacer()
                     Image(systemName: "chevron.right")
@@ -174,13 +153,8 @@ struct HealthView: View {
             SectionEyebrow(title: "最近变化", action: "血压 · 7 天")
             VStack(alignment: .leading, spacing: CXSpacing.md) {
                 HStack {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("血压趋势")
-                            .font(CXTypography.section)
-                        Text("最近 7 天的记录")
-                            .font(CXTypography.meta)
-                            .foregroundStyle(CX.muted)
-                    }
+                    Text("血压趋势")
+                        .font(CXTypography.section)
                     Spacer()
                     NavigationLink { MetricDetailView(kind: .pressure) } label: {
                         Text("查看明细")
@@ -201,18 +175,8 @@ struct HealthView: View {
 
     private var planContent: some View {
         Group {
-            VStack(alignment: .leading, spacing: CXSpacing.xs) {
-                Text("今天")
-                    .font(CXTypography.micro.weight(.semibold))
-                    .foregroundStyle(CX.actionPrimary)
-                    .tracking(0.6)
-                Text("把今天要做的事放在一处")
-                    .font(CXTypography.display)
-                Text("计划负责提醒节奏，用药记录负责保留事实，不必在多个页面重复找入口。")
-                    .font(CXTypography.body)
-                    .foregroundStyle(CX.muted)
-                    .lineSpacing(5)
-            }
+            Text("今日计划")
+                .font(CXTypography.display)
 
             VStack(alignment: .leading, spacing: CXSpacing.md) {
                 RhythmView(completed: store.completed, total: store.data.plans.count)

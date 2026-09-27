@@ -115,13 +115,8 @@ struct HomeView: View {
                     .font(CXTypography.title)
                     .symbolRenderingMode(.hierarchical)
 
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("和常曦说说")
-                        .font(CXTypography.section)
-                    Text("语音或文字都可以")
-                        .font(CXTypography.supporting)
-                        .opacity(0.82)
-                }
+                Text("和常曦说说")
+                    .font(CXTypography.section)
 
                 Spacer()
 
@@ -142,22 +137,10 @@ private struct HomeHeader: View {
     var body: some View {
         HStack(alignment: .top, spacing: 16) {
             VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: CXSpacing.xs) {
-                    LunarGlyph(size: 22, tint: CX.actionPrimary)
-
-                    Text("常曦")
-                        .font(CXTypography.section)
-                        .foregroundStyle(CX.muted)
-                }
-
                 Text("\(greeting)，\(name)")
                     .font(CXTypography.display)
                     .minimumScaleFactor(0.82)
                     .fixedSize(horizontal: false, vertical: true)
-
-                Text("今天也慢慢来。")
-                    .font(CXTypography.body)
-                    .foregroundStyle(CX.muted)
             }
 
             Spacer(minLength: 8)
@@ -204,10 +187,6 @@ private struct RefinedMoonPhaseCard: View {
                     .font(.subheadline)
                     .foregroundStyle(CX.muted)
 
-                Text("月光只记录时间，不定义你的状态")
-                    .font(.caption)
-                    .foregroundStyle(CX.faint)
-                    .lineLimit(1)
             }
 
             Spacer(minLength: 8)
@@ -229,9 +208,6 @@ private struct RefinedMoonPhaseCard: View {
 private struct HomeMoonBadge: View {
     let phase: Double
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var breathing = false
-
     var body: some View {
         ZStack {
             Circle()
@@ -247,18 +223,11 @@ private struct HomeMoonBadge: View {
                         endRadius: 40
                     )
                 )
-                .scaleEffect(reduceMotion ? 1 : (breathing ? 1.06 : 0.94))
                 .blur(radius: 4)
 
             MoonDisc(phase: phase)
                 .frame(width: 52, height: 52)
                 .shadow(color: CX.brandMoonlight.opacity(0.18), radius: 9, y: 4)
-        }
-        .onAppear {
-            guard !reduceMotion else { return }
-            withAnimation(.easeInOut(duration: 4.6).repeatForever(autoreverses: true)) {
-                breathing = true
-            }
         }
         .accessibilityHidden(true)
     }

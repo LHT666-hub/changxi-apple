@@ -99,12 +99,7 @@ struct MoonPoolView: View {
 
                 ZStack(alignment: .bottom) {
                     celestialMotes(time: time)
-                    halo(time: time)
-                    orbit(time: time)
-                    moon(time: time)
-                    reflection(time: time)
                     waterSurface(time: time)
-
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }
@@ -113,8 +108,10 @@ struct MoonPoolView: View {
                 characterView
             }
 
-            MoonStatusPill(state: state, reduceTransparency: reduceTransparency)
-                .padding(.bottom, compact ? 2 : 8)
+            if state != .idle {
+                MoonStatusPill(state: state, reduceTransparency: reduceTransparency)
+                    .padding(.bottom, compact ? 2 : 8)
+            }
         }
         .frame(height: stageHeight)
         .accessibilityElement(children: .ignore)
@@ -303,8 +300,38 @@ struct MoonPoolView: View {
     private func waterSurface(time: TimeInterval) -> some View {
         Canvas { context, size in
             let center = CGPoint(x: size.width / 2, y: size.height - (compact ? 47 : 58))
-            let width = min(size.width * 0.86, compact ? 360 : 500)
-            let surfaceHeight = compact ? 54.0 : 72.0
+            let width = min(size.width * 0.96, compact ? 380 : 520)
+            let surfaceHeight = compact ? 72.0 : 112.0
+
+            let pool = CGRect(
+                x: center.x - width / 2,
+                y: center.y - surfaceHeight / 2,
+                width: width,
+                height: surfaceHeight
+            )
+            context.fill(
+                Path(ellipseIn: pool),
+                with: .radialGradient(
+                    Gradient(colors: [
+                        .white.opacity(reduceTransparency ? 0.62 : 0.86),
+                        CX.brandMoonlight.opacity(reduceTransparency ? 0.20 : 0.42),
+                        CX.actionPrimary.opacity(reduceTransparency ? 0.08 : 0.18),
+                        .clear
+                    ]),
+                    center: CGPoint(x: center.x, y: center.y - surfaceHeight * 0.12),
+                    startRadius: 2,
+                    endRadius: width * 0.52
+                )
+            )
+            context.stroke(
+                Path(ellipseIn: pool.insetBy(dx: 1, dy: 1)),
+                with: .linearGradient(
+                    Gradient(colors: [.clear, .white.opacity(0.72), CX.brandMoonlight.opacity(0.30), .clear]),
+                    startPoint: CGPoint(x: pool.minX, y: pool.midY),
+                    endPoint: CGPoint(x: pool.maxX, y: pool.midY)
+                ),
+                lineWidth: 1
+            )
 
             // 不再铺一整块“玻璃圆盘”，只保留破碎反射和极弱水纹。
             for row in 0..<9 {
@@ -402,7 +429,7 @@ struct MoonPoolView: View {
             }
         }
         .frame(maxWidth: 540)
-        .frame(height: compact ? 78 : 104)
+        .frame(height: compact ? 94 : 136)
         .padding(.horizontal, 8)
         .offset(y: compact ? -4 : -4)
         .allowsHitTesting(false)
@@ -413,14 +440,6 @@ struct MoonPoolView: View {
             .resizable()
             .scaledToFit()
             .frame(height: compact ? 142 : 226)
-            .phaseAnimator(paused ? [CharacterRestPhase.still] : CharacterRestPhase.allCases) { content, phase in
-                content
-                    .scaleEffect(x: phase.scaleX, y: phase.scaleY, anchor: .bottom)
-                    .rotationEffect(.degrees(phase.rotation), anchor: .bottom)
-                    .offset(y: phase.offset)
-            } animation: { phase in
-                phase.animation
-            }
             .keyframeAnimator(
                 initialValue: CharacterResponse(),
                 trigger: reduceMotion ? MoonPoolState.idle : state
@@ -447,7 +466,7 @@ struct MoonPoolView: View {
                     SpringKeyframe(0, duration: 0.38)
                 }
             }
-            .offset(x: compact ? -4 : -14, y: compact ? -34 : -55)
+            .offset(x: compact ? -4 : -14, y: compact ? -30 : -42)
             .shadow(color: .white.opacity(reduceTransparency ? 0.04 : 0.28), radius: 7, y: -2)
             .shadow(color: state.accent.opacity(0.12), radius: 14, y: 8)
             .allowsHitTesting(false)

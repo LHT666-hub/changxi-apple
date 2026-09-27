@@ -170,10 +170,9 @@ struct PainLocationView: View {
             Text("把疼的位置标出来")
                 .font(CXTypography.display)
 
-            Text("先选视角，再选标记方式。只需要画出你感觉到的位置，不需要懂解剖。")
+            Text("先选位置，再标记。")
                 .font(CXTypography.body)
                 .foregroundStyle(CX.muted)
-                .lineSpacing(5)
         }
     }
 
@@ -217,13 +216,13 @@ struct PainLocationView: View {
     private var stepGuidance: String {
         switch step {
         case 0:
-            "先选一个大致区域。下一步再在人体轮廓上标出更具体的位置，不需要一次选得很精确。"
+            "先选大致区域。"
         case 2:
-            "位置记好以后，再描述疼痛的强度和感觉。位置与强度是两件不同的事。"
+            "再记录强度和感觉。"
         case 3:
-            "最后核对一次位置、感觉和时间；只有你点保存后，这次记录才会留在本机。"
+            "核对后保存。"
         default:
-            "按你的实际感受标记即可；画面只是帮助描述位置，不代表诊断。"
+            "在图上标出位置。"
         }
     }
 
@@ -260,7 +259,7 @@ struct PainLocationView: View {
             }
             .accessibilityHidden(true)
 
-            SectionEyebrow(title: "哪里不舒服", action: "先选大致区域")
+            SectionEyebrow(title: "哪里不舒服")
 
             LazyVGrid(
                 columns: CXLayout.adaptiveColumns(
@@ -1356,43 +1355,26 @@ private struct GentlePainFigure: View {
     let angle: PainAngle
 
     var body: some View {
-        Canvas { context, size in
-            let focus = focusConfiguration(in: size)
-            var drawing = context
-            drawing.translateBy(x: size.width / 2 - focus.center.x * focus.scale,
-                                y: size.height / 2 - focus.center.y * focus.scale)
-            drawing.scaleBy(x: focus.scale, y: focus.scale)
-
-            let glow = Path(ellipseIn: highlightRect)
-            drawing.fill(glow, with: .color(CX.moonlight.opacity(region == nil ? 0.07 : 0.15)))
-
-            let parts = angle == .left || angle == .right ? sideParts : frontParts
-            for part in parts {
-                drawing.fill(
-                    part,
-                    with: .linearGradient(
-                        Gradient(colors: [
-                            PainVisual.bodyTop,
-                            PainVisual.bodyBottom
-                        ]),
-                        startPoint: CGPoint(x: 95, y: 80),
-                        endPoint: CGPoint(x: 230, y: 560)
-                    )
+        PainAtlasCell(angle: angle, crop: atlasCrop)
+            .overlay {
+                LinearGradient(
+                    colors: [.clear, CX.moonlight.opacity(0.035)],
+                    startPoint: .top,
+                    endPoint: .bottom
                 )
+                .allowsHitTesting(false)
             }
+            .compositingGroup()
+    }
 
-            var guide = Path()
-            if angle == .back {
-                guide.move(to: CGPoint(x: 160, y: 154))
-                guide.addCurve(to: CGPoint(x: 160, y: 320), control1: CGPoint(x: 154, y: 210), control2: CGPoint(x: 166, y: 268))
-            } else if angle == .front {
-                guide.move(to: CGPoint(x: 130, y: 170))
-                guide.addQuadCurve(to: CGPoint(x: 190, y: 170), control: CGPoint(x: 160, y: 184))
-            } else {
-                guide.move(to: CGPoint(x: 168, y: 164))
-                guide.addCurve(to: CGPoint(x: 173, y: 315), control1: CGPoint(x: 180, y: 210), control2: CGPoint(x: 164, y: 270))
-            }
-            drawing.stroke(guide, with: .color(PainVisual.guide), style: StrokeStyle(lineWidth: 2.2 / focus.scale, lineCap: .round))
+    private var atlasCrop: CGRect {
+        switch region {
+        case nil: PainAtlasCell.fullBody
+        case .head?: CGRect(x: 0.28, y: 0.00, width: 0.44, height: 0.30)
+        case .neck?: CGRect(x: 0.25, y: 0.08, width: 0.50, height: 0.34)
+        case .torso?, .back?: CGRect(x: 0.20, y: 0.10, width: 0.60, height: 0.52)
+        case .arms?: CGRect(x: 0.10, y: 0.08, width: 0.80, height: 0.60)
+        case .legs?: CGRect(x: 0.18, y: 0.38, width: 0.64, height: 0.62)
         }
     }
 
