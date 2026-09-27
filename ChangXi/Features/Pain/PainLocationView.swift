@@ -602,7 +602,6 @@ struct PainLocationView: View {
                         Button {
                             draft.intensity = choice.score
                             draft.intensityConfirmed = true
-                            MoonHaptics.shared.play(success: false, enabled: true)
                         } label: {
                             HStack(spacing: CXSpacing.md) {
                                 Text("\(choice.score)")
@@ -1231,15 +1230,7 @@ private struct GentlePainFigure: View {
     }
 
     private var sideParts: [Path] {
-        var head = Path(ellipseIn: CGRect(x: 126, y: 24, width: 72, height: 96))
-        var profile = Path()
-        profile.move(to: CGPoint(x: 190, y: 62))
-        profile.addLine(to: CGPoint(x: 207, y: 76))
-        profile.addLine(to: CGPoint(x: 191, y: 83))
-        profile.addLine(to: CGPoint(x: 195, y: 101))
-        profile.addQuadCurve(to: CGPoint(x: 177, y: 116), control: CGPoint(x: 190, y: 114))
-        profile.closeSubpath()
-        head.addPath(profile)
+        let head = Path(ellipseIn: CGRect(x: 126, y: 24, width: 72, height: 96))
 
         var neck = Path()
         neck.addRect(CGRect(x: 145, y: 107, width: 35, height: 58))
@@ -1279,7 +1270,7 @@ private struct PainToolPreview: View {
 
     var body: some View {
         Canvas { context, size in
-            let coral = CX.coral
+            let coral = PainVisual.accent
             switch kind {
             case .point:
                 context.fill(Path(ellipseIn: CGRect(x: 4, y: 4, width: size.width - 8, height: size.height - 8)), with: .color(coral.opacity(0.13)))
@@ -1301,7 +1292,7 @@ private struct PainToolPreview: View {
             }
         }
         .frame(width: 36, height: 36)
-        .background(CX.coral.opacity(0.06), in: Circle())
+        .background(PainVisual.accent.opacity(0.055), in: Circle())
     }
 }
 
@@ -1314,38 +1305,97 @@ struct PainMarkingSurface: View {
     @State private var stroke: [PainCoordinate] = []
 
     var body: some View {
-        VStack(spacing: 10) {
-            GeometryReader { geo in
-                ZStack {
-                    PainArtwork(region: region, angle: angle)
-                    Canvas { context, size in
-                        let visible = marks.filter { $0.angle == angle && !$0.hasSurfaceLocation }
-                        for mark in visible { paint(mark.points, kind: mark.kind, context: &context, size: size) }
-                        paint(stroke, kind: kind, context: &context, size: size)
-                    }.allowsHitTesting(false)
-                }
-                .contentShape(Rectangle())
-                .gesture(DragGesture(minimumDistance: 0)
-                    .onChanged { value in
-                        guard editable else { return }
-                        let point = PainCoordinate(x: min(1, max(0, value.location.x / geo.size.width)), y: min(1, max(0, value.location.y / geo.size.height)))
-                        if kind == .point { stroke = [point] }
-                        else if stroke.count < 500, shouldAppend(point) { stroke.append(point) }
+        VStack(alignment: .leading, spacing: CXSpacing.sm) {
+            ZStack {
+                GeometryReader { geo in
+                    ZStack {
+                        PainArtwork(region: region, angle: angle)
+
+                        Canvas { context, size in
+                            let visible = marks.filter { $0.angle == angle && !$0.hasSurfaceLocation }
+                            for mark in visible {
+                                paint(mark.points, kind: mark.kind, context: &context, size: size)
+                            }
+                            paint(stroke, kind: kind, context: &context, size: size)
+                        }
+                        .allowsHitTesting(false)
                     }
-                    .onEnded { _ in
-                        guard editable, !stroke.isEmpty else { return }
-                        let finalKind: PainMarkKind = (kind == .line || kind == .radiating) && stroke.count < 2 ? .point : kind
-                        marks.append(PainMark(angle: angle, kind: finalKind, points: stroke))
-                        stroke = []
-                    }, including: editable ? .all : .none)
-            }.aspectRatio(1, contentMode: .fit)
-                .clipShape(.rect(cornerRadius: 30))
-                .overlay { RoundedRectangle(cornerRadius: 30).strokeBorder(CX.moonlight.opacity(0.22), lineWidth: 1) }
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(region.rawValue)\(angle.rawValue)位置图")
-                .accessibilityHint(kind.instruction)
-                .accessibilityIdentifier("pain-marking-surface")
-            Text(angle.orientation).font(.caption).foregroundStyle(CX.muted)
+                    .contentShape(Rectangle())
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .onChanged { value in
+                                guard editable else { return }
+                                let point = PainCoordinate(
+                                    x: min(1, max(0, value.location.x / geo.size.width)),
+                                    y: min(1, max(0, value.location.y / geo.size.height))
+                                )
+                                if kind == .point {
+                                    stroke = [point]
+                                } else if stroke.count < 500, shouldAppend(point) {
+                                    stroke.append(point)
+                                }
+                            }
+                            .onEnded { _ in
+                                guard editable, !stroke.isEmpty else { return }
+                                let finalKind: PainMarkKind =
+                                    (kind == .line || kind == .radiating) && stroke.count < 2
+                                        ? .point
+                                        : kind
+                                marks.append(
+                                    PainMark(
+                                        angle: angle,
+                                        kind: finalKind,
+                                        points: stroke
+                                    )
+                                )
+                                stroke = []
+                            },
+                        including: editable ? .all : .none
+                    )
+                }
+                .aspectRatio(1, contentMode: .fit)
+
+                VStack {
+                    HStack {
+                        Text(angle.rawValue)
+                            .font(CXTypography.micro.weight(.semibold))
+                            .foregroundStyle(CX.ink.opacity(0.72))
+                            .padding(.horizontal, 10)
+                            .frame(minHeight: 30)
+                            .background(.ultraThinMaterial, in: Capsule())
+
+                        Spacer()
+                    }
+
+                    Spacer()
+
+                    if editable && marks.allSatisfy({ $0.angle != angle || $0.hasSurfaceLocation }) {
+                        Label("在轮廓上\(kind.label == "点状" ? "轻点" : "拖动")", systemImage: "hand.draw")
+                            .font(CXTypography.micro.weight(.semibold))
+                            .foregroundStyle(CX.muted)
+                            .padding(.horizontal, 10)
+                            .frame(minHeight: 30)
+                            .background(.ultraThinMaterial, in: Capsule())
+                    }
+                }
+                .padding(12)
+                .allowsHitTesting(false)
+            }
+            .clipShape(.rect(cornerRadius: 26, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 26, style: .continuous)
+                    .strokeBorder(CX.separator.opacity(0.12), lineWidth: 0.6)
+            }
+            .shadow(color: .black.opacity(0.035), radius: 14, y: 6)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(region.rawValue)\(angle.rawValue)位置图")
+            .accessibilityHint(kind.instruction)
+            .accessibilityIdentifier("pain-marking-surface")
+
+            Text(angle.orientation)
+                .font(CXTypography.micro)
+                .foregroundStyle(CX.muted)
+                .frame(maxWidth: .infinity, alignment: .center)
         }
         .sensoryFeedback(.impact(weight: .light), trigger: marks.count)
     }
@@ -1384,15 +1434,26 @@ struct PainMarkingSurface: View {
         } else {
             var path = Path(); path.move(to: start)
             for point in points.dropFirst() { path.addLine(to: CGPoint(x: point.x * size.width, y: point.y * size.height)) }
-            let strokeColor = CX.coral
+            let strokeColor = PainVisual.accent
             context.stroke(path, with: .color(strokeColor.opacity(0.13)), style: StrokeStyle(lineWidth: 11, lineCap: .round, lineJoin: .round))
             context.stroke(path, with: .color(strokeColor), style: StrokeStyle(lineWidth: 3.2, lineCap: .round, lineJoin: .round))
             if kind == .radiating, let last = points.last {
                 let end = CGPoint(x: last.x * size.width, y: last.y * size.height)
                 context.fill(Path(ellipseIn: CGRect(x: start.x - 11, y: start.y - 11, width: 22, height: 22)), with: .color(strokeColor.opacity(0.16)))
                 context.fill(Path(ellipseIn: CGRect(x: start.x - 4, y: start.y - 4, width: 8, height: 8)), with: .color(strokeColor))
-                for radius: CGFloat in [12, 20] {
-                    context.stroke(Path(ellipseIn: CGRect(x: end.x - radius, y: end.y - radius, width: radius * 2, height: radius * 2)), with: .color(strokeColor.opacity(radius == 12 ? 0.32 : 0.16)), lineWidth: 2)
+                for radius: CGFloat in [10, 17] {
+                    context.stroke(
+                        Path(
+                            ellipseIn: CGRect(
+                                x: end.x - radius,
+                                y: end.y - radius,
+                                width: radius * 2,
+                                height: radius * 2
+                            )
+                        ),
+                        with: .color(strokeColor.opacity(radius == 10 ? 0.22 : 0.10)),
+                        lineWidth: 1.6
+                    )
                 }
             }
         }
@@ -1402,35 +1463,171 @@ struct PainMarkingSurface: View {
 private struct PainHistoryView: View {
     let journal: PainJournal
     @Environment(\.dismiss) private var dismiss
+
     var body: some View {
-        List {
-            if let error = journal.readError { Text(error).foregroundStyle(CX.coral) }
-            if journal.records.isEmpty { ContentUnavailableView("还没有疼痛记录", systemImage: "figure.stand", description: Text("用图记下感受，以后可以回来对照。")) }
-            ForEach(journal.records) { record in
-                NavigationLink {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 20) {
-                            Text(record.summary).font(.title3)
-                            if record.marks.contains(where: \.hasSurfaceLocation) {
-                                LegacySurfaceMarkSummary(count: record.marks.filter(\.hasSurfaceLocation).count)
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("身体感受记录")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .tracking(0.6)
+
+                Text("回看之前标过的位置")
+                    .font(CXTypography.display)
+
+                Text("这些记录只描述当时的感受和位置，不代表诊断结果。")
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
+            }
+
+            if let error = journal.readError {
+                Label(error, systemImage: "exclamationmark.triangle.fill")
+                    .font(CXTypography.supporting)
+                    .foregroundStyle(CX.statusCritical)
+                    .padding(CXSpacing.md)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        CX.statusCritical.opacity(0.05),
+                        in: .rect(cornerRadius: CXRadius.md, style: .continuous)
+                    )
+            }
+
+            if journal.records.isEmpty {
+                CXEmptyState(
+                    title: "还没有身体感受记录",
+                    message: "以后每次标记的位置、强度和感觉，都会留在这里方便回看。",
+                    icon: "figure.stand"
+                )
+            } else {
+                SectionEyebrow(title: "本机记录", action: "\(journal.records.count) 条")
+
+                ForEach(journal.records) { record in
+                    NavigationLink {
+                        PainHistoryDetailView(record: record)
+                    } label: {
+                        HStack(spacing: CXSpacing.md) {
+                            GentlePainFigure(
+                                region: record.region,
+                                angle: record.region == .back ? .back : .front
+                            )
+                            .frame(width: 54, height: 76)
+                            .background(CX.moonlight.opacity(0.035), in: .rect(cornerRadius: 12, style: .continuous))
+                            .accessibilityHidden(true)
+
+                            VStack(alignment: .leading, spacing: 5) {
+                                HStack {
+                                    Text(record.region.rawValue)
+                                        .font(CXTypography.section)
+                                        .foregroundStyle(CX.ink)
+
+                                    if record.intensityConfirmed == true {
+                                        Text("\(record.intensity)/10")
+                                            .font(CXTypography.micro.weight(.semibold))
+                                            .foregroundStyle(PainVisual.accent)
+                                            .padding(.horizontal, 8)
+                                            .frame(minHeight: 26)
+                                            .background(PainVisual.accentSoft, in: Capsule())
+                                    }
+                                }
+
+                                Text(record.sensation)
+                                    .font(CXTypography.supporting)
+                                    .foregroundStyle(CX.muted)
+
+                                Text(record.date.formatted(date: .abbreviated, time: .shortened))
+                                    .font(CXTypography.micro)
+                                    .foregroundStyle(CX.faint)
                             }
-                            ForEach(PainAngle.allCases.filter { angle in record.marks.contains { $0.angle == angle && !$0.hasSurfaceLocation } }) { angle in
-                                Text(angle.rawValue).font(.headline)
-                                PainMarkingSurface(region: record.region, angle: angle, kind: .point, marks: .constant(record.marks), editable: false)
-                            }
-                            Text(record.note)
-                            if let assessment = record.assessment { PainAssessmentSummary(assessment: assessment) }
-                        }.padding(20).frame(maxWidth: 680)
-                    }.navigationTitle(record.region.rawValue)
-                } label: {
-                    VStack(alignment: .leading, spacing: 7) {
-                        Text(record.summary)
-                        Text(record.date.formatted(date: .abbreviated, time: .shortened)).font(.caption).foregroundStyle(CX.muted)
-                    }.padding(.vertical, 8)
+
+                            Spacer()
+
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(CX.faint)
+                        }
+                        .padding(CXSpacing.md)
+                        .cxContentSurface(cornerRadius: CXRadius.md)
+                    }
+                    .buttonStyle(QuietPressButton())
                 }
             }
-        }.navigationTitle("疼痛记录")
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
+        }
+        .navigationTitle("疼痛记录")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("完成") { dismiss() }
+            }
+        }
+    }
+}
+
+private struct PainHistoryDetailView: View {
+    let record: PainRecord
+
+    var body: some View {
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text(record.date.formatted(date: .long, time: .shortened))
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.muted)
+
+                Text(record.region.rawValue)
+                    .font(CXTypography.display)
+
+                Text(record.summary)
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
+            }
+
+            if record.marks.contains(where: { !$0.hasSurfaceLocation }) {
+                SectionEyebrow(title: "当时标记的位置")
+
+                ForEach(
+                    PainAngle.allCases.filter { angle in
+                        record.marks.contains { $0.angle == angle && !$0.hasSurfaceLocation }
+                    }
+                ) { angle in
+                    VStack(alignment: .leading, spacing: CXSpacing.sm) {
+                        Text(angle.rawValue)
+                            .font(CXTypography.section)
+
+                        PainMarkingSurface(
+                            region: record.region,
+                            angle: angle,
+                            kind: .point,
+                            marks: .constant(record.marks),
+                            editable: false
+                        )
+                    }
+                    .padding(CXSpacing.md)
+                    .cxContentSurface(cornerRadius: CXRadius.lg)
+                }
+            }
+
+            if record.marks.contains(where: \.hasSurfaceLocation) {
+                LegacySurfaceMarkSummary(
+                    count: record.marks.filter(\.hasSurfaceLocation).count
+                )
+            }
+
+            if !record.note.isEmpty {
+                SectionEyebrow(title: "补充说明")
+                Text(record.note)
+                    .font(CXTypography.body)
+                    .lineSpacing(5)
+                    .padding(CXSpacing.lg)
+                    .cxContentSurface(cornerRadius: CXRadius.lg)
+            }
+
+            if let assessment = record.assessment {
+                PainAssessmentSummary(assessment: assessment)
+            }
+        }
+        .navigationTitle("记录详情")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
