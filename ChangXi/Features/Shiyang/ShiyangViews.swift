@@ -283,9 +283,9 @@ private struct ShiyangConsentCard: View {
                     .frame(width: 42, height: 42)
                     .background(tint.opacity(0.10), in: Circle())
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(title).font(.headline)
+                    Text(title).font(CXTypography.section)
                     Text(detail)
-                        .font(.subheadline)
+                        .font(CXTypography.supporting)
                         .foregroundStyle(SY.muted)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -309,12 +309,13 @@ private struct ShiyangProfileQuestionsView: View {
         ShiyangOnboardingPage(step: 2, total: 3, onBack: goBack) {
             HStack {
                 Text("认识你的饭桌")
-                    .font(.headline)
+                    .font(CXTypography.section)
                     .foregroundStyle(SY.apricot)
                 Spacer()
                 Text("\(question + 1) / \(total)")
-                    .font(.subheadline.monospacedDigit())
+                    .font(CXTypography.micro)
                     .foregroundStyle(SY.muted)
+                    .monospacedDigit()
             }
 
             ProgressView(value: Double(question + 1), total: Double(total))
@@ -413,10 +414,10 @@ private struct ShiyangProfileSummaryView: View {
 
             VStack(alignment: .leading, spacing: 16) {
                 Label("你的日常", systemImage: "house.fill")
-                    .font(.headline)
+                    .font(CXTypography.section)
                     .foregroundStyle(SY.tea)
                 Text(draft.summary)
-                    .font(.title3.weight(.medium))
+                    .font(CXTypography.title)
                     .lineSpacing(6)
                 Button("返回修改", systemImage: "pencil", action: onEdit)
                     .font(.subheadline.weight(.semibold))
@@ -427,7 +428,7 @@ private struct ShiyangProfileSummaryView: View {
 
             VStack(alignment: .leading, spacing: 12) {
                 Label("需要特别注意", systemImage: "exclamationmark.shield.fill")
-                    .font(.headline)
+                    .font(CXTypography.section)
                     .foregroundStyle(SY.apricot)
                 Text(draft.safetySummary.isEmpty ? "目前没有填写；以后可以随时补充。" : draft.safetySummary)
                     .foregroundStyle(draft.safetySummary.isEmpty ? SY.muted : SY.ink)
@@ -501,7 +502,7 @@ private struct ShiyangChoiceGrid<Value: Hashable>: View {
                     selection = option
                 } label: {
                     HStack {
-                        Text(label(option)).font(.subheadline.weight(.semibold))
+                        Text(label(option)).font(CXTypography.supporting.weight(.semibold))
                         Spacer()
                         if selection == option { Image(systemName: "checkmark.circle.fill") }
                     }
@@ -539,11 +540,27 @@ private struct ShiyangOnboardingPage<Content: View>: View {
                             .shiyangGlass(cornerRadius: 22)
                     }
                     .buttonStyle(.plain)
+
                     Spacer()
+
                     Text("\(step) / \(total)")
-                        .font(.caption.monospacedDigit().weight(.semibold))
+                        .font(CXTypography.micro.weight(.semibold))
                         .foregroundStyle(SY.muted)
+                        .monospacedDigit()
                 }
+
+                GeometryReader { proxy in
+                    Capsule()
+                        .fill(SY.apricot.opacity(0.12))
+                        .overlay(alignment: .leading) {
+                            Capsule()
+                                .fill(SY.apricot)
+                                .frame(width: max(22, proxy.size.width * CGFloat(step) / CGFloat(total)))
+                        }
+                }
+                .frame(height: 6)
+                .accessibilityHidden(true)
+
                 content
             }
             .frame(maxWidth: 640, minHeight: 620, alignment: .top)
@@ -590,10 +607,10 @@ private struct ShiyangBrowseView: View {
                                     .clipped()
                                     .clipShape(.rect(cornerRadius: 18, style: .continuous))
                                 Text(recipe.title)
-                                    .font(.headline)
+                                    .font(CXTypography.section)
                                     .lineLimit(dynamicTypeSize >= .xxxLarge ? nil : 1)
                                 Text("约\(recipe.minutes)分钟")
-                                    .font(.caption)
+                                    .font(CXTypography.micro)
                                     .foregroundStyle(SY.muted)
                             }
                             .foregroundStyle(SY.ink)
@@ -706,7 +723,7 @@ private struct ShiyangProfileSettingsView: View {
 
     private func profileField(_ title: String, text: Binding<String>, prompt: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(.subheadline.weight(.semibold))
+            Text(title).font(CXTypography.supporting.weight(.semibold))
             TextField(prompt, text: text, axis: .vertical)
                 .lineLimit(1...3)
                 .textFieldStyle(.plain)
