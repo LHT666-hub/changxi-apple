@@ -643,30 +643,113 @@ struct RecordReadingView: View {
     @State private var error: String?
     @State private var submitting = false
     @State private var pendingWorkflow: EventWorkflowResult?
+
     var body: some View {
-        Form {
-            Section("\(kind.rawValue) · \(kind.unit)") {
-                TextField(kind == .pressure ? "收缩压" : "测量值", text: $value).keyboardType(.decimalPad).accessibilityIdentifier("reading-primary")
-                if kind == .pressure { TextField("舒张压", text: $secondary).keyboardType(.decimalPad).accessibilityIdentifier("reading-secondary") }
-                DatePicker("测量时间", selection: $date, in: ...Date.now)
-                TextField("备注，如晨起、餐前或餐后", text: $note, axis: .vertical)
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("健康记录")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .tracking(0.6)
+
+                Text("记录\(kind.rawValue)")
+                    .font(CXTypography.display)
+
+                Text("只记录事实，不在录入时替你判断结果。")
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
             }
-            if let error { Section { Text(error).foregroundStyle(CX.statusCritical) } }
-            if submitting {
-                Section {
-                    HStack(spacing: 10) {
-                        ProgressView()
-                        Text("正在发起玄同会诊…").foregroundStyle(CX.muted)
+
+            SectionEyebrow(title: "测量数值", action: kind.unit)
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                MeasurementField(
+                    title: kind == .pressure ? "收缩压" : kind.rawValue,
+                    unit: kind.unit
+                ) {
+                    TextField(kind == .pressure ? "例如 120" : "输入测量值", text: $value)
+                        .keyboardType(.decimalPad)
+                        .accessibilityIdentifier("reading-primary")
+                }
+
+                if kind == .pressure {
+                    MeasurementField(title: "舒张压", unit: kind.unit) {
+                        TextField("例如 80", text: $secondary)
+                            .keyboardType(.decimalPad)
+                            .accessibilityIdentifier("reading-secondary")
                     }
                 }
+
+                Divider().overlay(CX.separator.opacity(0.14))
+
+                DatePicker("测量时间", selection: $date, in: ...Date.now)
+                    .font(CXTypography.supporting)
             }
-            Section { Button("保存记录", action: save).accessibilityIdentifier("save-reading").disabled(submitting) }
-            Section { Text("输入校验只用于避免录入错误，不代表医学正常范围。").font(.footnote) }
-        }.navigationTitle("记录\(kind.rawValue)")
-        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } } }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            SectionEyebrow(title: "补充说明", action: "可选")
+            VStack(alignment: .leading, spacing: CXSpacing.sm) {
+                TextField("例如：晨起、餐前、餐后或当时的感受", text: $note, axis: .vertical)
+                    .lineLimit(3...6)
+                    .padding(CXSpacing.md)
+                    .background(CX.raisedSurface, in: .rect(cornerRadius: CXRadius.sm, style: .continuous))
+
+                Text("备注是为了帮助以后回看测量情境，不影响保存。")
+                    .font(CXTypography.meta)
+                    .foregroundStyle(CX.muted)
+            }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            if let error {
+                Label(error, systemImage: "exclamationmark.circle.fill")
+                    .font(CXTypography.supporting)
+                    .foregroundStyle(CX.statusCritical)
+                    .padding(CXSpacing.md)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(CX.statusCritical.opacity(0.06), in: .rect(cornerRadius: CXRadius.md, style: .continuous))
+            }
+
+            if submitting {
+                HStack(spacing: 10) {
+                    ProgressView()
+                    Text("正在整理记录…")
+                        .font(CXTypography.supporting)
+                        .foregroundStyle(CX.muted)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+            }
+
+            Button("保存记录", action: save)
+                .buttonStyle(PrimaryButton())
+                .disabled(submitting)
+                .accessibilityIdentifier("save-reading")
+
+            HStack(alignment: .top, spacing: CXSpacing.sm) {
+                Image(systemName: "info.circle")
+                    .foregroundStyle(CX.actionPrimary)
+                Text("输入校验只用于避免明显录入错误，不代表医学正常范围。")
+                    .font(CXTypography.meta)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(4)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, CXSpacing.xs)
+        }
+        .navigationTitle("记录\(kind.rawValue)")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("取消") { dismiss() }
+            }
+        }
         .fullScreenCover(item: $pendingWorkflow) { result in
             NavigationStack {
-                WorkflowProgressView(result: result, onClose: { pendingWorkflow = nil; dismiss() })
+                WorkflowProgressView(result: result, onClose: {
+                    pendingWorkflow = nil
+                    dismiss()
+                })
             }
         }
         .assistantFormContext(
@@ -684,6 +767,39 @@ struct RecordReadingView: View {
             return true
         }
     }
+
+    private struct MeasurementField<Content: View>: View {
+        let title: String
+        let unit: String
+        @ViewBuilder let content: Content
+
+        init(title: String, unit: String, @ViewBuilder content: () -> Content) {
+            self.title = title
+            self.unit = unit
+            self.content = content()
+        }
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: 7) {
+                HStack {
+                    Text(title)
+                        .font(CXTypography.micro.weight(.semibold))
+                        .foregroundStyle(CX.muted)
+                    Spacer()
+                    Text(unit)
+                        .font(CXTypography.micro)
+                        .foregroundStyle(CX.faint)
+                }
+
+                content
+                    .font(CXTypography.numeric)
+                    .padding(.horizontal, CXSpacing.md)
+                    .frame(minHeight: 58)
+                    .background(CX.raisedSurface, in: .rect(cornerRadius: CXRadius.sm, style: .continuous))
+            }
+        }
+    }
+
     private func save() {
         guard let number = Double(value.replacingOccurrences(of: ",", with: ".")), number.isFinite, kind.inputRange.contains(number) else { error = "请检查测量值，输入\(kind.inputRange.lowerBound.formatted())至\(kind.inputRange.upperBound.formatted())之间的数字。"; return }
         let second = Double(secondary)
