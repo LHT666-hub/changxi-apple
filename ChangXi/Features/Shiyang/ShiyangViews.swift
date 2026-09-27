@@ -592,6 +592,7 @@ private struct ShiyangOnboardingPage<Content: View>: View {
             .frame(maxWidth: 640, minHeight: 620, alignment: .top)
             .padding(.horizontal, 20)
             .padding(.vertical, 18)
+            .padding(.bottom, 160)
             .frame(maxWidth: .infinity)
         }
         .contentMargins(.bottom, 96, for: .scrollContent)

@@ -49,14 +49,14 @@ struct PainLocationView: View {
                     case 2: descriptionForm
                     default: review
                     }
-                    if step > 1 || (step == 1 && dynamicTypeSize.isAccessibilitySize) {
+                    if step > 0 {
                         footer.padding(.top, 4)
                     }
                 }
             }
             .frame(maxWidth: 680)
             .padding(20)
-            .padding(.bottom, step == 1 && !saved && !dynamicTypeSize.isAccessibilitySize ? 172 : 24)
+            .padding(.bottom, 24)
             .frame(maxWidth: .infinity)
             .id(step)
         }
@@ -67,13 +67,6 @@ struct PainLocationView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { history = true } label: { Image(systemName: "clock.arrow.circlepath") }
                     .accessibilityLabel("查看疼痛记录")
-            }
-        }
-        .overlay(alignment: .bottom) {
-            if step == 1 && !saved && !dynamicTypeSize.isAccessibilitySize {
-                footer
-                    .padding(.horizontal, 14)
-                    .padding(.bottom, 82)
             }
         }
         .sheet(isPresented: $history) { NavigationStack { PainHistoryView(journal: journal) } }
@@ -1561,7 +1554,6 @@ struct PainMarkingSurface: View {
                             for mark in visible {
                                 paint(mark.points, kind: mark.kind, context: &context, size: size)
                             }
-                            paint(stroke, kind: kind, context: &context, size: size)
                         }
                         .allowsHitTesting(false)
                     }
@@ -1574,53 +1566,43 @@ struct PainMarkingSurface: View {
                                     x: min(1, max(0, value.location.x / geo.size.width)),
                                     y: min(1, max(0, value.location.y / geo.size.height))
                                 )
+
+                                if activeMarkID == nil {
+                                    stroke = [point]
+                                    let mark = PainMark(
+                                        angle: angle,
+                                        kind: kind,
+                                        points: stroke
+                                    )
+                                    activeMarkID = mark.id
+                                    marks.append(mark)
+                                    return
+                                }
+
+                                guard let activeMarkID,
+                                      let index = marks.firstIndex(where: { $0.id == activeMarkID }) else {
+                                    return
+                                }
+
                                 if kind == .point {
                                     stroke = [point]
                                 } else if stroke.count < 500, shouldAppend(point) {
                                     stroke.append(point)
-
-                                    if stroke.count == 2 {
-                                        let mark = PainMark(
-                                            angle: angle,
-                                            kind: kind,
-                                            points: stroke
-                                        )
-                                        activeMarkID = mark.id
-                                        marks.append(mark)
-                                    } else if let activeMarkID,
-                                              let index = marks.firstIndex(where: { $0.id == activeMarkID }) {
-                                        marks[index].kind = kind
-                                        marks[index].points = stroke
-                                    }
                                 }
+
+                                marks[index].kind = kind
+                                marks[index].points = stroke
                             }
                             .onEnded { _ in
-                                guard editable, !stroke.isEmpty else { return }
+                                guard editable else { return }
 
-                                if kind == .point {
-                                    marks.append(
-                                        PainMark(
-                                            angle: angle,
-                                            kind: .point,
-                                            points: stroke
-                                        )
-                                    )
-                                } else if let activeMarkID,
-                                          let index = marks.firstIndex(where: { $0.id == activeMarkID }) {
+                                if let activeMarkID,
+                                   let index = marks.firstIndex(where: { $0.id == activeMarkID }) {
                                     let finalKind: PainMarkKind =
-                                        (kind == .line || kind == .radiating) && stroke.count < 2
+                                        (kind == .line || kind == .radiating) && marks[index].points.count < 2
                                             ? .point
                                             : kind
                                     marks[index].kind = finalKind
-                                    marks[index].points = stroke
-                                } else {
-                                    marks.append(
-                                        PainMark(
-                                            angle: angle,
-                                            kind: .point,
-                                            points: [stroke[0]]
-                                        )
-                                    )
                                 }
 
                                 activeMarkID = nil
@@ -1674,6 +1656,10 @@ struct PainMarkingSurface: View {
                 .frame(maxWidth: .infinity, alignment: .center)
         }
         .sensoryFeedback(.impact(weight: .light), trigger: marks.count)
+        .onChange(of: kind) { _, _ in
+            activeMarkID = nil
+            stroke = []
+        }
     }
 
     private func shouldAppend(_ point: PainCoordinate) -> Bool {

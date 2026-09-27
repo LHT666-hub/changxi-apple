@@ -378,6 +378,35 @@ final class FlowTests: XCTestCase {
         XCTAssertTrue(element.isHittable, "Element never became hittable after scrolling up")
     }
 
+    private func scrollUpUntilFullyAboveTabBar(
+        _ element: XCUIElement,
+        in app: XCUIApplication,
+        maxSwipes: Int = 8
+    ) {
+        XCTAssertTrue(element.waitForExistence(timeout: 5))
+
+        let tab = app.buttons["root-tab-首页"]
+        XCTAssertTrue(tab.waitForExistence(timeout: 3))
+        let tabTop = tab.frame.minY
+
+        var swipes = 0
+        while swipes < maxSwipes {
+            let frame = element.frame
+            if element.isHittable && frame.maxY < tabTop - 12 {
+                break
+            }
+            app.swipeUp()
+            swipes += 1
+        }
+
+        XCTAssertTrue(element.isHittable, "Element never became hittable above tab bar: \(element.identifier)")
+        XCTAssertLessThan(
+            element.frame.maxY,
+            tabTop - 8,
+            "Element is still covered by the persistent tab bar: \(element.identifier)"
+        )
+    }
+
     /// Taps the part of a lower card that remains above the persistent tab bar.
     /// XCTest can report these cards as non-hittable even though their top edge is visible.
     private func tapVisiblePortion(of element: XCUIElement, in app: XCUIApplication) {
@@ -419,8 +448,9 @@ final class FlowTests: XCTestCase {
 
         let confirm = app.buttons["confirm-shiyang-profile"]
         XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        scrollUpUntilFullyAboveTabBar(confirm, in: app)
         capture("17-shiyang-summary")
-        tapWhenHittable(confirm, in: app)
+        confirm.tap()
         XCTAssertTrue(app.descendants(matching: .any)["shiyang-home"].firstMatch.waitForExistence(timeout: 8))
         XCTAssertTrue(app.staticTexts["今天，也好好吃饭。"].exists)
         XCTAssertTrue(app.descendants(matching: .any)["shiyang-recommendation"].firstMatch.exists)
