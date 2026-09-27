@@ -386,9 +386,10 @@ final class AppStore {
         }
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("--ui-testing")
-            || ProcessInfo.processInfo.arguments.contains("--integration-testing") {
+            || ProcessInfo.processInfo.arguments.contains("--integration-testing")
+            || ProcessInfo.processInfo.arguments.contains("--onboarding-testing") {
             data = LocalState()
-            data.onboarded = true
+            data.onboarded = !ProcessInfo.processInfo.arguments.contains("--onboarding-testing")
             if ProcessInfo.processInfo.arguments.contains("--large-text") { data.largeText = true }
         }
         #endif
