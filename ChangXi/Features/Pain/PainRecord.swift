@@ -34,6 +34,41 @@ enum PainAnatomyLayer: String, CaseIterable, Identifiable {
     var nodePrefix: String { rawValue == "体表" ? "surface__" : rawValue == "肌肉" ? "muscle__" : "skeleton__" }
 }
 
+enum PainDepthImpression: String, CaseIterable, Codable, Identifiable {
+    case surface = "表面附近"
+    case muscle = "肌肉附近"
+    case jointOrBone = "关节或骨头附近"
+    case deep = "身体里面更深"
+    case unsure = "说不清"
+
+    var id: Self { self }
+
+    var detail: String {
+        switch self {
+        case .surface:
+            "更像皮肤或靠近体表的位置不舒服"
+        case .muscle:
+            "更像肌肉发酸、发紧或按压不舒服"
+        case .jointOrBone:
+            "更像关节周围或骨头附近的深处不舒服"
+        case .deep:
+            "感觉在身体里面，位置比表面更深"
+        case .unsure:
+            "现在不确定，先只记录位置就可以"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .surface: "circle"
+        case .muscle: "waveform.path"
+        case .jointOrBone: "circle.hexagongrid"
+        case .deep: "dot.circle.and.hand.point.up.left.fill"
+        case .unsure: "questionmark.circle"
+        }
+    }
+}
+
 enum PainAngle: String, CaseIterable, Codable, Identifiable {
     case front = "正面", left = "左侧", right = "右侧", back = "背面"
     var id: Self { self }
@@ -168,13 +203,17 @@ struct PainRecord: Identifiable, Codable {
     var intensity: Int = 3
     var onset = "开始时间未填写"
     var note = ""
+    /// Optional subjective description of how deep the discomfort feels.
+    /// This is not a diagnosis or inferred pain source.
+    var depthImpression: PainDepthImpression? = nil
     // Store the illustration version so future artwork changes do not relocate old marks.
     var artworkVersion = 1
     var assessment: PainAssessment?
     var intensityConfirmed: Bool?
     var summary: String {
         let rating = intensityConfirmed == true ? "\(intensity)分" : (assessment?.intensityWords == "还没选" ? nil : assessment?.intensityWords) ?? "程度未填写"
-        return "\(region.rawValue)，\(marks.count)处；\(sensation)，\(rating)；\(onset)。"
+        let depth = depthImpression.map { "，感觉更像\($0.rawValue)" } ?? ""
+        return "\(region.rawValue)，\(marks.count)处\(depth)；\(sensation)，\(rating)；\(onset)。"
     }
 }
 
