@@ -131,10 +131,14 @@ private struct ShiyangOnboardingFlow: View {
     @State private var useHealthData = false
     @State private var useMedicationData = false
     @State private var loaded = false
+    @State private var finished = false
 
     var body: some View {
         Group {
-            switch stage {
+            if finished {
+                ShiyangHomeView()
+            } else {
+                switch stage {
             case .intro:
                 ShiyangWelcomeView { move(to: .consent) }
             case .consent:
@@ -160,6 +164,7 @@ private struct ShiyangOnboardingFlow: View {
                     onEdit: { move(to: .profile) },
                     onConfirm: confirmProfile
                 )
+            }
             }
         }
         .transition(.opacity.combined(with: .move(edge: .trailing)))
@@ -218,6 +223,7 @@ private struct ShiyangOnboardingFlow: View {
         )
         if let first = recommendations.first { store.data.shiyangSelectedRecipeID = first.recipe.id }
         store.data.shiyangOnboarded = true
+        finished = true
         onFinished()
         MoonHaptics.shared.play(success: true, enabled: store.data.haptics)
     }
