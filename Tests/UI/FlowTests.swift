@@ -319,7 +319,7 @@ final class FlowTests: XCTestCase {
                 forDuration: 0.12,
                 thenDragTo: areaSurface.coordinate(withNormalizedOffset: CGVector(dx: 0.56, dy: 0.39))
             )
-        XCTAssertTrue(app.staticTexts["这个视角已标记 2 处"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["已标记 2 处"].waitForExistence(timeout: 3))
         let radiatingTool = app.buttons["pain-tool-放射"]
         tapWhenHittable(radiatingTool, in: app)
         let radiatingSurface = app.descendants(matching: .any)["pain-marking-surface"].firstMatch
@@ -329,9 +329,16 @@ final class FlowTests: XCTestCase {
                 forDuration: 0.12,
                 thenDragTo: radiatingSurface.coordinate(withNormalizedOffset: CGVector(dx: 0.62, dy: 0.48))
             )
-        XCTAssertTrue(app.staticTexts["这个视角已标记 3 处"].waitForExistence(timeout: 3))
-        capture("22-pain-area-and-radiating-marks")
-        next.tap()
+        XCTAssertTrue(app.staticTexts["已标记 3 处"].waitForExistence(timeout: 3))
+
+        let depthDisclosure = app.descendants(matching: .any)["pain-depth-disclosure"].firstMatch
+        tapWhenHittable(depthDisclosure, in: app)
+        let muscleDepth = app.buttons["pain-depth-肌肉附近"]
+        tapWhenHittable(muscleDepth, in: app)
+        XCTAssertTrue(app.staticTexts["肌肉附近"].firstMatch.exists)
+
+        capture("22-pain-area-radiating-and-depth")
+        tapWhenHittable(next, in: app)
         let naturalChoice = app.buttons["pain-intensity-5"]
         XCTAssertTrue(naturalChoice.waitForExistence(timeout: 5))
         naturalChoice.tap()
