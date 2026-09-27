@@ -347,21 +347,98 @@ struct ServiceDetailView: View {
 struct BookingsView: View {
     @Environment(AppStore.self) private var store
     @State private var cancelID: UUID?
+
     var body: some View {
-        Page {
-            if store.data.bookings.isEmpty { CXEmptyState(title: "还没有服务记录", message: "从服务页选择需要的服务，保存一次本机意向后会出现在这里。", icon: "calendar.badge.clock") }
-            ForEach(store.data.bookings.reversed()) { booking in
-                Card {
-                    RowLabel(title: booking.service, subtitle: booking.person, icon: "calendar", chevron: false)
-                    Text(booking.date.formatted(date: .abbreviated, time: .shortened))
-                    if !booking.note.isEmpty { Text(booking.note) }
-                    Text(booking.cancelled ? "已取消本地意向" : "本地意向 · 未提交医疗机构").foregroundStyle(CX.muted)
-                    if !booking.cancelled { Button("取消意向", role: .destructive) { cancelID = booking.id }.frame(minHeight: 44) }
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("服务记录")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .tracking(0.6)
+                Text("看清哪些只是本机意向")
+                    .font(CXTypography.display)
+                Text("当前体验版不会把这些记录自动提交给医疗机构。")
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
+            }
+
+            if store.data.bookings.isEmpty {
+                CXEmptyState(
+                    title: "还没有服务记录",
+                    message: "从服务页保存一次本机意向后，会按时间出现在这里。",
+                    icon: "calendar.badge.clock"
+                )
+            } else {
+                SectionEyebrow(title: "本机记录", action: "\(store.data.bookings.count) 条")
+
+                ForEach(store.data.bookings.reversed()) { booking in
+                    VStack(alignment: .leading, spacing: CXSpacing.md) {
+                        HStack(spacing: CXSpacing.md) {
+                            Image(systemName: booking.cancelled ? "xmark.circle" : "calendar")
+                                .foregroundStyle(booking.cancelled ? CX.muted : CX.actionPrimary)
+                                .frame(width: 42, height: 42)
+                                .background(
+                                    (booking.cancelled ? CX.muted : CX.actionPrimary).opacity(0.08),
+                                    in: Circle()
+                                )
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(booking.service)
+                                    .font(CXTypography.section)
+                                Text(booking.person)
+                                    .font(CXTypography.meta)
+                                    .foregroundStyle(CX.muted)
+                            }
+
+                            Spacer()
+                        }
+
+                        Text(booking.date.formatted(date: .abbreviated, time: .shortened))
+                            .font(CXTypography.supporting)
+
+                        if !booking.note.isEmpty {
+                            Text(booking.note)
+                                .font(CXTypography.supporting)
+                                .foregroundStyle(CX.muted)
+                        }
+
+                        Label(
+                            booking.cancelled ? "已取消本地意向" : "本地意向 · 未提交医疗机构",
+                            systemImage: booking.cancelled ? "minus.circle" : "iphone"
+                        )
+                        .font(CXTypography.meta.weight(.semibold))
+                        .foregroundStyle(booking.cancelled ? CX.muted : CX.statusWarning)
+
+                        if !booking.cancelled {
+                            Button("取消意向", role: .destructive) {
+                                cancelID = booking.id
+                            }
+                            .font(CXTypography.meta.weight(.semibold))
+                            .frame(minHeight: 44)
+                        }
+                    }
+                    .padding(CXSpacing.lg)
+                    .cxContentSurface(cornerRadius: CXRadius.lg)
                 }
             }
-        }.navigationTitle("服务记录")
-        .confirmationDialog("取消这条预约意向？", isPresented: Binding(get: { cancelID != nil }, set: { if !$0 { cancelID = nil } }), titleVisibility: .visible) {
-            Button("确认取消", role: .destructive) { if let i = store.data.bookings.firstIndex(where: { $0.id == cancelID }) { store.data.bookings[i].cancelled = true }; cancelID = nil }
+        }
+        .navigationTitle("服务记录")
+        .navigationBarTitleDisplayMode(.inline)
+        .confirmationDialog(
+            "取消这条预约意向？",
+            isPresented: Binding(
+                get: { cancelID != nil },
+                set: { if !$0 { cancelID = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("确认取消", role: .destructive) {
+                if let i = store.data.bookings.firstIndex(where: { $0.id == cancelID }) {
+                    store.data.bookings[i].cancelled = true
+                }
+                cancelID = nil
+            }
         }
     }
 }
@@ -454,27 +531,104 @@ struct ConsultationView: View {
 
 struct ArticleView: View {
     var isClass: Bool
+
     var body: some View {
-        Page {
-            Card {
-                Label(isClass ? "家医课堂" : "社区活动", systemImage: isClass ? "book" : "figure.walk").foregroundStyle(CX.muted)
-                Text(isClass ? "让健康记录更有用" : "社区月光散步计划").font(.largeTitle.bold())
-                Text(isClass ? "把时间和情境一起记下来" : "周六 18:30 · 社区花园").font(.headline)
-                Text(isClass ? "除了数值，你也可以记录测量时间、当时的感受，以及餐前或餐后等信息。连续的记录能帮助你和医生回顾变化。\n\n遇到不熟悉的单位或指标，先核对原始报告，再在咨询时一起讨论。\n\n不必追求每天完美完成，漏记以后也可以从下一次重新开始。" : "一次轻松的社区散步，和邻里认识，也给自己一点放松的时间。\n\n集合地点：社区花园入口。\n活动时长：约30分钟，可按自己的节奏提前休息。\n\n这是示例活动，目前不接受真实报名。").lineSpacing(8)
-                if !isClass { NavigationLink("保存参与意向") { ServiceDetailView(service: ServiceItem.all[5]) }.buttonStyle(PrimaryButton()) }
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text(isClass ? "家医课堂" : "社区活动")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(isClass ? CX.actionPrimary : CX.statusPositive)
+                    .tracking(0.6)
+                Text(isClass ? "让健康记录更有用" : "社区月光散步计划")
+                    .font(CXTypography.display)
+                Text(isClass ? "把时间和情境一起记下来" : "周六 18:30 · 社区花园")
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
             }
-        }.navigationTitle(isClass ? "家医课堂" : "活动详情")
+
+            Text(
+                isClass
+                    ? "除了数值，你也可以记录测量时间、当时的感受，以及餐前或餐后等信息。连续的记录能帮助你和医生回顾变化。\n\n遇到不熟悉的单位或指标，先核对原始报告，再在咨询时一起讨论。\n\n不必追求每天完美完成，漏记以后也可以从下一次重新开始。"
+                    : "一次轻松的社区散步，和邻里认识，也给自己一点放松的时间。\n\n集合地点：社区花园入口。\n活动时长：约30分钟，可按自己的节奏提前休息。\n\n这是示例活动，目前不接受真实报名。"
+            )
+            .font(CXTypography.body)
+            .lineSpacing(7)
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            if !isClass {
+                NavigationLink("保存参与意向") {
+                    ServiceDetailView(service: ServiceItem.all[5])
+                }
+                .buttonStyle(PrimaryButton())
+            }
+        }
+        .navigationTitle(isClass ? "家医课堂" : "活动详情")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
 struct MessagesView: View {
     @Environment(AppStore.self) private var store
+
     var body: some View {
-        Page {
-            NavigationLink { DoctorMessageView() } label: { Card { RowLabel(title: "蒋医生的回复", subtitle: store.data.doctorMessageRead ? "已读 · 示例消息" : "未读 · 示例消息", icon: "stethoscope") } }.buttonStyle(.plain)
-            NavigationLink { PlanView() } label: { Card { RowLabel(title: "今日计划", subtitle: "还有\(store.data.plans.count - store.completed)项待完成", icon: "bell") } }.buttonStyle(.plain)
-            NavigationLink { MemoryView() } label: { Card { RowLabel(title: "常曦记忆待确认", subtitle: "\(store.pendingMemories)条等待你确认", icon: "sparkles") } }.buttonStyle(.plain)
-        }.navigationTitle("消息中心")
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("消息")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .tracking(0.6)
+                Text("把需要你看一眼的事放在这里")
+                    .font(CXTypography.display)
+                Text("医生示例回复、今日计划和待确认记忆分开呈现，不和服务入口混在一起。")
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
+            }
+
+            VStack(spacing: CXSpacing.sm) {
+        struct DoctorMessageView: View {
+    @Environment(AppStore.self) private var store
+
+    var body: some View {
+        Page(illustrated: true) {
+            MoonPoolView(state: .doctorReply, character: true, compact: true)
+
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                HStack(spacing: CXSpacing.md) {
+                    Image(systemName: "stethoscope")
+                        .foregroundStyle(CX.statusPositive)
+                        .frame(width: 42, height: 42)
+                        .background(CX.statusPositive.opacity(0.08), in: Circle())
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("蒋医生")
+                            .font(CXTypography.title)
+                        Text("示例消息 · 今天 17:30")
+                            .font(CXTypography.meta)
+                            .foregroundStyle(CX.muted)
+                    }
+
+                    Spacer()
+                }
+
+                Text("下次沟通时，可以带上最近一周的测量记录和完整体检报告，我们一起回顾变化。")
+                    .font(CXTypography.body)
+                    .lineSpacing(6)
+
+                NavigationLink("整理我的回复") { ConsultationView() }
+                    .buttonStyle(PrimaryButton())
+            }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            DemoLabel()
+        }
+        .navigationTitle("医生回复")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            store.data.doctorMessageRead = true
+        }
     }
 }
 
