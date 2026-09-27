@@ -143,22 +143,44 @@ struct CareTaskView: View {
 
     private func completeSheet(_ task: CareTask) -> some View {
         NavigationStack {
-            Form {
-                Section(task.displayTitle) {
-                    TextField("完成情况备注（可选）", text: $completeNotes, axis: .vertical)
+            Page(illustrated: true) {
+                VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                    Text("完成照护任务")
+                        .font(CXTypography.micro.weight(.semibold))
+                        .foregroundStyle(CX.statusPositive)
+                        .tracking(0.6)
+                    Text(task.displayTitle)
+                        .font(CXTypography.display)
+                    Text("如果有需要补充的完成情况，可以在提交前写一句；没有也可以直接完成。")
+                        .font(CXTypography.body)
+                        .foregroundStyle(CX.muted)
+                        .lineSpacing(5)
                 }
-                Section {
-                    Button {
-                        Task { await complete(task) }
-                    } label: {
-                        if completing {
-                            HStack(spacing: 8) { ProgressView(); Text("提交中…") }
-                        } else {
-                            Text("标记完成")
-                        }
+
+                SectionEyebrow(title: "完成情况", action: "可选")
+                TextField("例如：已预约复诊，等待确认时间", text: $completeNotes, axis: .vertical)
+                    .lineLimit(4...8)
+                    .padding(CXSpacing.md)
+                    .background(CX.surface, in: .rect(cornerRadius: CXRadius.md, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: CXRadius.md, style: .continuous)
+                            .strokeBorder(CX.separator.opacity(0.12), lineWidth: 0.5)
                     }
-                    .disabled(completing)
+
+                Button {
+                    Task { await complete(task) }
+                } label: {
+                    if completing {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                            Text("正在提交")
+                        }
+                    } else {
+                        Text("标记完成")
+                    }
                 }
+                .buttonStyle(PrimaryButton())
+                .disabled(completing)
             }
             .navigationTitle("完成任务")
             .navigationBarTitleDisplayMode(.inline)
