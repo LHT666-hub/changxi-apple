@@ -200,25 +200,89 @@ struct MedicationEditor: View {
     @State private var dosage = ""
     @State private var instructions = ""
     @State private var time = Calendar.current.date(from: DateComponents(hour: 20, minute: 0)) ?? .now
+
     var body: some View {
-        Form {
-            Section("按本人处方填写") {
-                TextField("药名", text: $name)
-                TextField("处方剂量与用法", text: $dosage)
-                DatePicker("每日记录时间", selection: $time, displayedComponents: .hourAndMinute)
-                TextField("备注", text: $instructions, axis: .vertical)
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text(medication == nil ? "添加用药" : "修改用药")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.statusPositive)
+                    .tracking(0.6)
+
+                Text("按处方把关键信息记清楚")
+                    .font(CXTypography.display)
+
+                Text("常曦只帮你记录，不会根据这里的内容自动调整剂量或频次。")
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
             }
-            Section { Text("此处为每日一次的记录计划，不会自动创建药物提醒。若处方每天多次服用，可分别添加对应时段的计划。").font(.footnote) }
-            Section { Button("保存计划") {
-                let components = Calendar.current.dateComponents([.hour, .minute], from: time)
-                let updated = Medication(id: medication?.id ?? UUID(), name: name, dosage: dosage, instructions: instructions, hour: components.hour ?? 20, minute: components.minute ?? 0)
-                if let i = store.data.medications.firstIndex(where: { $0.id == updated.id }) { store.data.medications[i] = updated } else { store.data.medications.append(updated) }
-                archiveMedication(updated)
-                dismiss()
-            }.disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || dosage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) }
-        }.navigationTitle(medication == nil ? "添加药品" : "修改用药计划")
-        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } } }
-        .onAppear { if let medication { name = medication.name; dosage = medication.dosage; instructions = medication.instructions; time = Calendar.current.date(from: DateComponents(hour: medication.hour, minute: medication.minute)) ?? .now } }
+
+            SectionEyebrow(title: "处方信息")
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                LabeledMedicationField(title: "药名", hint: "必填") {
+                    TextField("例如：阿司匹林", text: $name)
+                }
+
+                LabeledMedicationField(title: "剂量与用法", hint: "按处方填写") {
+                    TextField("例如：100 mg，每日一次", text: $dosage)
+                }
+
+                Divider().overlay(CX.separator.opacity(0.14))
+
+                DatePicker("每日记录时间", selection: $time, displayedComponents: .hourAndMinute)
+                    .font(CXTypography.supporting)
+            }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            SectionEyebrow(title: "补充说明", action: "可选")
+            TextField("例如：随餐服用、医生特别交代", text: $instructions, axis: .vertical)
+                .lineLimit(3...6)
+                .padding(CXSpacing.md)
+                .background(CX.surface, in: .rect(cornerRadius: CXRadius.md, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: CXRadius.md, style: .continuous)
+                        .strokeBorder(CX.separator.opacity(0.12), lineWidth: 0.5)
+                }
+
+            Button("保存计划") {
+                save()
+            }
+            .buttonStyle(PrimaryButton())
+            .disabled(
+                name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                || dosage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            )
+
+            HStack(alignment: .top, spacing: CXSpacing.sm) {
+                Image(systemName: "info.circle")
+                    .foregroundStyle(CX.actionPrimary)
+                Text("这里按“每日一次”建立记录计划。若处方一天多次，可分别添加对应时段。")
+                    .font(CXTypography.meta)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(4)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, CXSpacing.xs)
+        }
+        .navigationTitle(medication == nil ? "添加药品" : "修改用药计划")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("取消") { dismiss() }
+            }
+        }
+        .onAppear {
+            if let medication {
+                name = medication.name
+                dosage = medication.dosage
+                instructions = medication.instructions
+                time = Calendar.current.date(
+                    from: DateComponents(hour: medication.hour, minute: medication.minute)
+                ) ?? .now
+            }
+        }
         .assistantFormContext(title: "用药计划备注", draft: instructions) { value in
             let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmed.isEmpty else { return false }
@@ -227,8 +291,25 @@ struct MedicationEditor: View {
         }
     }
 
-    /// Task #25：保存用药计划后，尽力归档到云端 health-records（record_type = medication）。
-    /// 离线不发请求；归档失败静默，绝不影响本地保存。
+    private func save() {
+        let components = Calendar.current.dateComponents([.hour, .minute], from: time)
+        let updated = Medication(
+            id: medication?.id ?? UUID(),
+            name: name,
+            dosage: dosage,
+            instructions: instructions,
+            hour: components.hour ?? 20,
+            minute: components.minute ?? 0
+        )
+        if let i = store.data.medications.firstIndex(where: { $0.id == updated.id }) {
+            store.data.medications[i] = updated
+        } else {
+            store.data.medications.append(updated)
+        }
+        archiveMedication(updated)
+        dismiss()
+    }
+
     private func archiveMedication(_ medication: Medication) {
         guard AppConfiguration.useRemoteAPI else { return }
         let pid = PatientContext.effectiveID(auth)
@@ -248,6 +329,37 @@ struct MedicationEditor: View {
     }
 }
 
+private struct LabeledMedicationField<Content: View>: View {
+    let title: String
+    let hint: String
+    @ViewBuilder let content: Content
+
+    init(title: String, hint: String, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.hint = hint
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            HStack {
+                Text(title)
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.muted)
+                Spacer()
+                Text(hint)
+                    .font(CXTypography.micro)
+                    .foregroundStyle(CX.faint)
+            }
+
+            content
+                .padding(.horizontal, CXSpacing.md)
+                .frame(minHeight: 52)
+                .background(CX.raisedSurface, in: .rect(cornerRadius: CXRadius.sm, style: .continuous))
+        }
+    }
+}
+
 struct DoseHistoryView: View {
     @Environment(AppStore.self) private var store
     @State private var filter = "全部"
@@ -255,7 +367,7 @@ struct DoseHistoryView: View {
         Page {
             Picker("记录类型", selection: $filter) { ForEach(["全部", "已服药", "漏服"], id: \.self) { Text($0) } }.pickerStyle(.segmented)
             let records = store.data.doseHistory.filter { filter == "全部" || (filter == "已服药" ? $0.taken : !$0.taken) }
-            if records.isEmpty { ContentUnavailableView("暂无这类记录", systemImage: "pills", description: Text("记录服药后，可在这里回顾。")) }
+            if records.isEmpty { CXEmptyState(title: "暂无这类记录", message: "记录服药或漏服后，可以在这里回顾。", icon: "pills") }
             ForEach(records.reversed()) { record in
                 Card { RowLabel(title: record.medicationName, subtitle: "\(record.date.formatted(date: .abbreviated, time: .shortened)) · \(record.taken ? "已服药" : "漏服")", icon: record.taken ? "checkmark.circle.fill" : "minus.circle", tint: record.taken ? CX.teal : CX.coral, chevron: false) }
             }
