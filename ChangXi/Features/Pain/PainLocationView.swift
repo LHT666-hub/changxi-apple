@@ -238,6 +238,7 @@ struct PainLocationView: View {
                     .background(CX.moonlight.opacity(0.12), in: .rect(cornerRadius: 14))
             }
             anglePicker
+            markToolPicker
             PainMarkingSurface(region: draft.region, angle: angle, kind: kind, marks: $draft.marks)
                 .id(angle)
                 .transition(.opacity)
@@ -248,31 +249,45 @@ struct PainLocationView: View {
                     .foregroundStyle(count == 0 ? CX.muted : CX.teal)
                 Spacer()
                 Button { enlarged = true } label: { Label("放大细标", systemImage: "arrow.up.left.and.arrow.down.right") }
-            }.font(.subheadline)
-            markTools
+            }
+            .font(CXTypography.supporting)
+            markHistoryActions
             if draft.region == .head { landmarks }
             Text("以你自己的身体左右为准。标记只表达你感到疼的位置。")
                 .font(.footnote).foregroundStyle(CX.muted)
         }
     }
 
-    private var markTools: some View {
-        VStack(spacing: 12) {
-            LazyVGrid(columns: CXLayout.adaptiveColumns(minimum: 146, spacing: 10, dynamicTypeSize: dynamicTypeSize), spacing: 10) {
+    private var markToolPicker: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: CXSpacing.sm) {
                 ForEach(PainMarkKind.allCases) { tool in
-                    Button { kind = tool } label: {
-                        HStack(spacing: 10) {
+                    Button {
+                        kind = tool
+                    } label: {
+                        HStack(spacing: 8) {
                             PainToolPreview(kind: tool)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(tool.label).font(.subheadline.weight(.semibold))
-                                Text(toolShortHint(tool)).font(.caption2).foregroundStyle(CX.muted)
+                                Text(tool.label)
+                                    .font(CXTypography.supporting.weight(.semibold))
+                                Text(toolShortHint(tool))
+                                    .font(CXTypography.micro)
+                                    .foregroundStyle(CX.muted)
                             }
-                            Spacer(minLength: 0)
                         }
                         .padding(.horizontal, 12)
-                        .frame(maxWidth: .infinity, minHeight: 62, alignment: .leading)
-                        .background(kind == tool ? CX.moonlight.opacity(0.16) : CX.surface.opacity(0.82), in: .rect(cornerRadius: 18))
-                        .overlay { RoundedRectangle(cornerRadius: 18).strokeBorder(kind == tool ? CX.blue.opacity(0.45) : CX.separator.opacity(0.12), lineWidth: kind == tool ? 1.2 : 0.5) }
+                        .frame(minWidth: 128, minHeight: 56, alignment: .leading)
+                        .background(
+                            kind == tool ? CX.moonlight.opacity(0.16) : CX.surface.opacity(0.82),
+                            in: .rect(cornerRadius: 16, style: .continuous)
+                        )
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .strokeBorder(
+                                    kind == tool ? CX.blue.opacity(0.45) : CX.separator.opacity(0.12),
+                                    lineWidth: kind == tool ? 1.2 : 0.5
+                                )
+                        }
                     }
                     .buttonStyle(.plain)
                     .accessibilityAddTraits(kind == tool ? .isSelected : [])
@@ -280,16 +295,29 @@ struct PainLocationView: View {
                     .accessibilityIdentifier("pain-tool-\(tool.label)")
                 }
             }
-            HStack(spacing: 12) {
-                Button {
-                    if let index = draft.marks.lastIndex(where: { $0.angle == angle && !$0.hasSurfaceLocation }) { draft.marks.remove(at: index) }
-                } label: { Label("撤销上一笔", systemImage: "arrow.uturn.backward").frame(maxWidth: .infinity, minHeight: 44) }
-                    .disabled(!draft.marks.contains(where: { $0.angle == angle && !$0.hasSurfaceLocation }))
-                Button(role: .destructive) {
-                    draft.marks.removeAll { $0.angle == angle && !$0.hasSurfaceLocation }
-                } label: { Label("清空此面", systemImage: "eraser").frame(maxWidth: .infinity, minHeight: 44) }
-                    .disabled(!draft.marks.contains(where: { $0.angle == angle && !$0.hasSurfaceLocation }))
+        }
+        .scrollIndicators(.hidden)
+    }
+
+    private var markHistoryActions: some View {
+        HStack(spacing: CXSpacing.sm) {
+            Button {
+                if let index = draft.marks.lastIndex(where: { $0.angle == angle && !$0.hasSurfaceLocation }) {
+                    draft.marks.remove(at: index)
+                }
+            } label: {
+                Label("撤销上一笔", systemImage: "arrow.uturn.backward")
+                    .frame(maxWidth: .infinity, minHeight: 44)
             }
+            .disabled(!draft.marks.contains(where: { $0.angle == angle && !$0.hasSurfaceLocation }))
+
+            Button(role: .destructive) {
+                draft.marks.removeAll { $0.angle == angle && !$0.hasSurfaceLocation }
+            } label: {
+                Label("清空此面", systemImage: "eraser")
+                    .frame(maxWidth: .infinity, minHeight: 44)
+            }
+            .disabled(!draft.marks.contains(where: { $0.angle == angle && !$0.hasSurfaceLocation }))
         }
     }
 
