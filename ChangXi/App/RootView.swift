@@ -965,6 +965,7 @@ struct WelcomeView: View {
 
     private func move(to nextStage: Int) {
         guard (0..<stageCount).contains(nextStage) else { return }
+        MoonHaptics.shared.play(success: false, enabled: store.data.haptics)
         if reduceMotion {
             stage = nextStage
         } else {
