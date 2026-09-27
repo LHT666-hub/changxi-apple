@@ -246,23 +246,94 @@ struct ServiceDetailView: View {
     @State private var date = Calendar.current.date(byAdding: .day, value: 1, to: .now)!
     @State private var note = ""
     @State private var saved = false
+
     var body: some View {
-        Page {
-            Card {
-                RowLabel(title: service.title, subtitle: service.subtitle, icon: service.icon, tint: service.color, chevron: false)
-                Text("服务对象：\(store.data.person)")
-                Text("选择期望时间并写下需求。体验版将创建本地服务记录，尚未向医院或医生提交。").foregroundStyle(CX.muted)
-                DatePicker("期望时间", selection: $date, in: Date.now...)
-                TextField("补充说明", text: $note, axis: .vertical).lineLimit(3...6).padding().background(CX.mist, in: RoundedRectangle(cornerRadius: 16))
-                Button(saved ? "已保存本地记录" : "保存预约意向") {
-                    store.data.bookings.append(ServiceBooking(service: service.title, person: store.data.person, date: date, note: note))
-                    saved = true
-                    MoonHaptics.shared.play(success: true, enabled: store.data.haptics)
-                }.buttonStyle(PrimaryButton()).disabled(saved)
-                if saved { Label("尚未提交至医疗机构", systemImage: "checkmark.circle").foregroundStyle(CX.statusPositive); NavigationLink("查看服务记录") { BookingsView() } }
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("服务意向")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(service.color)
+                    .tracking(0.6)
+                Text(service.title)
+                    .font(CXTypography.display)
+                Text(service.subtitle)
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
             }
+
+            HStack(spacing: CXSpacing.md) {
+                Image(systemName: service.icon)
+                    .font(.title2.weight(.medium))
+                    .foregroundStyle(service.color)
+                    .frame(width: 54, height: 54)
+                    .background(service.color.opacity(0.09), in: Circle())
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("服务对象")
+                        .font(CXTypography.micro.weight(.semibold))
+                        .foregroundStyle(CX.muted)
+                    Text(store.data.person)
+                        .font(CXTypography.section)
+                }
+
+                Spacer()
+            }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            SectionEyebrow(title: "期望时间")
+            VStack(alignment: .leading, spacing: CXSpacing.sm) {
+                DatePicker("选择时间", selection: $date, in: Date.now...)
+                    .font(CXTypography.supporting)
+
+                Text("这里只记录你的期望时间，不代表医院或医生已确认。")
+                    .font(CXTypography.meta)
+                    .foregroundStyle(CX.muted)
+            }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            SectionEyebrow(title: "补充说明", action: "可选")
+            TextField("例如：希望周末上午，想咨询最近的体检报告", text: $note, axis: .vertical)
+                .lineLimit(4...8)
+                .padding(CXSpacing.md)
+                .background(CX.surface, in: .rect(cornerRadius: CXRadius.md, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: CXRadius.md, style: .continuous)
+                        .strokeBorder(CX.separator.opacity(0.12), lineWidth: 0.5)
+                }
+
+            Button(saved ? "已保存本地记录" : "保存预约意向") {
+                store.data.bookings.append(
+                    ServiceBooking(service: service.title, person: store.data.person, date: date, note: note)
+                )
+                saved = true
+                MoonHaptics.shared.play(success: true, enabled: store.data.haptics)
+            }
+            .buttonStyle(PrimaryButton())
+            .disabled(saved)
+
+            if saved {
+                VStack(spacing: CXSpacing.sm) {
+                    Label("尚未提交至医疗机构", systemImage: "checkmark.circle.fill")
+                        .font(CXTypography.supporting.weight(.semibold))
+                        .foregroundStyle(CX.statusPositive)
+
+                    NavigationLink("查看服务记录") { BookingsView() }
+                        .font(CXTypography.supporting.weight(.semibold))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(CXSpacing.md)
+                .background(CX.statusPositive.opacity(0.06), in: .rect(cornerRadius: CXRadius.md, style: .continuous))
+            }
+
+            Text("当前为体验版，本页只保存本机服务意向。")
+                .font(CXTypography.meta)
+                .foregroundStyle(CX.muted)
+                .frame(maxWidth: .infinity, alignment: .center)
         }
         .navigationTitle(service.title)
+        .navigationBarTitleDisplayMode(.inline)
         .assistantFormContext(title: "\(service.title)说明", draft: note) { value in
             let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmed.isEmpty else { return false }
@@ -299,19 +370,78 @@ struct ConsultationView: View {
     @Environment(AppStore.self) private var store
     @State private var question = ""
     @State private var saved = false
+
     var body: some View {
-        Page {
-            Card {
-                RowLabel(title: "向蒋医生咨询", subtitle: "先整理你想沟通的问题", icon: "stethoscope", chevron: false)
-                TextField("发生了什么？从什么时候开始？", text: $question, axis: .vertical).lineLimit(5...12).padding().background(CX.mist, in: RoundedRectangle(cornerRadius: 16))
-                Text("本页为咨询流程演示，内容只保存到本机，不会发送给医生。").font(.footnote).foregroundStyle(CX.muted)
-                Button(saved ? "咨询草稿已保存" : "保存咨询草稿") {
-                    store.data.bookings.append(ServiceBooking(service: "家医咨询草稿", person: store.data.person, date: .now, note: question)); saved = true
-                }.buttonStyle(PrimaryButton()).disabled(question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || saved)
-                if saved { NavigationLink("查看我的咨询") { BookingsView() } }
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("家医咨询")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.statusPositive)
+                    .tracking(0.6)
+                Text("先把想问的事整理清楚")
+                    .font(CXTypography.display)
+                Text("不用一次写完整，先记下发生了什么、从什么时候开始，以及最想确认的问题。")
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
+            }
+
+            HStack(spacing: CXSpacing.md) {
+                Image(systemName: "stethoscope")
+                    .font(.title2.weight(.medium))
+                    .foregroundStyle(CX.statusPositive)
+                    .frame(width: 52, height: 52)
+                    .background(CX.statusPositive.opacity(0.08), in: Circle())
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("蒋医生")
+                        .font(CXTypography.title)
+                    Text("全科医生 · 示例家庭医生团队")
+                        .font(CXTypography.supporting)
+                        .foregroundStyle(CX.muted)
+                }
+
+                Spacer()
+            }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            SectionEyebrow(title: "咨询内容")
+            VStack(alignment: .leading, spacing: CXSpacing.sm) {
+                TextField("发生了什么？从什么时候开始？", text: $question, axis: .vertical)
+                    .lineLimit(6...12)
+                    .padding(CXSpacing.md)
+                    .background(CX.raisedSurface, in: .rect(cornerRadius: CXRadius.sm, style: .continuous))
+
+                Text("这只是咨询草稿，当前不会发送给医生。")
+                    .font(CXTypography.meta)
+                    .foregroundStyle(CX.muted)
+            }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            Button(saved ? "咨询草稿已保存" : "保存咨询草稿") {
+                store.data.bookings.append(
+                    ServiceBooking(
+                        service: "家医咨询草稿",
+                        person: store.data.person,
+                        date: .now,
+                        note: question
+                    )
+                )
+                saved = true
+            }
+            .buttonStyle(PrimaryButton())
+            .disabled(question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || saved)
+
+            if saved {
+                NavigationLink("查看我的咨询") { BookingsView() }
+                    .font(CXTypography.supporting.weight(.semibold))
+                    .frame(maxWidth: .infinity, alignment: .center)
             }
         }
         .navigationTitle("家医咨询")
+        .navigationBarTitleDisplayMode(.inline)
         .assistantFormContext(title: "咨询草稿", draft: question) { value in
             let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmed.isEmpty else { return false }
