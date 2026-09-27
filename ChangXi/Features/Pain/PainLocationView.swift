@@ -25,6 +25,7 @@ struct PainLocationView: View {
     @State private var enlarged = false
     @State private var voiceLocation = false
     @State private var voiceHint: String?
+    @State private var showPainDepthOptions = false
     @State private var assistantContextID = UUID()
 
     private var title: String {
@@ -477,13 +478,13 @@ struct PainLocationView: View {
                 }
             }
 
+            painDepthDisclosure
+
             markHistoryActions
 
             if draft.region == .head {
                 landmarks
             }
-
-            painDepthDisclosure
 
             HStack(alignment: .top, spacing: CXSpacing.sm) {
                 Image(systemName: "info.circle")
@@ -583,109 +584,128 @@ struct PainLocationView: View {
     }
 
     private var painDepthDisclosure: some View {
-        DisclosureGroup {
-            VStack(alignment: .leading, spacing: CXSpacing.md) {
-                Text("这一项只记录你的主观感觉，不代表常曦判断疼痛来自皮肤、肌肉、骨头或内部器官。")
-                    .font(CXTypography.meta)
-                    .foregroundStyle(CX.muted)
-                    .lineSpacing(4)
-
-                VStack(spacing: CXSpacing.sm) {
-                    ForEach(PainDepthImpression.allCases) { option in
-                        let selected = draft.depthImpression == option
-
-                        Button {
-                            draft.depthImpression = option
-                        } label: {
-                            HStack(spacing: CXSpacing.md) {
-                                Image(systemName: option.symbol)
-                                    .font(.body.weight(.medium))
-                                    .foregroundStyle(selected ? PainVisual.accent : CX.actionPrimary)
-                                    .frame(width: 40, height: 40)
-                                    .background(
-                                        (selected ? PainVisual.accent : CX.actionPrimary).opacity(0.08),
-                                        in: Circle()
-                                    )
-
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(option.rawValue)
-                                        .font(CXTypography.section)
-                                        .foregroundStyle(CX.ink)
-
-                                    Text(option.detail)
-                                        .font(CXTypography.meta)
-                                        .foregroundStyle(CX.muted)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-
-                                Spacer(minLength: CXSpacing.sm)
-
-                                if selected {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundStyle(PainVisual.accent)
-                                }
-                            }
-                            .padding(CXSpacing.md)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(
-                                selected ? PainVisual.accentSoft : CX.surface,
-                                in: .rect(cornerRadius: CXRadius.md, style: .continuous)
-                            )
-                            .overlay {
-                                RoundedRectangle(cornerRadius: CXRadius.md, style: .continuous)
-                                    .strokeBorder(
-                                        selected ? PainVisual.accent.opacity(0.25) : CX.separator.opacity(0.08),
-                                        lineWidth: selected ? 1 : 0.5
-                                    )
-                            }
-                        }
-                        .buttonStyle(QuietPressButton())
-                        .accessibilityAddTraits(selected ? .isSelected : [])
-                        .accessibilityIdentifier("pain-depth-\(option.rawValue)")
+        VStack(alignment: .leading, spacing: CXSpacing.sm) {
+            Button {
+                if AppConfiguration.isUITesting {
+                    showPainDepthOptions.toggle()
+                } else {
+                    withAnimation(.easeInOut(duration: 0.18)) {
+                        showPainDepthOptions.toggle()
                     }
                 }
+            } label: {
+                HStack(spacing: CXSpacing.md) {
+                    Image(systemName: "scope")
+                        .foregroundStyle(CX.actionPrimary)
+                        .frame(width: 42, height: 42)
+                        .background(CX.actionPrimary.opacity(0.08), in: Circle())
 
-                if draft.depthImpression != nil {
-                    Button("清除这一项") {
-                        draft.depthImpression = nil
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("更准确描述位置")
+                            .font(CXTypography.section)
+                            .foregroundStyle(CX.ink)
+
+                        Text(draft.depthImpression?.rawValue ?? "可选 · 感觉更靠表面、肌肉、关节骨头还是更深")
+                            .font(CXTypography.meta)
+                            .foregroundStyle(CX.muted)
+                            .lineLimit(2)
                     }
-                    .font(CXTypography.meta.weight(.semibold))
-                    .foregroundStyle(CX.muted)
-                    .frame(minHeight: 40)
+
+                    Spacer(minLength: 0)
+
+                    Image(systemName: showPainDepthOptions ? "chevron.up" : "chevron.down")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(CX.faint)
+                }
+                .padding(CXSpacing.md)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    CX.actionPrimary.opacity(0.025),
+                    in: .rect(cornerRadius: CXRadius.md, style: .continuous)
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: CXRadius.md, style: .continuous)
+                        .strokeBorder(CX.actionPrimary.opacity(0.08), lineWidth: 0.5)
                 }
             }
-            .padding(.top, CXSpacing.sm)
-        } label: {
-            HStack(spacing: CXSpacing.md) {
-                Image(systemName: "scope")
-                    .foregroundStyle(CX.actionPrimary)
-                    .frame(width: 42, height: 42)
-                    .background(CX.actionPrimary.opacity(0.08), in: Circle())
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("pain-depth-disclosure")
+            .accessibilityValue(showPainDepthOptions ? "已展开" : "已收起")
 
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("更准确描述位置")
-                        .font(CXTypography.section)
-                        .foregroundStyle(CX.ink)
-
-                    Text(draft.depthImpression?.rawValue ?? "可选 · 感觉更靠表面、肌肉、关节骨头还是更深")
+            if showPainDepthOptions {
+                VStack(alignment: .leading, spacing: CXSpacing.md) {
+                    Text("这一项只记录你的主观感觉，不代表常曦判断疼痛来自皮肤、肌肉、骨头或内部器官。")
                         .font(CXTypography.meta)
                         .foregroundStyle(CX.muted)
-                        .lineLimit(2)
-                }
+                        .lineSpacing(4)
 
-                Spacer(minLength: 0)
+                    VStack(spacing: CXSpacing.sm) {
+                        ForEach(PainDepthImpression.allCases) { option in
+                            let selected = draft.depthImpression == option
+
+                            Button {
+                                draft.depthImpression = option
+                            } label: {
+                                HStack(spacing: CXSpacing.md) {
+                                    Image(systemName: option.symbol)
+                                        .font(.body.weight(.medium))
+                                        .foregroundStyle(selected ? PainVisual.accent : CX.actionPrimary)
+                                        .frame(width: 40, height: 40)
+                                        .background(
+                                            (selected ? PainVisual.accent : CX.actionPrimary).opacity(0.08),
+                                            in: Circle()
+                                        )
+
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(option.rawValue)
+                                            .font(CXTypography.section)
+                                            .foregroundStyle(CX.ink)
+
+                                        Text(option.detail)
+                                            .font(CXTypography.meta)
+                                            .foregroundStyle(CX.muted)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+
+                                    Spacer(minLength: CXSpacing.sm)
+
+                                    if selected {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundStyle(PainVisual.accent)
+                                    }
+                                }
+                                .padding(CXSpacing.md)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(
+                                    selected ? PainVisual.accentSoft : CX.surface,
+                                    in: .rect(cornerRadius: CXRadius.md, style: .continuous)
+                                )
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: CXRadius.md, style: .continuous)
+                                        .strokeBorder(
+                                            selected ? PainVisual.accent.opacity(0.25) : CX.separator.opacity(0.08),
+                                            lineWidth: selected ? 1 : 0.5
+                                        )
+                                }
+                            }
+                            .buttonStyle(QuietPressButton())
+                            .accessibilityAddTraits(selected ? .isSelected : [])
+                            .accessibilityIdentifier("pain-depth-\(option.rawValue)")
+                        }
+                    }
+
+                    if draft.depthImpression != nil {
+                        Button("清除这一项") {
+                            draft.depthImpression = nil
+                        }
+                        .font(CXTypography.meta.weight(.semibold))
+                        .foregroundStyle(CX.muted)
+                        .frame(minHeight: 40)
+                    }
+                }
+                .padding(.horizontal, CXSpacing.xs)
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
-        }
-        .tint(CX.actionPrimary)
-        .accessibilityIdentifier("pain-depth-disclosure")
-        .padding(CXSpacing.md)
-        .background(
-            CX.actionPrimary.opacity(0.025),
-            in: .rect(cornerRadius: CXRadius.md, style: .continuous)
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: CXRadius.md, style: .continuous)
-                .strokeBorder(CX.actionPrimary.opacity(0.08), lineWidth: 0.5)
         }
     }
 
@@ -1527,6 +1547,7 @@ struct PainMarkingSurface: View {
     @Binding var marks: [PainMark]
     var editable = true
     @State private var stroke: [PainCoordinate] = []
+    @State private var activeMarkID: UUID?
 
     var body: some View {
         VStack(alignment: .leading, spacing: CXSpacing.sm) {
@@ -1557,21 +1578,52 @@ struct PainMarkingSurface: View {
                                     stroke = [point]
                                 } else if stroke.count < 500, shouldAppend(point) {
                                     stroke.append(point)
+
+                                    if stroke.count == 2 {
+                                        let mark = PainMark(
+                                            angle: angle,
+                                            kind: kind,
+                                            points: stroke
+                                        )
+                                        activeMarkID = mark.id
+                                        marks.append(mark)
+                                    } else if let activeMarkID,
+                                              let index = marks.firstIndex(where: { $0.id == activeMarkID }) {
+                                        marks[index].kind = kind
+                                        marks[index].points = stroke
+                                    }
                                 }
                             }
                             .onEnded { _ in
                                 guard editable, !stroke.isEmpty else { return }
-                                let finalKind: PainMarkKind =
-                                    (kind == .line || kind == .radiating) && stroke.count < 2
-                                        ? .point
-                                        : kind
-                                marks.append(
-                                    PainMark(
-                                        angle: angle,
-                                        kind: finalKind,
-                                        points: stroke
+
+                                if kind == .point {
+                                    marks.append(
+                                        PainMark(
+                                            angle: angle,
+                                            kind: .point,
+                                            points: stroke
+                                        )
                                     )
-                                )
+                                } else if let activeMarkID,
+                                          let index = marks.firstIndex(where: { $0.id == activeMarkID }) {
+                                    let finalKind: PainMarkKind =
+                                        (kind == .line || kind == .radiating) && stroke.count < 2
+                                            ? .point
+                                            : kind
+                                    marks[index].kind = finalKind
+                                    marks[index].points = stroke
+                                } else {
+                                    marks.append(
+                                        PainMark(
+                                            angle: angle,
+                                            kind: .point,
+                                            points: [stroke[0]]
+                                        )
+                                    )
+                                }
+
+                                activeMarkID = nil
                                 stroke = []
                             },
                         including: editable ? .all : .none
