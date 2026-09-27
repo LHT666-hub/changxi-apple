@@ -35,26 +35,11 @@ struct HomeView: View {
                     talkButton
                         .entrance(index: 2, appeared: appeared, reduceMotion: reduceMotion)
 
-                    SectionEyebrow(title: "常用")
+                    ShiyangEntryCard()
                         .entrance(index: 3, appeared: appeared, reduceMotion: reduceMotion)
 
-                    HomeQuickActions()
+                    ConstitutionEntryCard()
                         .entrance(index: 4, appeared: appeared, reduceMotion: reduceMotion)
-
-                    SectionEyebrow(
-                        title: "今天",
-                        action: Date.now.formatted(
-                            .dateTime
-                                .locale(Locale(identifier: "zh_CN"))
-                                .month()
-                                .day()
-                                .weekday(.abbreviated)
-                        )
-                    )
-                    .entrance(index: 5, appeared: appeared, reduceMotion: reduceMotion)
-
-                    TodaySummaryCard(nextPlan: nextPlan)
-                        .entrance(index: 6, appeared: appeared, reduceMotion: reduceMotion)
 
                     NavigationLink { RefinedMoonRhythmDetailView() } label: {
                         RefinedMoonPhaseCard()
@@ -66,16 +51,22 @@ struct HomeView: View {
                             }
                     }
                     .buttonStyle(.plain)
-                    .entrance(index: 7, appeared: appeared, reduceMotion: reduceMotion)
+                    .entrance(index: 5, appeared: appeared, reduceMotion: reduceMotion)
 
-                    SectionEyebrow(title: "更多照护")
-                        .entrance(index: 8, appeared: appeared, reduceMotion: reduceMotion)
+                    SectionEyebrow(
+                        title: "今天",
+                        action: Date.now.formatted(
+                            .dateTime
+                                .locale(Locale(identifier: "zh_CN"))
+                                .month()
+                                .day()
+                                .weekday(.abbreviated)
+                        )
+                    )
+                    .entrance(index: 6, appeared: appeared, reduceMotion: reduceMotion)
 
-                    ShiyangEntryCard()
-                        .entrance(index: 9, appeared: appeared, reduceMotion: reduceMotion)
-
-                    ConstitutionEntryCard()
-                        .entrance(index: 10, appeared: appeared, reduceMotion: reduceMotion)
+                    TodaySummaryCard(nextPlan: nextPlan)
+                        .entrance(index: 7, appeared: appeared, reduceMotion: reduceMotion)
 
                     DemoLabel()
                         .frame(maxWidth: .infinity)
@@ -102,10 +93,10 @@ struct HomeView: View {
     @ViewBuilder
     private var moonPool: some View {
         if store.data.doctorMessageRead {
-            MoonPoolView(state: .idle, character: false)
+            MoonPoolView(state: .idle)
         } else {
             NavigationLink { DoctorMessageView() } label: {
-                MoonPoolView(state: .doctorReply, character: false)
+                MoonPoolView(state: .doctorReply)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -164,7 +155,7 @@ private struct HomeHeader: View {
                     .minimumScaleFactor(0.82)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text("照顾自己，不用一次做很多。")
+                Text("今天也慢慢来。")
                     .font(CXTypography.body)
                     .foregroundStyle(CX.muted)
             }
@@ -185,113 +176,6 @@ private struct HomeHeader: View {
             .buttonStyle(.plain)
             .accessibilityLabel(hasUnreadMessage ? "消息中心，有新消息" : "消息中心")
         }
-    }
-}
-
-private struct HomeQuickActions: View {
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-
-    var body: some View {
-        LazyVGrid(
-            columns: CXLayout.adaptiveColumns(
-                minimum: dynamicTypeSize.isAccessibilitySize ? 230 : 150,
-                spacing: 12,
-                dynamicTypeSize: dynamicTypeSize
-            ),
-            spacing: 12
-        ) {
-            NavigationLink {
-                MetricDetailView(kind: .pressure)
-            } label: {
-                HomeQuickActionTile(
-                    icon: "heart.text.square",
-                    title: "记健康",
-                    subtitle: "血压与日常记录",
-                    tint: CX.statusCritical
-                )
-            }
-            .buttonStyle(.plain)
-
-            NavigationLink {
-                ReportImportView()
-            } label: {
-                HomeQuickActionTile(
-                    icon: "doc.viewfinder",
-                    title: "导入报告",
-                    subtitle: "拍照或选择文件",
-                    tint: CX.actionPrimary
-                )
-            }
-            .buttonStyle(.plain)
-
-            NavigationLink {
-                DoctorMessageView()
-            } label: {
-                HomeQuickActionTile(
-                    icon: "stethoscope",
-                    title: "医生消息",
-                    subtitle: "查看回复与建议",
-                    tint: CX.statusPositive
-                )
-            }
-            .buttonStyle(.plain)
-
-            NavigationLink {
-                PlanView()
-            } label: {
-                HomeQuickActionTile(
-                    icon: "calendar.badge.checkmark",
-                    title: "今日计划",
-                    subtitle: "用药与日常安排",
-                    tint: CX.statusWarning
-                )
-            }
-            .buttonStyle(.plain)
-        }
-    }
-}
-
-private struct HomeQuickActionTile: View {
-    let icon: String
-    let title: String
-    let subtitle: String
-    let tint: Color
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Image(systemName: icon)
-                    .font(.title3.weight(.medium))
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(tint)
-                    .frame(width: 42, height: 42)
-                    .background(tint.opacity(0.07), in: Circle())
-
-                Spacer()
-
-                Image(systemName: "arrow.up.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(CX.faint)
-            }
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.headline)
-
-                Text(subtitle)
-                    .font(CXTypography.micro)
-                    .foregroundStyle(CX.muted)
-                    .lineLimit(2)
-            }
-        }
-        .frame(maxWidth: .infinity, minHeight: 118, alignment: .leading)
-        .padding(CXSpacing.md)
-        .background(CX.surface, in: .rect(cornerRadius: CXRadius.md, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: CXRadius.md, style: .continuous)
-                .strokeBorder(CX.separator.opacity(0.10), lineWidth: 0.5)
-        }
-        .contentShape(Rectangle())
     }
 }
 
