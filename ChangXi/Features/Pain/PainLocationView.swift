@@ -483,6 +483,8 @@ struct PainLocationView: View {
                 landmarks
             }
 
+            painDepthDisclosure
+
             HStack(alignment: .top, spacing: CXSpacing.sm) {
                 Image(systemName: "info.circle")
                     .foregroundStyle(CX.actionPrimary)
@@ -569,6 +571,112 @@ struct PainLocationView: View {
         case .area: "像涂色一样"
         case .line: "顺着方向画"
         case .radiating: "从起点拖出去"
+        }
+    }
+
+    private var painDepthDisclosure: some View {
+        DisclosureGroup {
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                Text("这一项只记录你的主观感觉，不代表常曦判断疼痛来自皮肤、肌肉、骨头或内部器官。")
+                    .font(CXTypography.meta)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(4)
+
+                VStack(spacing: CXSpacing.sm) {
+                    ForEach(PainDepthImpression.allCases) { option in
+                        let selected = draft.depthImpression == option
+
+                        Button {
+                            draft.depthImpression = option
+                        } label: {
+                            HStack(spacing: CXSpacing.md) {
+                                Image(systemName: option.symbol)
+                                    .font(.body.weight(.medium))
+                                    .foregroundStyle(selected ? PainVisual.accent : CX.actionPrimary)
+                                    .frame(width: 40, height: 40)
+                                    .background(
+                                        (selected ? PainVisual.accent : CX.actionPrimary).opacity(0.08),
+                                        in: Circle()
+                                    )
+
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(option.rawValue)
+                                        .font(CXTypography.section)
+                                        .foregroundStyle(CX.ink)
+
+                                    Text(option.detail)
+                                        .font(CXTypography.meta)
+                                        .foregroundStyle(CX.muted)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+
+                                Spacer(minLength: CXSpacing.sm)
+
+                                if selected {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(PainVisual.accent)
+                                }
+                            }
+                            .padding(CXSpacing.md)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(
+                                selected ? PainVisual.accentSoft : CX.surface,
+                                in: .rect(cornerRadius: CXRadius.md, style: .continuous)
+                            )
+                            .overlay {
+                                RoundedRectangle(cornerRadius: CXRadius.md, style: .continuous)
+                                    .strokeBorder(
+                                        selected ? PainVisual.accent.opacity(0.25) : CX.separator.opacity(0.08),
+                                        lineWidth: selected ? 1 : 0.5
+                                    )
+                            }
+                        }
+                        .buttonStyle(QuietPressButton())
+                        .accessibilityAddTraits(selected ? .isSelected : [])
+                        .accessibilityIdentifier("pain-depth-\(option.rawValue)")
+                    }
+                }
+
+                if draft.depthImpression != nil {
+                    Button("清除这一项") {
+                        draft.depthImpression = nil
+                    }
+                    .font(CXTypography.meta.weight(.semibold))
+                    .foregroundStyle(CX.muted)
+                    .frame(minHeight: 40)
+                }
+            }
+            .padding(.top, CXSpacing.sm)
+        } label: {
+            HStack(spacing: CXSpacing.md) {
+                Image(systemName: "scope")
+                    .foregroundStyle(CX.actionPrimary)
+                    .frame(width: 42, height: 42)
+                    .background(CX.actionPrimary.opacity(0.08), in: Circle())
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("更准确描述位置")
+                        .font(CXTypography.section)
+                        .foregroundStyle(CX.ink)
+
+                    Text(draft.depthImpression?.rawValue ?? "可选 · 感觉更靠表面、肌肉、关节骨头还是更深")
+                        .font(CXTypography.meta)
+                        .foregroundStyle(CX.muted)
+                        .lineLimit(2)
+                }
+
+                Spacer(minLength: 0)
+            }
+        }
+        .tint(CX.actionPrimary)
+        .padding(CXSpacing.md)
+        .background(
+            CX.actionPrimary.opacity(0.025),
+            in: .rect(cornerRadius: CXRadius.md, style: .continuous)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: CXRadius.md, style: .continuous)
+                .strokeBorder(CX.actionPrimary.opacity(0.08), lineWidth: 0.5)
         }
     }
 
@@ -949,6 +1057,14 @@ struct PainLocationView: View {
                     title: "疼痛感觉",
                     value: draft.sensation
                 )
+
+                if let depth = draft.depthImpression {
+                    Divider().overlay(CX.separator.opacity(0.12))
+                    PainReviewRow(
+                        title: "感觉层次",
+                        value: depth.rawValue
+                    )
+                }
 
                 if !draft.note.isEmpty {
                     Divider().overlay(CX.separator.opacity(0.12))
@@ -1634,6 +1750,12 @@ private struct PainHistoryView: View {
                                     .font(CXTypography.supporting)
                                     .foregroundStyle(CX.muted)
 
+                                if let depth = record.depthImpression {
+                                    Text(depth.rawValue)
+                                        .font(CXTypography.micro.weight(.semibold))
+                                        .foregroundStyle(PainVisual.accent)
+                                }
+
                                 Text(record.date.formatted(date: .abbreviated, time: .shortened))
                                     .font(CXTypography.micro)
                                     .foregroundStyle(CX.faint)
@@ -1710,6 +1832,28 @@ private struct PainHistoryDetailView: View {
                 LegacySurfaceMarkSummary(
                     count: record.marks.filter(\.hasSurfaceLocation).count
                 )
+            }
+
+            if let depth = record.depthImpression {
+                SectionEyebrow(title: "更准确描述位置")
+                HStack(spacing: CXSpacing.md) {
+                    Image(systemName: depth.symbol)
+                        .foregroundStyle(PainVisual.accent)
+                        .frame(width: 40, height: 40)
+                        .background(PainVisual.accentSoft, in: Circle())
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(depth.rawValue)
+                            .font(CXTypography.section)
+                        Text(depth.detail)
+                            .font(CXTypography.meta)
+                            .foregroundStyle(CX.muted)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+                .padding(CXSpacing.md)
+                .cxContentSurface(cornerRadius: CXRadius.md)
             }
 
             if !record.note.isEmpty {
