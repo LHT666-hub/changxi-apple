@@ -784,20 +784,22 @@ struct SectionEyebrow: View {
     var body: some View {
         if dynamicTypeSize >= .xxxLarge {
             VStack(alignment: .leading, spacing: 4) {
-                Text(title).font(.title3.weight(.semibold))
+                Text(title)
+                    .font(CXTypography.section)
                 if let action {
                     Text(action)
-                        .font(.subheadline)
+                        .font(CXTypography.meta)
                         .foregroundStyle(CX.muted)
                 }
             }
         } else {
             HStack(alignment: .firstTextBaseline) {
-                Text(title).font(.title3.weight(.semibold))
+                Text(title)
+                    .font(CXTypography.section)
                 Spacer()
                 if let action {
                     Text(action)
-                        .font(.subheadline)
+                        .font(CXTypography.meta)
                         .foregroundStyle(CX.muted)
                 }
             }
@@ -808,7 +810,7 @@ struct SectionEyebrow: View {
 struct BrandFooter: View {
     var body: some View {
         Label("让每一个平凡的日子，都有月光相伴", systemImage: "moon.fill")
-            .font(.footnote)
+            .font(CXTypography.meta)
             .foregroundStyle(CX.muted)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
@@ -818,7 +820,7 @@ struct BrandFooter: View {
 struct DemoLabel: View {
     var body: some View {
         Label("体验模式 · 示例数据仅保存在本机", systemImage: "iphone")
-            .font(.caption)
+            .font(CXTypography.micro)
             .foregroundStyle(CX.muted)
             .accessibilityIdentifier("demo-label")
     }
