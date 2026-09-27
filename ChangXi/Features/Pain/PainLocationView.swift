@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 enum PainVisual {
     static let accent = Color(red: 0.66, green: 0.36, blue: 0.34)
@@ -1533,6 +1534,54 @@ private struct PainToolPreview: View {
     }
 }
 
+private struct PainTouchCapture: UIViewRepresentable {
+    let onBegan: (CGPoint, CGSize) -> Void
+    let onMoved: (CGPoint, CGSize) -> Void
+    let onEnded: () -> Void
+
+    func makeUIView(context: Context) -> PainTouchView {
+        let view = PainTouchView()
+        view.backgroundColor = .clear
+        view.isOpaque = false
+        view.isMultipleTouchEnabled = false
+        view.isAccessibilityElement = false
+        return view
+    }
+
+    func updateUIView(_ view: PainTouchView, context: Context) {
+        view.onBegan = onBegan
+        view.onMoved = onMoved
+        view.onEnded = onEnded
+    }
+}
+
+private final class PainTouchView: UIView {
+    var onBegan: ((CGPoint, CGSize) -> Void)?
+    var onMoved: ((CGPoint, CGSize) -> Void)?
+    var onEnded: (() -> Void)?
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        onBegan?(touch.location(in: self), bounds.size)
+    }
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        onMoved?(touch.location(in: self), bounds.size)
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        onEnded?()
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        // A parent scroll view may cancel delivery once it recognizes a pan.
+        // The mark already exists from touchesBegan, so cancellation only
+        // finalizes it instead of silently discarding the user's stroke.
+        onEnded?()
+    }
+}
+
 struct PainMarkingSurface: View {
     let region: PainRegion
     let angle: PainAngle
@@ -1558,58 +1607,20 @@ struct PainMarkingSurface: View {
                         .allowsHitTesting(false)
                     }
                     .contentShape(Rectangle())
-                    .highPriorityGesture(
-                        DragGesture(minimumDistance: 0)
-                            .onChanged { value in
-                                guard editable else { return }
-                                let point = PainCoordinate(
-                                    x: min(1, max(0, value.location.x / geo.size.width)),
-                                    y: min(1, max(0, value.location.y / geo.size.height))
-                                )
 
-                                if activeMarkID == nil {
-                                    stroke = [point]
-                                    let mark = PainMark(
-                                        angle: angle,
-                                        kind: kind,
-                                        points: stroke
-                                    )
-                                    activeMarkID = mark.id
-                                    marks.append(mark)
-                                    return
-                                }
-
-                                guard let activeMarkID,
-                                      let index = marks.firstIndex(where: { $0.id == activeMarkID }) else {
-                                    return
-                                }
-
-                                if kind == .point {
-                                    stroke = [point]
-                                } else if stroke.count < 500, shouldAppend(point) {
-                                    stroke.append(point)
-                                }
-
-                                marks[index].kind = kind
-                                marks[index].points = stroke
-                            }
-                            .onEnded { _ in
-                                guard editable else { return }
-
-                                if let activeMarkID,
-                                   let index = marks.firstIndex(where: { $0.id == activeMarkID }) {
-                                    let finalKind: PainMarkKind =
-                                        (kind == .line || kind == .radiating) && marks[index].points.count < 2
-                                            ? .point
-                                            : kind
-                                    marks[index].kind = finalKind
-                                }
-
-                                activeMarkID = nil
-                                stroke = []
+                    if editable {
+                        PainTouchCapture(
+                            onBegan: { point, size in
+                                beginStroke(at: point, in: size)
                             },
-                        including: editable ? .all : .none
-                    )
+                            onMoved: { point, size in
+                                moveStroke(to: point, in: size)
+                            },
+                            onEnded: {
+                                finishStroke()
+                            }
+                        )
+                    }
                 }
                 .aspectRatio(1, contentMode: .fit)
 
@@ -1657,9 +1668,73 @@ struct PainMarkingSurface: View {
         }
         .sensoryFeedback(.impact(weight: .light), trigger: marks.count)
         .onChange(of: kind) { _, _ in
-            activeMarkID = nil
-            stroke = []
+            finishStroke()
         }
+        .onChange(of: angle) { _, _ in
+            finishStroke()
+        }
+    }
+
+    private func normalized(_ point: CGPoint, in size: CGSize) -> PainCoordinate {
+        PainCoordinate(
+            x: min(1, max(0, point.x / max(size.width, 1))),
+            y: min(1, max(0, point.y / max(size.height, 1)))
+        )
+    }
+
+    private func beginStroke(at point: CGPoint, in size: CGSize) {
+        // A fresh physical touch always owns a fresh mark. Finalize any stale
+        // interrupted stroke first so an ancestor ScrollView can never merge
+        // two user gestures into one record.
+        finishStroke()
+
+        let coordinate = normalized(point, in: size)
+        stroke = [coordinate]
+
+        let mark = PainMark(
+            angle: angle,
+            kind: kind,
+            points: stroke
+        )
+        activeMarkID = mark.id
+        marks.append(mark)
+    }
+
+    private func moveStroke(to point: CGPoint, in size: CGSize) {
+        guard let activeMarkID,
+              let index = marks.firstIndex(where: { $0.id == activeMarkID }) else {
+            beginStroke(at: point, in: size)
+            return
+        }
+
+        let coordinate = normalized(point, in: size)
+
+        if kind == .point {
+            stroke = [coordinate]
+        } else if stroke.count < 500, shouldAppend(coordinate) {
+            stroke.append(coordinate)
+        }
+
+        marks[index].kind = kind
+        marks[index].points = stroke
+    }
+
+    private func finishStroke() {
+        guard let activeMarkID else {
+            stroke = []
+            return
+        }
+
+        if let index = marks.firstIndex(where: { $0.id == activeMarkID }) {
+            let finalKind: PainMarkKind =
+                (kind == .line || kind == .radiating) && marks[index].points.count < 2
+                    ? .point
+                    : kind
+            marks[index].kind = finalKind
+        }
+
+        self.activeMarkID = nil
+        stroke = []
     }
 
     private func shouldAppend(_ point: PainCoordinate) -> Bool {

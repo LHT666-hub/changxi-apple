@@ -331,7 +331,9 @@ final class FlowTests: XCTestCase {
                 forDuration: 0.12,
                 thenDragTo: radiatingSurface.coordinate(withNormalizedOffset: CGVector(dx: 0.62, dy: 0.48))
             )
-        XCTAssertTrue(app.staticTexts["已标记 3 处"].waitForExistence(timeout: 3))
+        guard app.staticTexts["已标记 3 处"].waitForExistence(timeout: 5) else {
+            return XCTFail("第三笔放射标记没有写入，停止后续滚动以保留现场")
+        }
 
         let depthDisclosure = app.descendants(matching: .any)["pain-depth-disclosure"].firstMatch
         tapWhenHittable(depthDisclosure, in: app)
@@ -475,9 +477,13 @@ final class FlowTests: XCTestCase {
         app.buttons["食材备好了"].tap()
         let nextCookingStep = app.buttons["next-cooking-step"]
         XCTAssertTrue(nextCookingStep.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.otherElements["cooking-storyboard-step-1"].waitForExistence(timeout: 5))
+        XCTAssertTrue(
+            app.descendants(matching: .any)["cooking-storyboard-step-1"].firstMatch.waitForExistence(timeout: 5)
+        )
         tapWhenHittable(nextCookingStep, in: app)
-        XCTAssertTrue(app.otherElements["cooking-storyboard-step-2"].waitForExistence(timeout: 5))
+        XCTAssertTrue(
+            app.descendants(matching: .any)["cooking-storyboard-step-2"].firstMatch.waitForExistence(timeout: 5)
+        )
         capture("22-shiyang-cooking")
     }
 

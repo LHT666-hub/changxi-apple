@@ -1786,7 +1786,10 @@ private struct ShiyangCookingGuideView: View {
                     Capsule()
                         .fill(index <= stepIndex ? SY.apricot : SY.apricot.opacity(0.16))
                         .frame(height: 6)
-                        .animation(.spring(duration: 0.35), value: stepIndex)
+                        .animation(
+                            AppConfiguration.isUITesting ? nil : .spring(duration: 0.35),
+                            value: stepIndex
+                        )
                 }
             }
             .accessibilityLabel("已进行到第\(stepIndex + 1)步，共\(recipe.steps.count)步")
@@ -1806,7 +1809,7 @@ private struct ShiyangCookingGuideView: View {
             .frame(height: 330)
             .id("\(stepIndex)-\(sceneReplay)")
             .transition(
-                reduceMotion
+                (reduceMotion || AppConfiguration.isUITesting)
                     ? .opacity
                     : .asymmetric(
                         insertion: .move(edge: .trailing).combined(with: .opacity),
@@ -1922,21 +1925,39 @@ private struct ShiyangCookingGuideView: View {
 
     private func previousStep() {
         guard stepIndex > 0 else { return }
-        withAnimation(.spring(duration: 0.4, bounce: 0.08)) { stepIndex -= 1 }
+
+        if AppConfiguration.isUITesting {
+            stepIndex -= 1
+        } else {
+            withAnimation(.spring(duration: 0.4, bounce: 0.08)) { stepIndex -= 1 }
+        }
         resetTimer()
     }
 
     private func nextStep() {
         timerRunning = false
+
         if stepIndex < recipe.steps.count - 1 {
-            withAnimation(.spring(duration: 0.4, bounce: 0.08)) { stepIndex += 1 }
+            if AppConfiguration.isUITesting {
+                stepIndex += 1
+            } else {
+                withAnimation(.spring(duration: 0.4, bounce: 0.08)) { stepIndex += 1 }
+            }
+            print("[ShiyangCooking] advanced to step \(stepIndex + 1)")
             resetTimer()
         } else {
             MoonHaptics.shared.play(success: true, enabled: store.data.haptics)
-            withAnimation(.spring(duration: 0.45, bounce: 0.10)) {
+
+            if AppConfiguration.isUITesting {
                 showingIngredients = true
                 stepIndex = 0
                 ingredientsArrived = false
+            } else {
+                withAnimation(.spring(duration: 0.45, bounce: 0.10)) {
+                    showingIngredients = true
+                    stepIndex = 0
+                    ingredientsArrived = false
+                }
             }
         }
     }
@@ -2008,7 +2029,12 @@ private struct ShiyangCookingStoryboard: View {
     }
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion)) { context in
+        TimelineView(
+            .animation(
+                minimumInterval: 1.0 / 30.0,
+                paused: reduceMotion || AppConfiguration.isUITesting
+            )
+        ) { context in
             storyboardFrame(time: context.date.timeIntervalSinceReferenceDate)
         }
         .clipShape(.rect(cornerRadius: 30, style: .continuous))
@@ -2025,7 +2051,9 @@ private struct ShiyangCookingStoryboard: View {
     private func storyboardFrame(time: TimeInterval) -> some View {
         GeometryReader { proxy in
             let size = proxy.size
-            let beat = reduceMotion ? CGFloat.zero : CGFloat(sin(time * 3.2))
+            let beat = (reduceMotion || AppConfiguration.isUITesting)
+                ? CGFloat.zero
+                : CGFloat(sin(time * 3.2))
 
             ZStack {
                 LinearGradient(
