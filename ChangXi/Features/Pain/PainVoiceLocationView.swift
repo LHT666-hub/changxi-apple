@@ -90,9 +90,9 @@ struct PainVoiceLocationView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 VStack(alignment: .leading, spacing: CXSpacing.xs) {
-                    Text("疼痛定位")
+                    Text("身体感受 · 语音定位")
                         .font(CXTypography.micro.weight(.semibold))
-                        .foregroundStyle(CX.statusCritical)
+                        .foregroundStyle(PainVisual.accent)
                         .tracking(0.6)
                     Text("说给常曦听，我先帮你找位置")
                         .font(CXTypography.display)
@@ -124,12 +124,27 @@ struct PainVoiceLocationView: View {
                         .disabled(speech.isRecording || speech.isStarting || speech.isTranscribing)
                     Button {
                         speaker.stopSpeaking(at: .immediate)
-                        if speech.isRecording || speech.isStarting { speech.stop() }
-                        else { suggestion = nil; candidateMarks = []; Task { await speech.start() } }
+                        if speech.isRecording || speech.isStarting {
+                            speech.stop()
+                        } else {
+                            suggestion = nil
+                            candidateMarks = []
+                            Task { await speech.start() }
+                        }
                     } label: {
-                        Label(speech.isRecording ? "说完了" : speech.isStarting ? "正在准备麦克风…" : "说给常曦听", systemImage: speech.isRecording ? "stop.circle.fill" : "mic.fill")
-                            .frame(maxWidth: .infinity, minHeight: 48)
-                    }.buttonStyle(.borderedProminent).disabled(speech.isTranscribing)
+                        Label(
+                            speech.isRecording
+                                ? "说完了"
+                                : speech.isStarting
+                                    ? "正在准备麦克风…"
+                                    : "说给常曦听",
+                            systemImage: speech.isRecording ? "stop.circle.fill" : "mic.fill"
+                        )
+                        .frame(maxWidth: .infinity, minHeight: 48)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(PainVisual.accent)
+                    .disabled(speech.isTranscribing)
                     if speech.isRecording {
                         Text("正在听，点“说完了”结束；文字可以在结束后修改。")
                             .font(CXTypography.meta)
@@ -155,29 +170,64 @@ struct PainVoiceLocationView: View {
                 .padding(CXSpacing.lg)
                 .cxContentSurface(cornerRadius: CXRadius.lg)
                 if let suggestion {
-                    Label("待你确认 · \(suggestion.name)", systemImage: "questionmark.circle")
-                        .font(.headline).foregroundStyle(CX.blue)
-                    PainMarkingSurface(region: suggestion.region, angle: suggestion.angle, kind: .point, marks: Binding(
-                        get: { candidateMarks },
-                        set: { value in
-                            // A new tap moves the candidate; it does not create another confirmed site.
-                            candidateMarks = value.last.map { mark in
-                                var adjusted = mark
-                                adjusted.name = "手动调整的位置"
-                                return [adjusted]
-                            } ?? []
+                    VStack(alignment: .leading, spacing: CXSpacing.md) {
+                        SectionEyebrow(title: "常曦建议的位置", action: "请你确认")
+
+                        HStack(spacing: CXSpacing.md) {
+                            Image(systemName: "location.circle.fill")
+                                .foregroundStyle(PainVisual.accent)
+                                .frame(width: 42, height: 42)
+                                .background(PainVisual.accentSoft, in: Circle())
+
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(suggestion.name)
+                                    .font(CXTypography.title)
+                                Text("\(suggestion.region.rawValue) · \(suggestion.angle.rawValue)")
+                                    .font(CXTypography.meta)
+                                    .foregroundStyle(CX.muted)
+                            }
+
+                            Spacer()
                         }
-                    ))
-                    Button("对，就是这里") {
-                        guard text == recognizedText, !candidateMarks.isEmpty else { return }
-                        confirm(suggestion.region, suggestion.angle, candidateMarks)
-                        dismiss()
-                    }.buttonStyle(PrimaryButton())
-                    Button("不是，我再说一次") {
-                        self.suggestion = nil; candidateMarks = []
-                        question = "好，我们重新来。请说你身体哪一边、哪个地方疼。"
-                    }.frame(maxWidth: .infinity, minHeight: 48)
+
+                        PainMarkingSurface(
+                            region: suggestion.region,
+                            angle: suggestion.angle,
+                            kind: .point,
+                            marks: Binding(
+                                get: { candidateMarks },
+                                set: { value in
+                                    candidateMarks = value.last.map { mark in
+                                        var adjusted = mark
+                                        adjusted.name = "手动调整的位置"
+                                        return [adjusted]
+                                    } ?? []
+                                }
+                            )
+                        )
+
+                        HStack(spacing: CXSpacing.sm) {
+                            Button("不是，我再说一次") {
+                                self.suggestion = nil
+                                candidateMarks = []
+                                question = "好，我们重新来。请说你身体哪一边、哪个地方疼。"
+                            }
+                            .font(CXTypography.supporting.weight(.semibold))
+                            .frame(maxWidth: .infinity, minHeight: 48)
+                            .buttonStyle(.bordered)
+
+                            Button("对，就是这里") {
+                                guard text == recognizedText, !candidateMarks.isEmpty else { return }
+                                confirm(suggestion.region, suggestion.angle, candidateMarks)
+                                dismiss()
+                            }
+                            .buttonStyle(PrimaryButton())
+                        }
+                    }
+                    .padding(CXSpacing.lg)
+                    .cxContentSurface(cornerRadius: CXRadius.lg)
                 }
+
                 Button { readQuestion() } label: {
                     Label("听常曦读出来", systemImage: "speaker.wave.2")
                 }
