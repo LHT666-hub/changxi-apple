@@ -7,7 +7,7 @@ struct RootView: View {
     @State private var selectedTab = RootTab.home
     @State private var showGeneralChat = false
     @State private var isKeyboardVisible = false
-    @State private var showLaunchExperience = !AppConfiguration.isUITesting
+    @State private var showLaunchExperience = !AppConfiguration.isUITesting || AppConfiguration.isLaunchTesting
     /// 认证会话：与 `store` 同为 `@MainActor @Observable`，在此创建并注入环境，
     /// 供 `DemoAuthView` / `ChatView` / `ProfileView` 等下游视图通过
     /// `@Environment(AuthSession.self)` 读取。
@@ -96,7 +96,9 @@ struct RootView: View {
         }
         .task {
             if showLaunchExperience {
-                try? await Task.sleep(nanoseconds: 1_650_000_000)
+                try? await Task.sleep(
+                    nanoseconds: AppConfiguration.isLaunchTesting ? 2_500_000_000 : 1_650_000_000
+                )
                 withAnimation(.easeOut(duration: 0.42)) {
                     showLaunchExperience = false
                 }
@@ -252,6 +254,7 @@ private struct ChangXiLaunchExperience: View {
         .foregroundStyle(CX.ink)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("常曦正在启动")
+        .accessibilityIdentifier("launch-experience")
         .onAppear {
             guard !reduceMotion else {
                 moonRevealed = true
