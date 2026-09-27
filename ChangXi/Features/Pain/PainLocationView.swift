@@ -669,6 +669,7 @@ struct PainLocationView: View {
             }
         }
         .tint(CX.actionPrimary)
+        .accessibilityIdentifier("pain-depth-disclosure")
         .padding(CXSpacing.md)
         .background(
             CX.actionPrimary.opacity(0.025),
