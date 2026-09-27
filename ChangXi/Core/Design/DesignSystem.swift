@@ -749,32 +749,6 @@ struct MoonPhaseCard: View {
     }
 }
 
-struct MoonRhythmDetailView: View {
-    private let phase = LunarPhase.today
-
-    var body: some View {
-        Page(illustrated: true) {
-            VStack(spacing: 12) {
-                MoonDisc(phase: Double(phase.lunarDay - 1) / 29.53)
-                    .frame(width: 108, height: 108).padding(12)
-                Text(phase.phaseName).font(CXTypography.display)
-                Text("\(phase.dateLabel) · \(phase.rhythmLabel)").foregroundStyle(CX.muted)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-
-            Card {
-                Text("月相节律").font(.title2.weight(.semibold))
-                Text("常曦用月相表达一天一天积累的过程。月光的盈亏只是一种温柔的时间提示，不用于判断健康好坏。")
-                    .lineSpacing(6)
-                NavigationLink("查看今日计划") { PlanView() }
-                    .buttonStyle(PrimaryButton())
-            }
-        }
-        .navigationTitle("今日月相")
-    }
-}
-
 struct SectionEyebrow: View {
     let title: String
     var action: String?

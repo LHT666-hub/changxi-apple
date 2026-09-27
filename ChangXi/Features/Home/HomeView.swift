@@ -258,16 +258,8 @@ private struct RefinedMoonRhythmDetailView: View {
             }
             .frame(maxWidth: .infinity)
 
-            Card {
-                Text("月相节律")
-                    .font(.title2.weight(.semibold))
-
-                Text("常曦用月光的盈亏表达时间缓慢推进的过程。它是一种视觉节律，也是一种温柔的时间提示，不用于判断健康好坏。")
-                    .lineSpacing(6)
-
-                NavigationLink("查看今日计划") { PlanView() }
-                    .buttonStyle(PrimaryButton())
-            }
+            NavigationLink("查看今日计划") { PlanView() }
+                .buttonStyle(PrimaryButton())
         }
         .navigationTitle("今日月相")
     }
@@ -279,10 +271,6 @@ private struct RefinedMoonRhythmDetailView: View {
 
 private struct MoonDetailHero: View {
     let phase: Double
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var breathing = false
-    @State private var rotation = -22.0
 
     var body: some View {
         ZStack {
@@ -301,23 +289,6 @@ private struct MoonDetailHero: View {
                 )
                 .frame(width: 270, height: 270)
                 .blur(radius: 10)
-                .scaleEffect(reduceMotion ? 1 : (breathing ? 1.04 : 0.97))
-
-            Circle()
-                .stroke(
-                    AngularGradient(
-                        colors: [
-                            .clear,
-                            .white.opacity(0.60),
-                            CX.brandMoonlight.opacity(0.24),
-                            .clear
-                        ],
-                        center: .center
-                    ),
-                    style: StrokeStyle(lineWidth: 1, lineCap: .round)
-                )
-                .frame(width: 232, height: 232)
-                .rotationEffect(.degrees(rotation))
 
             MoonDisc(phase: phase)
                 .frame(width: 180, height: 180)
@@ -325,17 +296,6 @@ private struct MoonDetailHero: View {
                 .shadow(color: CX.brandMoonlight.opacity(0.22), radius: 24, y: 10)
         }
         .frame(height: 250)
-        .onAppear {
-            guard !reduceMotion else { return }
-
-            withAnimation(.easeInOut(duration: 4.8).repeatForever(autoreverses: true)) {
-                breathing = true
-            }
-
-            withAnimation(.linear(duration: 30).repeatForever(autoreverses: false)) {
-                rotation = 338
-            }
-        }
         .accessibilityHidden(true)
     }
 }

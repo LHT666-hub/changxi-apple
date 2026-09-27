@@ -40,29 +40,6 @@ enum MoonPoolState: String, CaseIterable, Identifiable {
         }
     }
 
-    var glowStrength: Double {
-        switch self {
-        case .idle: 0.86
-        case .listening: 1.10
-        case .thinking: 0.98
-        case .responding: 1.06
-        case .success: 1.14
-        case .notification, .doctorReply: 1.08
-        case .quietAlert: 0.82
-        }
-    }
-
-    var orbitSpeed: Double {
-        switch self {
-        case .thinking: 0.92
-        case .listening: 0.72
-        case .responding: 0.60
-        case .success: 0.42
-        case .notification, .doctorReply: 0.48
-        case .idle: 0.30
-        case .quietAlert: 0
-        }
-    }
 }
 
 /// 常曦 UI 2.0 的核心月池视觉。
@@ -76,7 +53,6 @@ struct MoonPoolView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.scenePhase) private var scenePhase
-    @Environment(\.colorScheme) private var colorScheme
 
     @State private var entered = Date.now
 
@@ -84,13 +60,7 @@ struct MoonPoolView: View {
         reduceMotion || AppConfiguration.isUITesting || state == .quietAlert || scenePhase != .active
     }
 
-    private var moonSize: CGFloat { compact ? 94 : 142 }
     private var stageHeight: CGFloat { compact ? 200 : 292 }
-
-    private var lunarPhase: Double {
-        let day = LunarPhase.today.lunarDay
-        return min(max(Double(day - 1) / 29.53, 0), 1)
-    }
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -140,160 +110,6 @@ struct MoonPoolView: View {
                 mote.fill(Path(ellipseIn: rect), with: .color(.white.opacity(pulse)))
             }
         }
-        .allowsHitTesting(false)
-    }
-
-    private func halo(time: TimeInterval) -> some View {
-        let breath = paused ? 1 : 1 + sin(time * 0.52) * 0.035
-        let voice = state == .listening ? min(max(amplitude, 0), 1) * 0.12 : 0
-
-        return ZStack {
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            .white.opacity(reduceTransparency ? 0.04 : 0.30 * state.glowStrength),
-                            CX.moonlight.opacity(reduceTransparency ? 0.02 : 0.16 * state.glowStrength),
-                            state.accent.opacity(reduceTransparency ? 0.01 : 0.055 * state.glowStrength),
-                            .clear
-                        ],
-                        center: .center,
-                        startRadius: moonSize * 0.14,
-                        endRadius: moonSize * 0.92
-                    )
-                )
-                .frame(width: moonSize * 2.02, height: moonSize * 2.02)
-                .blur(radius: compact ? 8 : 12)
-
-            Circle()
-                .stroke(
-                    LinearGradient(
-                        colors: [
-                            .white.opacity(0.34),
-                            state.accent.opacity(0.10),
-                            .clear
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 0.7
-                )
-                .frame(width: moonSize * 1.42, height: moonSize * 1.42)
-                .opacity(reduceTransparency ? 0.25 : 0.72)
-        }
-        .scaleEffect(breath + voice)
-        .offset(y: compact ? -58 : -88)
-        .blendMode(.plusLighter)
-        .allowsHitTesting(false)
-    }
-
-    private func orbit(time: TimeInterval) -> some View {
-        let rotation = paused ? 18 : time * 18 * state.orbitSpeed
-        let secondary = paused ? 110 : -time * 11 * max(state.orbitSpeed, 0.18)
-
-        return ZStack {
-            Circle()
-                .trim(from: 0.06, to: state == .thinking ? 0.82 : 0.58)
-                .stroke(
-                    AngularGradient(
-                        colors: [
-                            .clear,
-                            .white.opacity(0.54),
-                            state.accent.opacity(0.26),
-                            .clear
-                        ],
-                        center: .center
-                    ),
-                    style: StrokeStyle(lineWidth: state == .thinking ? 1.15 : 0.8, lineCap: .round)
-                )
-                .rotationEffect(.degrees(rotation))
-
-            Circle()
-                .trim(from: 0.54, to: 0.86)
-                .stroke(
-                    LinearGradient(
-                        colors: [.clear, .white.opacity(0.26), .clear],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    ),
-                    style: StrokeStyle(lineWidth: 0.55, lineCap: .round)
-                )
-                .rotationEffect(.degrees(secondary))
-
-            if state == .notification || state == .doctorReply || state == .success {
-                Circle()
-                    .fill(state.accent.opacity(0.88))
-                    .frame(width: compact ? 3 : 4, height: compact ? 3 : 4)
-                    .shadow(color: state.accent.opacity(0.62), radius: 5)
-                    .offset(y: -moonSize * 0.73)
-                    .rotationEffect(.degrees(rotation * 1.24 + 28))
-            }
-        }
-        .frame(width: moonSize * 1.52, height: moonSize * 1.52)
-        .offset(y: compact ? -58 : -88)
-        .opacity(state == .quietAlert ? 0.30 : 0.82)
-        .allowsHitTesting(false)
-    }
-
-    private func moon(time: TimeInterval) -> some View {
-        let float = paused ? 0 : sin(time * 0.63) * (compact ? 1.8 : 3.0)
-        let voiceScale = state == .listening ? 1 + min(max(amplitude, 0), 1) * 0.035 : 1
-        let thinkingTilt = state == .thinking && !paused ? sin(time * 0.8) * 0.65 : 0
-
-        return MoonDisc(phase: lunarPhase)
-            .frame(width: moonSize, height: moonSize)
-            .scaleEffect(voiceScale)
-            .rotationEffect(.degrees(thinkingTilt))
-            .offset(y: (compact ? -58 : -88) + float)
-            .overlay {
-                if state == .quietAlert {
-                    Circle()
-                        .strokeBorder(CX.coral.opacity(0.34), lineWidth: 1.4)
-                        .frame(width: moonSize, height: moonSize)
-                        .offset(y: (compact ? -58 : -88) + float)
-                }
-            }
-            .shadow(color: .white.opacity(colorScheme == .dark ? 0.16 : 0.26), radius: compact ? 8 : 12, y: -2)
-            .shadow(color: state.accent.opacity(0.18 * state.glowStrength), radius: compact ? 14 : 22, y: 8)
-            .allowsHitTesting(false)
-    }
-
-    private func reflection(time: TimeInterval) -> some View {
-        let shimmer = paused ? 0.54 : 0.42 + normalizedSine(time * 0.72) * 0.22
-
-        return ZStack {
-            Ellipse()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            .white.opacity(reduceTransparency ? 0.04 : Double(shimmer) * 0.28),
-                            CX.moonlight.opacity(reduceTransparency ? 0.02 : Double(shimmer) * 0.14),
-                            .clear
-                        ],
-                        center: .center,
-                        startRadius: 0,
-                        endRadius: compact ? 64 : 100
-                    )
-                )
-                .frame(width: compact ? 154 : 236, height: compact ? 30 : 44)
-                .blur(radius: compact ? 5 : 8)
-
-            RoundedRectangle(cornerRadius: 1)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            .clear,
-                            .white.opacity(reduceTransparency ? 0.04 : 0.22),
-                            .clear
-                        ],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .frame(width: compact ? 106 : 164, height: 1)
-                .blur(radius: 0.4)
-        }
-        .offset(y: compact ? -26 : -35)
         .allowsHitTesting(false)
     }
 
@@ -474,55 +290,6 @@ struct MoonPoolView: View {
 
     private func normalizedSine(_ value: Double) -> CGFloat {
         CGFloat((sin(value) + 1) / 2)
-    }
-}
-
-private enum CharacterRestPhase: CaseIterable {
-    case still, inhale, hover, exhale
-
-    var offset: CGFloat {
-        switch self {
-        case .still: 0
-        case .inhale: -1.5
-        case .hover: -3.5
-        case .exhale: -1
-        }
-    }
-
-    var scaleX: CGFloat {
-        switch self {
-        case .still: 1
-        case .inhale: 0.997
-        case .hover: 1.002
-        case .exhale: 1
-        }
-    }
-
-    var scaleY: CGFloat {
-        switch self {
-        case .still: 1
-        case .inhale: 1.006
-        case .hover: 1.011
-        case .exhale: 1.003
-        }
-    }
-
-    var rotation: Double {
-        switch self {
-        case .still: 0
-        case .inhale: -0.22
-        case .hover: 0.26
-        case .exhale: 0.08
-        }
-    }
-
-    var animation: Animation {
-        switch self {
-        case .still: .easeInOut(duration: 0.9)
-        case .inhale: .easeInOut(duration: 1.35)
-        case .hover: .easeInOut(duration: 1.65)
-        case .exhale: .easeInOut(duration: 1.2)
-        }
     }
 }
 
