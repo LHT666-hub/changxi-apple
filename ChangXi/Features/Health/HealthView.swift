@@ -476,9 +476,9 @@ private struct BMIRangeRow: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(classification.rawValue)
-                    .font(.headline)
+                    .font(CXTypography.section)
                 Text(classification.rangeDescription)
-                    .font(.subheadline)
+                    .font(CXTypography.supporting)
                     .monospacedDigit()
                     .foregroundStyle(CX.muted)
             }
@@ -487,7 +487,7 @@ private struct BMIRangeRow: View {
 
             if isCurrent {
                 Text("当前")
-                    .font(.caption.weight(.semibold))
+                    .font(CXTypography.micro.weight(.semibold))
                     .foregroundStyle(classification.tint)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
@@ -539,7 +539,7 @@ private struct MetricSummaryTile: View {
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(tint)
                 Text(kind.rawValue)
-                    .font(.subheadline.weight(.semibold))
+                    .font(CXTypography.supporting.weight(.semibold))
                 Spacer()
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
@@ -547,7 +547,7 @@ private struct MetricSummaryTile: View {
             }
 
             Text(value)
-                .font(.title2.weight(.bold))
+                .font(CXTypography.title)
                 .fontDesign(.rounded)
                 .monospacedDigit()
                 .lineLimit(1)
@@ -555,7 +555,7 @@ private struct MetricSummaryTile: View {
                 .contentTransition(.numericText())
 
             Text(kind.unit)
-                .font(.caption)
+                .font(CXTypography.micro)
                 .foregroundStyle(CX.muted)
         }
         .frame(maxWidth: .infinity, minHeight: 112, alignment: .leading)
