@@ -980,12 +980,12 @@ private struct ShiyangHomeView: View {
         HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 6) {
                 Label("常曦食养", systemImage: "moonphase.waxing.crescent")
-                    .font(.headline)
+                    .font(CXTypography.section)
                     .foregroundStyle(SY.apricot)
                 Text("今天，也好好吃饭。")
                     .font(CXTypography.display)
                 Text("\(store.data.shiyangCity) · \(ShiyangSeason.currentSolarTerm)  ·  按你的饭桌现配")
-                    .font(.subheadline)
+                    .font(CXTypography.supporting)
                     .foregroundStyle(SY.muted)
             }
             Spacer(minLength: 4)
@@ -1008,7 +1008,7 @@ private struct ShiyangHomeView: View {
                     .clipped()
 
                 Text("为你现配")
-                    .font(.caption.weight(.bold))
+                    .font(CXTypography.micro.weight(.bold))
                     .foregroundStyle(SY.ink)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)
@@ -1020,21 +1020,21 @@ private struct ShiyangHomeView: View {
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("今晚吃什么")
-                            .font(.caption.weight(.semibold))
+                            .font(CXTypography.micro.weight(.semibold))
                             .foregroundStyle(SY.apricot)
                         Text(current.recipe.title)
                             .font(CXTypography.title)
                     }
                     Spacer(minLength: 8)
                     Button("换一道", systemImage: "arrow.triangle.2.circlepath") { cycleRecipe() }
-                        .font(.subheadline.weight(.semibold))
+                        .font(CXTypography.supporting.weight(.semibold))
                         .labelStyle(.titleAndIcon)
                         .foregroundStyle(SY.ink)
                         .frame(minHeight: 44)
                 }
 
                 Text(personalizedRecommendationNote)
-                    .font(.subheadline)
+                    .font(CXTypography.supporting)
                     .foregroundStyle(SY.muted)
                     .lineSpacing(4)
 
@@ -1115,9 +1115,9 @@ private struct ShiyangRecipeRow: View {
                 .frame(width: 68, height: 68)
                 .clipShape(.rect(cornerRadius: 16, style: .continuous))
             VStack(alignment: .leading, spacing: 5) {
-                Text(recommendation.recipe.title).font(.headline)
+                Text(recommendation.recipe.title).font(CXTypography.section)
                 Text(recommendation.reason)
-                    .font(.caption)
+                    .font(CXTypography.micro)
                     .foregroundStyle(SY.muted)
                     .lineLimit(2)
             }
@@ -1155,12 +1155,22 @@ private struct ShiyangPantryView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                    Text("我的食材")
+                        .font(CXTypography.micro.weight(.semibold))
+                        .foregroundStyle(SY.apricot)
+                        .tracking(0.6)
                     Text("家里现在有什么？")
                         .font(CXTypography.display)
-                    Text("选你确定有的就好，缺少的食材稍后都能替换。")
+                    Text("选你确定有的就好。缺少的食材之后可以替换，安全限制会优先处理。")
+                        .font(CXTypography.body)
                         .foregroundStyle(SY.muted)
+                        .lineSpacing(5)
                 }
+
+                Text("可以直接输入，也可以用语音或照片辅助盘点。")
+                    .font(CXTypography.meta)
+                    .foregroundStyle(SY.muted)
 
                 HStack(spacing: 10) {
                     TextField("例如：番茄、鸡蛋、菌菇", text: $input)
@@ -1168,7 +1178,7 @@ private struct ShiyangPantryView: View {
                         .submitLabel(.done)
                         .onSubmit(addInput)
                     Button("加入", action: addInput)
-                        .font(.subheadline.weight(.semibold))
+                        .font(CXTypography.supporting.weight(.semibold))
                         .disabled(ShiyangCatalog.ingredientIDs(in: input).isEmpty)
                 }
                 .padding(.horizontal, 16)
@@ -1208,7 +1218,7 @@ private struct ShiyangPantryView: View {
                             .symbolEffect(.variableColor.iterative, isActive: speech.isRecording)
                             .foregroundStyle(SY.apricot)
                         Text(speech.transcript.isEmpty ? "正在听你说家里有哪些食材……" : speech.transcript)
-                            .font(.subheadline)
+                            .font(CXTypography.supporting)
                         Spacer()
                     }
                     .padding(14)
@@ -1225,17 +1235,17 @@ private struct ShiyangPantryView: View {
                             .clipped()
                             .clipShape(.rect(cornerRadius: 18, style: .continuous))
                         Text("照片只作为盘点参考，请在下面确认实际食材。")
-                            .font(.footnote)
+                            .font(CXTypography.meta)
                             .foregroundStyle(SY.muted)
                     }
                 }
 
                 HStack {
                     Text("已选 \(selected.count) 样")
-                        .font(.headline)
+                        .font(CXTypography.section)
                     Spacer()
                     Button("清空") { selected.removeAll() }
-                        .font(.subheadline)
+                        .font(CXTypography.supporting.weight(.semibold))
                         .disabled(selected.isEmpty)
                 }
 
@@ -1261,7 +1271,7 @@ private struct ShiyangPantryView: View {
                                             .strokeBorder(.white.opacity(0.72), lineWidth: 0.8)
                                     }
                                 Text(ingredient.name)
-                                    .font(.subheadline.weight(.semibold))
+                                    .font(CXTypography.supporting.weight(.semibold))
                                     .foregroundStyle(SY.ink)
                             }
                             .frame(maxWidth: .infinity, minHeight: 112)
@@ -1355,7 +1365,7 @@ private struct ShiyangPantryView: View {
 
                 if !generationHint.isEmpty {
                     Label(generationHint, systemImage: "sparkles")
-                        .font(.footnote)
+                        .font(CXTypography.meta)
                         .foregroundStyle(SY.muted)
                         .transition(.opacity)
                 }
@@ -1527,7 +1537,7 @@ private struct ShiyangRecipeDetailView: View {
                                 VStack(alignment: .leading, spacing: 6) {
                                     Text(recipe.title)
                                         .font(CXTypography.title)
-                                    Text(recipe.subtitle).font(.subheadline)
+                                    Text(recipe.subtitle).font(CXTypography.supporting)
                                 }
                                 .foregroundStyle(.white)
                                 .padding(20)
@@ -1545,11 +1555,13 @@ private struct ShiyangRecipeDetailView: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("为什么是这道")
-                        .font(.title3.weight(.semibold))
+                        .font(CXTypography.title)
                     Text(recipe.personalizationNote)
+                        .font(CXTypography.body)
                         .foregroundStyle(SY.muted)
+                        .lineSpacing(5)
                     Text(recipe.seasonalNote)
-                        .font(.subheadline)
+                        .font(CXTypography.supporting)
                         .foregroundStyle(SY.tea)
                 }
 
@@ -1559,7 +1571,7 @@ private struct ShiyangRecipeDetailView: View {
                             .font(CXTypography.title)
                         Spacer()
                         Text("按\(store.data.shiyangServings)人份")
-                            .font(.subheadline)
+                            .font(CXTypography.supporting)
                             .foregroundStyle(SY.muted)
                     }
                     ForEach(recipe.ingredients, id: \.ingredientID) { item in
@@ -1572,7 +1584,7 @@ private struct ShiyangRecipeDetailView: View {
                             Text(scaledAmount(item.amountForTwo))
                                 .foregroundStyle(SY.muted)
                             if !item.required {
-                                Text("可选").font(.caption2).foregroundStyle(SY.muted)
+                                Text("可选").font(CXTypography.micro).foregroundStyle(SY.muted)
                             }
                         }
                         .frame(minHeight: 40)
@@ -1591,7 +1603,7 @@ private struct ShiyangRecipeDetailView: View {
                 .accessibilityIdentifier("start-cooking")
 
                 Text("烹饪过程中可以暂停、重复步骤，也可以临时替换食材。")
-                    .font(.footnote)
+                    .font(CXTypography.meta)
                     .foregroundStyle(SY.muted)
                     .frame(maxWidth: .infinity)
             }
