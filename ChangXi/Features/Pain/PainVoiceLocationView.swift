@@ -89,13 +89,39 @@ struct PainVoiceLocationView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                HStack(spacing: 12) {
-                    Image("ChangXiCharacter").resizable().scaledToFit().frame(width: 76, height: 76)
-                    Text(question).font(.title3.weight(.medium)).fixedSize(horizontal: false, vertical: true)
-                }.accessibilityElement(children: .combine)
-                Card {
+                VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                    Text("疼痛定位")
+                        .font(CXTypography.micro.weight(.semibold))
+                        .foregroundStyle(CX.statusCritical)
+                        .tracking(0.6)
+                    Text("说给常曦听，我先帮你找位置")
+                        .font(CXTypography.display)
+                    Text("语音只用于提出一个待确认的位置；没有确认前，不会写入这次疼痛记录。")
+                        .font(CXTypography.body)
+                        .foregroundStyle(CX.muted)
+                        .lineSpacing(5)
+                }
+
+                HStack(alignment: .top, spacing: CXSpacing.md) {
+                    Image("ChangXiCharacter")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 72, height: 72)
+                    Text(question)
+                        .font(CXTypography.title)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(CXSpacing.lg)
+                .cxContentSurface(cornerRadius: CXRadius.lg)
+                .accessibilityElement(children: .combine)
+
+                VStack(alignment: .leading, spacing: CXSpacing.md) {
+                    SectionEyebrow(title: "告诉常曦")
                     TextField("例如：左边太阳穴，一跳一跳的", text: $text, axis: .vertical)
-                        .lineLimit(2...5).disabled(speech.isRecording || speech.isStarting || speech.isTranscribing)
+                        .lineLimit(2...5)
+                        .padding(CXSpacing.md)
+                        .background(CX.raisedSurface, in: .rect(cornerRadius: CXRadius.sm, style: .continuous))
+                        .disabled(speech.isRecording || speech.isStarting || speech.isTranscribing)
                     Button {
                         speaker.stopSpeaking(at: .immediate)
                         if speech.isRecording || speech.isStarting { speech.stop() }
@@ -104,13 +130,30 @@ struct PainVoiceLocationView: View {
                         Label(speech.isRecording ? "说完了" : speech.isStarting ? "正在准备麦克风…" : "说给常曦听", systemImage: speech.isRecording ? "stop.circle.fill" : "mic.fill")
                             .frame(maxWidth: .infinity, minHeight: 48)
                     }.buttonStyle(.borderedProminent).disabled(speech.isTranscribing)
-                    if speech.isRecording { Text("正在听，点“说完了”结束。文字可以在结束后修改。").font(.footnote).foregroundStyle(CX.muted) }
-                    if speech.isTranscribing { ProgressView("正在整理语音…") }
-                    if let error = speech.error { Text(error).font(.footnote).foregroundStyle(CX.coral) }
+                    if speech.isRecording {
+                        Text("正在听，点“说完了”结束；文字可以在结束后修改。")
+                            .font(CXTypography.meta)
+                            .foregroundStyle(CX.muted)
+                    }
+                    if speech.isTranscribing {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                            Text("正在整理语音")
+                                .font(CXTypography.supporting)
+                                .foregroundStyle(CX.muted)
+                        }
+                    }
+                    if let error = speech.error {
+                        Label(error, systemImage: "exclamationmark.circle.fill")
+                            .font(CXTypography.meta)
+                            .foregroundStyle(CX.statusCritical)
+                    }
                     Button("请常曦标出来") { locate() }
                         .buttonStyle(PrimaryButton())
                         .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || speech.isRecording || speech.isStarting || speech.isTranscribing)
                 }
+                .padding(CXSpacing.lg)
+                .cxContentSurface(cornerRadius: CXRadius.lg)
                 if let suggestion {
                     Label("待你确认 · \(suggestion.name)", systemImage: "questionmark.circle")
                         .font(.headline).foregroundStyle(CX.blue)
@@ -135,9 +178,16 @@ struct PainVoiceLocationView: View {
                         question = "好，我们重新来。请说你身体哪一边、哪个地方疼。"
                     }.frame(maxWidth: .infinity, minHeight: 48)
                 }
-                Button { readQuestion() } label: { Label("听常曦读出来", systemImage: "speaker.wave.2") }
-                    .disabled(speech.isRecording || speech.isStarting || speech.isTranscribing)
-                Text("先帮你定位，确认后才加入这次记录。说不清时也可以回去点图。").font(.footnote).foregroundStyle(CX.muted)
+                Button { readQuestion() } label: {
+                    Label("听常曦读出来", systemImage: "speaker.wave.2")
+                }
+                .font(CXTypography.supporting.weight(.semibold))
+                .disabled(speech.isRecording || speech.isStarting || speech.isTranscribing)
+
+                Text("先帮你定位，确认后才加入这次记录。说不清时也可以回去点图。")
+                    .font(CXTypography.meta)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(4)
             }.padding(20).frame(maxWidth: 680).frame(maxWidth: .infinity)
         }
         .cxMoonScreenBackground(illustrated: true)
