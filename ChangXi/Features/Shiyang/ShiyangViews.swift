@@ -905,6 +905,7 @@ private struct ShiyangHomeView: View {
                     .shiyangGlass(cornerRadius: 22)
                 }
                 .buttonStyle(QuietPressButton())
+                .accessibilityIdentifier("open-shiyang-pantry")
 
                 Button {
                     assistant.activateGeneral()
