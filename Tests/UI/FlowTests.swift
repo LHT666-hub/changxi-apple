@@ -120,7 +120,7 @@ final class FlowTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["欢迎来到常曦"].waitForExistence(timeout: 10))
         capture("00-onboarding-welcome")
 
-        let next = app.buttons["开始了解"]
+        let next = app.buttons["认识常曦"]
         XCTAssertTrue(next.waitForExistence(timeout: 5))
         next.tap()
 
