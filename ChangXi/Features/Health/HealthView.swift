@@ -559,7 +559,7 @@ struct HealthChart: View {
     var kind: MetricKind
     var body: some View {
         if readings.isEmpty {
-            ContentUnavailableView("还没有记录", systemImage: "chart.xyaxis.line", description: Text("添加一次测量，开始记录你的月影。"))
+            CXEmptyState(title: "还没有记录", message: "添加一次测量后，最近的变化会从这里慢慢出现。", icon: "chart.xyaxis.line")
         } else {
             Chart {
                 ForEach(readings) { reading in
