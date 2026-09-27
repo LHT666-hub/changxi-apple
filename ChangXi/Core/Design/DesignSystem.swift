@@ -817,6 +817,48 @@ struct BrandFooter: View {
     }
 }
 
+struct CXEmptyState: View {
+    let title: String
+    let message: String
+    let icon: String
+    var tint: Color = CX.actionPrimary
+
+    var body: some View {
+        VStack(spacing: CXSpacing.md) {
+            ZStack {
+                Circle()
+                    .fill(tint.opacity(0.07))
+                    .frame(width: 72, height: 72)
+                Circle()
+                    .stroke(tint.opacity(0.12), lineWidth: 1)
+                    .frame(width: 92, height: 92)
+                Image(systemName: icon)
+                    .font(.title2.weight(.medium))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(tint)
+            }
+
+            VStack(spacing: 6) {
+                Text(title)
+                    .font(CXTypography.section)
+                    .multilineTextAlignment(.center)
+
+                Text(message)
+                    .font(CXTypography.supporting)
+                    .foregroundStyle(CX.muted)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(4)
+                    .frame(maxWidth: 360)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, CXSpacing.xl)
+        .padding(.horizontal, CXSpacing.lg)
+        .cxContentSurface(cornerRadius: CXRadius.lg)
+        .accessibilityElement(children: .combine)
+    }
+}
+
 struct DemoLabel: View {
     var body: some View {
         Label("体验模式 · 示例数据仅保存在本机", systemImage: "iphone")
