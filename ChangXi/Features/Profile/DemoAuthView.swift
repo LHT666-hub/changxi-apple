@@ -12,14 +12,12 @@ struct DemoAuthView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var mode = "登录"
-    @State private var identifier = ""       // 登录：用户名或邮箱；注册：用户名
-    @State private var email = ""            // 注册用
+    @State private var identifier = ""
+    @State private var email = ""
     @State private var password = ""
-    @State private var confirmPassword = ""   // 注册用
+    @State private var confirmPassword = ""
     @State private var agreed = false
     @State private var localError: String?
-
-    // 离线演示模式
     @State private var showOffline = false
     @State private var offlineRequested = false
     @State private var offlineCode = ""
@@ -27,48 +25,100 @@ struct DemoAuthView: View {
     private var isLogin: Bool { mode == "登录" }
 
     var body: some View {
-        Page {
-            if AppConfiguration.useRemoteAPI && AppConfiguration.supportsExtendedAPI {
-                remoteCard
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("账户")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .tracking(0.6)
+
+                Text(isLogin ? "继续和常曦一起使用玄同" : "创建一个玄同账户")
+                    .font(CXTypography.display)
+
+                Text(
+                    AppConfiguration.useRemoteAPI && AppConfiguration.supportsExtendedAPI
+                        ? "联网账户用于连接玄同服务；如果只是体验界面，也可以使用下方离线演示。"
+                        : "当前版本以离线演示为主，不需要真实账户也可以继续体验。"
+                )
+                .font(CXTypography.body)
+                .foregroundStyle(CX.muted)
+                .lineSpacing(5)
             }
-            offlineCard
+
+            if AppConfiguration.useRemoteAPI && AppConfiguration.supportsExtendedAPI {
+                remoteSection
+            }
+
+            offlineSection
         }
         .navigationTitle(isLogin ? "登录" : "注册")
+        .navigationBarTitleDisplayMode(.inline)
         .onChange(of: auth.isAuthenticated) { _, isAuthenticated in
             if isAuthenticated { dismiss() }
         }
     }
 
-    // MARK: - 联网登录 / 注册
-
-    private var remoteCard: some View {
-        Card {
-            Text(isLogin ? "欢迎回来" : "创建账户").font(.largeTitle.bold())
-            Text(isLogin ? "登录玄同账户，与常曦继续相伴。" : "注册后即可与家庭医生团队对话。")
-                .foregroundStyle(CX.muted)
-
+    private var remoteSection: some View {
+        VStack(alignment: .leading, spacing: CXSpacing.lg) {
             Picker("账户操作", selection: $mode) {
                 Text("登录").tag("登录")
                 Text("注册").tag("注册")
             }
             .pickerStyle(.segmented)
-            .onChange(of: mode) { _, _ in localError = nil; auth.clearError() }
-
-            if isLogin {
-                field("用户名或邮箱", text: $identifier, contentType: .username, keyboard: .default)
-                field("密码", text: $password, contentType: .password, keyboard: .default, secure: true)
-            } else {
-                field("用户名（3–60 字符）", text: $identifier, contentType: .username, keyboard: .default)
-                field("邮箱", text: $email, contentType: .emailAddress, keyboard: .emailAddress)
-                field("密码（6–128 字符）", text: $password, contentType: .newPassword, keyboard: .default, secure: true)
-                field("确认密码", text: $confirmPassword, contentType: .newPassword, keyboard: .default, secure: true)
+            .onChange(of: mode) { _, _ in
+                localError = nil
+                auth.clearError()
             }
 
-            Toggle("已了解体验说明与隐私说明", isOn: $agreed)
-            NavigationLink("阅读隐私说明") { PrivacyView() }.frame(minHeight: 44)
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                if isLogin {
+                    AuthField(title: "用户名或邮箱") {
+                        field("用户名或邮箱", text: $identifier, contentType: .username, keyboard: .default)
+                    }
+                    AuthField(title: "密码") {
+                        field("密码", text: $password, contentType: .password, keyboard: .default, secure: true)
+                    }
+                } else {
+                    AuthField(title: "用户名", hint: "3–60 字符") {
+                        field("用户名", text: $identifier, contentType: .username, keyboard: .default)
+                    }
+                    AuthField(title: "邮箱") {
+                        field("邮箱", text: $email, contentType: .emailAddress, keyboard: .emailAddress)
+                    }
+                    AuthField(title: "密码", hint: "6–128 字符") {
+                        field("密码", text: $password, contentType: .newPassword, keyboard: .default, secure: true)
+                    }
+                    AuthField(title: "确认密码") {
+                        field("确认密码", text: $confirmPassword, contentType: .newPassword, keyboard: .default, secure: true)
+                    }
+                }
+
+                Toggle(isOn: $agreed) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("我已了解体验与隐私说明")
+                            .font(CXTypography.section)
+                        Text("登录或注册前确认当前版本的数据使用边界")
+                            .font(CXTypography.meta)
+                            .foregroundStyle(CX.muted)
+                    }
+                }
+
+                NavigationLink("阅读隐私说明") { PrivacyView() }
+                    .font(CXTypography.supporting.weight(.semibold))
+            }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
 
             if let error = displayError {
-                Text(error).foregroundStyle(CX.coral).font(.footnote)
+                Label(error, systemImage: "exclamationmark.circle.fill")
+                    .font(CXTypography.supporting)
+                    .foregroundStyle(CX.statusCritical)
+                    .padding(CXSpacing.md)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        CX.statusCritical.opacity(0.05),
+                        in: .rect(cornerRadius: CXRadius.md, style: .continuous)
+                    )
                     .accessibilityIdentifier("auth-error")
             }
 
@@ -76,7 +126,10 @@ struct DemoAuthView: View {
                 submit()
             } label: {
                 if auth.isBusy {
-                    HStack(spacing: 10) { ProgressView().tint(.white); Text(isLogin ? "登录中…" : "注册中…") }
+                    HStack(spacing: 10) {
+                        ProgressView().tint(.white)
+                        Text(isLogin ? "正在登录" : "正在注册")
+                    }
                 } else {
                     Text(isLogin ? "登录" : "注册并登录")
                 }
@@ -85,59 +138,113 @@ struct DemoAuthView: View {
             .disabled(!agreed || auth.isBusy)
             .opacity(agreed && !auth.isBusy ? 1 : 0.5)
             .accessibilityIdentifier("auth-submit")
-
-            Text("演示账户数据保存在玄同后端；如遇连接问题，可使用下方离线演示模式。")
-                .font(.caption2).foregroundStyle(CX.muted)
         }
     }
 
-    // MARK: - 离线演示模式
-
-    private var offlineCard: some View {
-        Card {
+    private var offlineSection: some View {
+        VStack(alignment: .leading, spacing: CXSpacing.md) {
             Button {
                 showOffline.toggle()
             } label: {
-                HStack {
-                    Label("离线演示模式", systemImage: "moon.zzz.fill")
+                HStack(spacing: CXSpacing.md) {
+                    Image(systemName: "moon.zzz.fill")
+                        .foregroundStyle(CX.actionPrimary)
+                        .frame(width: 42, height: 42)
+                        .background(CX.actionPrimary.opacity(0.08), in: Circle())
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("离线演示")
+                            .font(CXTypography.section)
+                        Text("无需真实账户，只在本机体验")
+                            .font(CXTypography.meta)
+                            .foregroundStyle(CX.muted)
+                    }
+
                     Spacer()
-                    Image(systemName: showOffline ? "chevron.up" : "chevron.down").foregroundStyle(CX.muted)
+                    Image(systemName: showOffline ? "chevron.up" : "chevron.down")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(CX.faint)
                 }
             }
-            .frame(minHeight: 44)
+            .buttonStyle(.plain)
+            .frame(minHeight: 52)
             .accessibilityIdentifier("offline-demo-toggle")
 
             if showOffline || !AppConfiguration.useRemoteAPI || !AppConfiguration.supportsExtendedAPI {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("无需真实账户，验证码固定为 123456，仅在本机体验。")
-                        .font(.footnote).foregroundStyle(CX.muted)
-                    Button(offlineRequested ? "重新获取演示验证码" : "获取演示验证码") {
-                        offlineRequested = true
-                    }
-                    .frame(minHeight: 44)
-                    if offlineRequested {
-                        Text("演示验证码：123456").font(.headline)
+                Divider().overlay(CX.separator.opacity(0.14))
+
+                Text("验证码固定为 123456，仅用于本机演示。")
+                    .font(CXTypography.meta)
+                    .foregroundStyle(CX.muted)
+
+                Button(offlineRequested ? "重新显示演示验证码" : "显示演示验证码") {
+                    offlineRequested = true
+                }
+                .font(CXTypography.supporting.weight(.semibold))
+                .frame(minHeight: 44)
+
+                if offlineRequested {
+                    VStack(alignment: .leading, spacing: CXSpacing.sm) {
+                        Text("演示验证码 123456")
+                            .font(CXTypography.section)
+                            .monospacedDigit()
+
                         TextField("输入 6 位演示验证码", text: $offlineCode)
                             .keyboardType(.numberPad)
                             .textContentType(.oneTimeCode)
-                            .padding().background(CX.mist, in: RoundedRectangle(cornerRadius: 14))
+                            .padding(.horizontal, CXSpacing.md)
+                            .frame(minHeight: 52)
+                            .background(CX.raisedSurface, in: .rect(cornerRadius: CXRadius.sm, style: .continuous))
                     }
-                    Button("登录演示账户") {
-                        guard offlineCode == "123456" else {
-                            localError = "验证码不正确，请输入页面显示的 6 位演示验证码。"
-                            return
-                        }
-                        store.data.demoSignedIn = true
-                        dismiss()
-                    }
-                    .buttonStyle(PrimaryButton())
-                    .disabled(!offlineRequested)
-                    .opacity(offlineRequested ? 1 : 0.5)
-                    .accessibilityIdentifier("offline-demo-submit")
                 }
+
+                Button("登录演示账户") {
+                    guard offlineCode == "123456" else {
+                        localError = "验证码不正确，请输入页面显示的 6 位演示验证码。"
+                        return
+                    }
+                    store.data.demoSignedIn = true
+                    dismiss()
+                }
+                .buttonStyle(PrimaryButton())
+                .disabled(!offlineRequested)
+                .opacity(offlineRequested ? 1 : 0.5)
+                .accessibilityIdentifier("offline-demo-submit")
             }
         }
+        .padding(CXSpacing.lg)
+        .cxContentSurface(cornerRadius: CXRadius.lg)
     }
+
+private struct AuthField<Content: View>: View {
+    let title: String
+    var hint: String? = nil
+    @ViewBuilder let content: Content
+
+    init(title: String, hint: String? = nil, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.hint = hint
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            HStack {
+                Text(title)
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.muted)
+                Spacer()
+                if let hint {
+                    Text(hint)
+                        .font(CXTypography.micro)
+                        .foregroundStyle(CX.faint)
+                }
+            }
+
+            content
+        }
+    }
+}
 
     // MARK: - 辅助
 
@@ -159,7 +266,7 @@ struct DemoAuthView: View {
         .textContentType(contentType)
         .autocorrectionDisabled()
         .textInputAutocapitalization(.never)
-        .padding().background(CX.mist, in: RoundedRectangle(cornerRadius: 14))
+        .padding(.horizontal, CXSpacing.md)\n        .frame(minHeight: 52)\n        .background(CX.raisedSurface, in: .rect(cornerRadius: CXRadius.sm, style: .continuous))
         .onChange(of: text.wrappedValue) { _, _ in localError = nil; auth.clearError() }
     }
 
