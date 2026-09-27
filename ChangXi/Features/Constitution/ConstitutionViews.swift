@@ -334,64 +334,253 @@ struct ConstitutionQuestionnaireView: View {
 
     private let choices = [(0, "没有"), (1, "很少"), (2, "有时"), (3, "经常"), (4, "总是")]
     private var question: ConstitutionQuestion { ConstitutionQuestion.brief[index] }
+    private var progress: Double {
+        Double(index + 1) / Double(ConstitutionQuestion.brief.count)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    ProgressView(value: Double(index + 1), total: Double(ConstitutionQuestion.brief.count))
-                        .tint(CX.blue)
-                    Text("第 \(index + 1) 题，共 \(ConstitutionQuestion.brief.count) 题")
-                        .font(.subheadline).foregroundStyle(CX.muted)
-                    HStack(alignment: .top, spacing: 12) {
-                        Image("ChangXiCharacter").resizable().scaledToFit().frame(width: 62, height: 62)
-                        Text(question.text)
-                            .font(CXTypography.title).lineSpacing(5)
-                    }
-                    VStack(spacing: 10) {
-                        ForEach(choices, id: \.0) { score, label in
-                            Button {
-                                answers[question.id] = score
-                                if index < ConstitutionQuestion.brief.count - 1 {
-                                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) { index += 1 }
-                                }
-                            } label: {
-                                HStack {
-                                    Text(label).font(.headline)
-                                    Spacer()
-                                    if answers[question.id] == score { Image(systemName: "checkmark.circle.fill").foregroundStyle(CX.blue) }
-                                }
-                                .padding(.horizontal, 18).frame(minHeight: 56)
-                                .background(answers[question.id] == score ? CX.blue.opacity(0.12) : CX.surface, in: .rect(cornerRadius: 18))
-                            }.buttonStyle(.plain)
-                        }
-                    }
-                    Text("请按最近三个月多数时候的感受选择。想不起来时，可以选最接近的一项。")
-                        .font(.footnote).foregroundStyle(CX.muted)
+                VStack(alignment: .leading, spacing: CXSpacing.xl) {
+                    questionnaireProgress
+                    questionCard
+                    answerChoices
+                    guidanceNote
                 }
-                .frame(maxWidth: 620).padding(20).frame(maxWidth: .infinity)
+                .frame(maxWidth: 620)
+                .padding(.horizontal, CXSpacing.page)
+                .padding(.top, CXSpacing.lg)
+                .padding(.bottom, CXSpacing.xl)
+                .frame(maxWidth: .infinity)
             }
-            HStack(spacing: 12) {
-                Button("上一题") { if index > 0 { index -= 1 } }.frame(minWidth: 90, minHeight: 50).disabled(index == 0)
-                if index == ConstitutionQuestion.brief.count - 1 {
-                    Button("查看初步结果") { finish() }
-                        .buttonStyle(PrimaryButton()).disabled(answers.count < ConstitutionQuestion.brief.count)
-                } else {
-                    Button("退出初测") { dismiss() }.buttonStyle(.bordered).frame(minHeight: 50)
-                }
-            }.padding(16).background(.regularMaterial)
+            .scrollIndicators(.hidden)
+
+            questionnaireFooter
         }
         .cxMoonScreenBackground(illustrated: true)
-        .navigationTitle("体质初测").navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(isPresented: $showResult) { ConstitutionResultView(store: store) }
+        .navigationTitle("体质初测")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(isPresented: $showResult) {
+            ConstitutionResultView(store: store)
+        }
+    }
+
+    private var questionnaireProgress: some View {
+        VStack(alignment: .leading, spacing: CXSpacing.sm) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("体质初测")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .tracking(0.6)
+
+                Spacer()
+
+                Text("\(index + 1) / \(ConstitutionQuestion.brief.count)")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.muted)
+                    .monospacedDigit()
+            }
+
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(CX.actionPrimary.opacity(0.10))
+                    Capsule()
+                        .fill(CX.actionPrimary)
+                        .frame(width: max(18, proxy.size.width * progress))
+                        .animation(reduceMotion ? nil : .smooth(duration: 0.26), value: progress)
+                }
+            }
+            .frame(height: 6)
+
+            Text("按最近三个月多数时候的感受选择")
+                .font(CXTypography.supporting)
+                .foregroundStyle(CX.muted)
+        }
+    }
+
+    private var questionCard: some View {
+        HStack(alignment: .top, spacing: CXSpacing.md) {
+            Image("ChangXiCharacter")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 72, height: 72)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("常曦想了解")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+
+                Text(question.text)
+                    .font(CXTypography.title)
+                    .lineSpacing(6)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(CXSpacing.lg)
+        .cxContentSurface(cornerRadius: CXRadius.lg)
+        .id(question.id)
+        .transition(
+            reduceMotion
+                ? .opacity
+                : .asymmetric(
+                    insertion: .move(edge: .trailing).combined(with: .opacity),
+                    removal: .move(edge: .leading).combined(with: .opacity)
+                )
+        )
+    }
+
+    private var answerChoices: some View {
+        VStack(alignment: .leading, spacing: CXSpacing.sm) {
+            SectionEyebrow(title: "选择最接近的一项")
+
+            VStack(spacing: CXSpacing.sm) {
+                ForEach(choices, id: \.0) { score, label in
+                    let selected = answers[question.id] == score
+
+                    Button {
+                        choose(score)
+                    } label: {
+                        HStack(spacing: CXSpacing.md) {
+                            ZStack {
+                                Circle()
+                                    .fill(selected ? CX.actionPrimary : CX.actionPrimary.opacity(0.07))
+                                    .frame(width: 34, height: 34)
+
+                                if selected {
+                                    Image(systemName: "checkmark")
+                                        .font(.caption.weight(.bold))
+                                        .foregroundStyle(.white)
+                                } else {
+                                    Text("\(score + 1)")
+                                        .font(CXTypography.micro.weight(.semibold))
+                                        .foregroundStyle(CX.actionPrimary)
+                                }
+                            }
+
+                            Text(label)
+                                .font(CXTypography.section)
+                                .foregroundStyle(CX.ink)
+
+                            Spacer()
+
+                            if !selected {
+                                Image(systemName: "chevron.right")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(CX.faint)
+                            }
+                        }
+                        .padding(.horizontal, CXSpacing.md)
+                        .frame(maxWidth: .infinity, minHeight: 58)
+                        .background(
+                            selected ? CX.actionPrimary.opacity(0.08) : CX.surface,
+                            in: .rect(cornerRadius: CXRadius.md, style: .continuous)
+                        )
+                        .overlay {
+                            RoundedRectangle(cornerRadius: CXRadius.md, style: .continuous)
+                                .strokeBorder(
+                                    selected ? CX.actionPrimary.opacity(0.28) : CX.separator.opacity(0.10),
+                                    lineWidth: selected ? 1 : 0.5
+                                )
+                        }
+                    }
+                    .buttonStyle(QuietPressButton())
+                    .accessibilityLabel(label)
+                    .accessibilityAddTraits(selected ? .isSelected : [])
+                }
+            }
+        }
+    }
+
+    private var guidanceNote: some View {
+        HStack(alignment: .top, spacing: CXSpacing.sm) {
+            Image(systemName: "moon.stars")
+                .foregroundStyle(CX.actionPrimary)
+                .frame(width: 26, height: 26)
+
+            Text("想不起来时，不必纠结最准确的答案，选择更接近日常状态的一项就可以。")
+                .font(CXTypography.meta)
+                .foregroundStyle(CX.muted)
+                .lineSpacing(4)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, CXSpacing.xs)
+    }
+
+    private var questionnaireFooter: some View {
+        HStack(spacing: CXSpacing.sm) {
+            Button {
+                guard index > 0 else { return }
+                move(to: index - 1)
+            } label: {
+                Label("上一题", systemImage: "chevron.left")
+                    .font(.headline)
+                    .frame(minWidth: 96, minHeight: 52)
+                    .padding(.horizontal, 14)
+            }
+            .buttonStyle(.plain)
+            .cxInteractiveGlass(cornerRadius: CXRadius.md)
+            .disabled(index == 0)
+
+            if index == ConstitutionQuestion.brief.count - 1 {
+                Button("查看初步结果") {
+                    finish()
+                }
+                .buttonStyle(PrimaryButton())
+                .disabled(answers.count < ConstitutionQuestion.brief.count)
+            } else {
+                Button("暂时退出") {
+                    dismiss()
+                }
+                .font(.headline)
+                .frame(maxWidth: .infinity, minHeight: 52)
+                .buttonStyle(.plain)
+                .foregroundStyle(CX.muted)
+            }
+        }
+        .padding(.horizontal, CXSpacing.page)
+        .padding(.vertical, CXSpacing.sm)
+        .background(.regularMaterial)
+    }
+
+    private func choose(_ score: Int) {
+        answers[question.id] = score
+        if index < ConstitutionQuestion.brief.count - 1 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + (reduceMotion ? 0 : 0.12)) {
+                move(to: index + 1)
+            }
+        }
+    }
+
+    private func move(to newIndex: Int) {
+        guard ConstitutionQuestion.brief.indices.contains(newIndex) else { return }
+        if reduceMotion {
+            index = newIndex
+        } else {
+            withAnimation(.smooth(duration: 0.28)) {
+                index = newIndex
+            }
+        }
     }
 
     private func finish() {
         var scores = Dictionary(uniqueKeysWithValues: TCMConstitution.allCases.map { ($0, 0) })
-        for question in ConstitutionQuestion.brief { scores[question.constitution, default: 0] += answers[question.id] ?? 0 }
-        let biasedMaximum = TCMConstitution.allCases.filter { $0 != .balanced }.map { scores[$0] ?? 0 }.max() ?? 0
-        if (scores[.balanced] ?? 0) >= 6 && biasedMaximum <= 3 { scores[.balanced] = 9 }
-        else { scores[.balanced] = 0 }
+        for question in ConstitutionQuestion.brief {
+            scores[question.constitution, default: 0] += answers[question.id] ?? 0
+        }
+        let biasedMaximum = TCMConstitution.allCases
+            .filter { $0 != .balanced }
+            .map { scores[$0] ?? 0 }
+            .max() ?? 0
+        if (scores[.balanced] ?? 0) >= 6 && biasedMaximum <= 3 {
+            scores[.balanced] = 9
+        } else {
+            scores[.balanced] = 0
+        }
         store.save(scores: scores)
         showResult = true
     }
