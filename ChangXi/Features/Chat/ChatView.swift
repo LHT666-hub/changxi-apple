@@ -901,42 +901,72 @@ private struct ReferenceLibraryView: View {
     private var citedCount: Int { references.filter { $0.cited == true }.count }
 
     var body: some View {
-        List {
-            Section {
-                ForEach(Array(references.enumerated()), id: \.element.id) { index, reference in
-                    NavigationLink {
-                        ReferenceDetailView(number: index + 1, reference: reference)
-                    } label: {
-                        HStack(alignment: .top, spacing: 13) {
-                            Text("\(index + 1)")
-                                .font(.caption.weight(.bold))
-                                .foregroundStyle(CX.actionPrimary)
-                                .frame(width: 28, height: 28)
-                                .background(CX.actionPrimary.opacity(0.10), in: Circle())
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text(reference.title).font(.body.weight(.semibold))
-                                Text(reference.cited == true ? "回答已引用" : "相关资料")
-                                    .font(.caption2.weight(.medium))
-                                    .foregroundStyle(reference.cited == true ? CX.statusPositive : CX.actionPrimary)
-                                Text(reference.source)
-                                    .font(.caption2)
-                                    .foregroundStyle(CX.muted)
-                                Text(reference.excerpt)
-                                    .font(.subheadline)
-                                    .foregroundStyle(CX.muted)
-                                    .lineLimit(3)
-                            }
-                        }
-                        .padding(.vertical, 6)
-                    }
-                }
-            } header: {
-                Text(citedCount > 0
-                     ? "正文已引用 \(citedCount) 篇，其余为相关资料"
-                     : "玄同为本次问题检索到的相关资料")
-            } footer: {
-                Text("资料用于辅助说明，不替代医生面诊、诊断或处方。")
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("参考资料")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .tracking(0.6)
+                Text("看看这次回答参考了什么")
+                    .font(CXTypography.display)
+                Text(
+                    citedCount > 0
+                        ? "正文引用了 \(citedCount) 篇资料，其余内容作为相关背景。"
+                        : "这里是玄同为本次问题检索到的相关资料。"
+                )
+                .font(CXTypography.body)
+                .foregroundStyle(CX.muted)
+                .lineSpacing(5)
             }
+
+            ForEach(Array(references.enumerated()), id: \.element.id) { index, reference in
+                NavigationLink {
+                    ReferenceDetailView(number: index + 1, reference: reference)
+                } label: {
+                    HStack(alignment: .top, spacing: CXSpacing.md) {
+                        Text("\(index + 1)")
+                            .font(CXTypography.micro.weight(.bold))
+                            .foregroundStyle(CX.actionPrimary)
+                            .frame(width: 32, height: 32)
+                            .background(CX.actionPrimary.opacity(0.10), in: Circle())
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(reference.title)
+                                .font(CXTypography.section)
+                                .foregroundStyle(CX.ink)
+
+                            HStack(spacing: 8) {
+                                Text(reference.cited == true ? "回答已引用" : "相关资料")
+                                    .font(CXTypography.micro.weight(.semibold))
+                                    .foregroundStyle(reference.cited == true ? CX.statusPositive : CX.actionPrimary)
+
+                                Text(reference.source)
+                                    .font(CXTypography.micro)
+                                    .foregroundStyle(CX.muted)
+                            }
+
+                            Text(reference.excerpt)
+                                .font(CXTypography.supporting)
+                                .foregroundStyle(CX.muted)
+                                .lineLimit(3)
+                                .multilineTextAlignment(.leading)
+                        }
+
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(CX.faint)
+                    }
+                    .padding(CXSpacing.md)
+                    .cxContentSurface(cornerRadius: CXRadius.md)
+                }
+                .buttonStyle(QuietPressButton())
+            }
+
+            Text("资料用于辅助说明，不替代医生面诊、诊断或处方。")
+                .font(CXTypography.meta)
+                .foregroundStyle(CX.muted)
+                .lineSpacing(4)
         }
         .navigationTitle("参考资料 · \(references.count)")
         .navigationBarTitleDisplayMode(.inline)
@@ -955,38 +985,56 @@ private struct ReferenceDetailView: View {
     }
 
     var body: some View {
-        Page {
-            HStack(spacing: 12) {
-                Text("\(number)")
-                    .font(.headline.weight(.bold))
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.sm) {
+                Text("资料 \(number)")
+                    .font(CXTypography.micro.weight(.semibold))
                     .foregroundStyle(CX.actionPrimary)
-                    .frame(width: 38, height: 38)
-                    .background(CX.actionPrimary.opacity(0.10), in: Circle())
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(reference.title).font(.title3.weight(.semibold))
-                    Text(reference.source).font(.caption).foregroundStyle(CX.muted)
-                }
-            }
-            Card {
-                Text("与本次回答相关的内容").font(.headline)
-                Text(reference.excerpt).font(.body).lineSpacing(6).textSelection(.enabled)
-            }
-            Card {
-                Label("资料边界", systemImage: "shield.lefthalf.filled")
-                    .font(.headline)
-                Text("这是知识库摘录，不是针对你的诊断。需要改变药物或治疗方案时，请由医生结合完整病史确认。")
-                    .font(.subheadline)
+                Text(reference.title)
+                    .font(CXTypography.display)
+                Text(reference.source)
+                    .font(CXTypography.supporting)
                     .foregroundStyle(CX.muted)
             }
+
+            SectionEyebrow(title: "与本次回答相关")
+            Text(reference.excerpt)
+                .font(CXTypography.body)
+                .lineSpacing(6)
+                .textSelection(.enabled)
+                .padding(CXSpacing.lg)
+                .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            HStack(alignment: .top, spacing: CXSpacing.md) {
+                Image(systemName: "shield.lefthalf.filled")
+                    .foregroundStyle(CX.statusPositive)
+                    .frame(width: 40, height: 40)
+                    .background(CX.statusPositive.opacity(0.08), in: Circle())
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("资料边界")
+                        .font(CXTypography.section)
+                    Text("这是知识库摘录，不是针对你的诊断。需要改变药物或治疗方案时，请由医生结合完整病史确认。")
+                        .font(CXTypography.supporting)
+                        .foregroundStyle(CX.muted)
+                        .lineSpacing(4)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
             if let externalURL {
                 Link(destination: externalURL) {
                     Label("打开原始网页", systemImage: "arrow.up.right.square")
-                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .frame(maxWidth: .infinity, minHeight: 48)
                 }
                 .buttonStyle(.borderedProminent)
             }
         }
         .navigationTitle("资料 \(number)")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -994,28 +1042,78 @@ private struct WorkOrderDetailView: View {
     let order: ConversationWorkOrder
 
     var body: some View {
-        Page {
-            Card {
-                Label(order.title, systemImage: "checklist.checked")
-                    .font(.title3.weight(.semibold))
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("照护工单")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.statusPositive)
+                    .tracking(0.6)
+                Text(order.title)
+                    .font(CXTypography.display)
                 if !order.description.isEmpty {
-                    Text(order.description).font(.body).lineSpacing(5)
+                    Text(order.description)
+                        .font(CXTypography.body)
+                        .foregroundStyle(CX.muted)
+                        .lineSpacing(5)
                 }
-                LabeledContent("状态", value: order.status == "pending" ? "待处理" : order.status)
-                LabeledContent("优先级", value: order.priority == "high" ? "较高" : "常规")
+            }
+
+            SectionEyebrow(title: "当前状态")
+            VStack(spacing: CXSpacing.md) {
+                WorkOrderFactRow(
+                    title: "状态",
+                    value: order.status == "pending" ? "待处理" : order.status
+                )
+                Divider().overlay(CX.separator.opacity(0.14))
+                WorkOrderFactRow(
+                    title: "优先级",
+                    value: order.priority == "high" ? "较高" : "常规"
+                )
+
                 if let role = order.assigneeRole, !role.isEmpty {
-                    LabeledContent("负责角色", value: WorkflowNodeName.roleDisplay(role))
+                    Divider().overlay(CX.separator.opacity(0.14))
+                    WorkOrderFactRow(
+                        title: "负责角色",
+                        value: WorkflowNodeName.roleDisplay(role)
+                    )
                 }
             }
-            Card {
-                Label("接下来", systemImage: "arrow.triangle.branch")
-                    .font(.headline)
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            SectionEyebrow(title: "接下来")
+            HStack(alignment: .top, spacing: CXSpacing.md) {
+                Image(systemName: "arrow.triangle.branch")
+                    .foregroundStyle(CX.actionPrimary)
+                    .frame(width: 40, height: 40)
+                    .background(CX.actionPrimary.opacity(0.08), in: Circle())
                 Text("工单已由玄同记录。涉及医疗判断或处方调整的事项仍需医生确认，常曦不会自动替你提交不可逆操作。")
-                    .font(.subheadline)
+                    .font(CXTypography.supporting)
                     .foregroundStyle(CX.muted)
+                    .lineSpacing(4)
+                Spacer(minLength: 0)
             }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
         }
         .navigationTitle("照护工单")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct WorkOrderFactRow: View {
+    let title: String
+    let value: String
+
+    var body: some View {
+        HStack {
+            Text(title)
+                .font(CXTypography.supporting)
+                .foregroundStyle(CX.muted)
+            Spacer()
+            Text(value)
+                .font(CXTypography.section)
+        }
     }
 }
 
