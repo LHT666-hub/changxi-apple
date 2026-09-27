@@ -387,7 +387,8 @@ final class AppStore {
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("--ui-testing")
             || ProcessInfo.processInfo.arguments.contains("--integration-testing")
-            || ProcessInfo.processInfo.arguments.contains("--onboarding-testing") {
+            || ProcessInfo.processInfo.arguments.contains("--onboarding-testing")
+            || ProcessInfo.processInfo.arguments.contains("--launch-testing") {
             data = LocalState()
             data.onboarded = !ProcessInfo.processInfo.arguments.contains("--onboarding-testing")
             if ProcessInfo.processInfo.arguments.contains("--large-text") { data.largeText = true }
