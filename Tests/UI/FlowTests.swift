@@ -274,9 +274,24 @@ final class FlowTests: XCTestCase {
     }
 
     private func openPainLocation(in app: XCUIApplication, entry: XCUIElement, head: XCUIElement) {
-        XCTAssertTrue(entry.waitForExistence(timeout: 5))
-        entry.tap()
+        tapWhenHittable(entry, in: app)
         XCTAssertTrue(head.waitForExistence(timeout: 5))
+    }
+
+    /// Scrolls a control clear of the persistent tab bar before tapping it.
+    /// XCTest may report an off-screen/covered element as existing and otherwise
+    /// synthesize the tap on the root tab bar underneath it.
+    private func tapWhenHittable(_ element: XCUIElement, in app: XCUIApplication, maxSwipes: Int = 5) {
+        XCTAssertTrue(element.waitForExistence(timeout: 5))
+        var swipes = 0
+        while !element.isHittable && swipes < maxSwipes {
+            app.swipeUp()
+            swipes += 1
+        }
+        XCTAssertTrue(element.isHittable, "Element never became hittable: \(element.identifier)")
+        if element.isHittable {
+            element.tap()
+        }
     }
 
     /// Taps the part of a lower card that remains above the persistent tab bar.
@@ -338,9 +353,10 @@ final class FlowTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["先把食材请上桌"].waitForExistence(timeout: 5))
         capture("21-shiyang-ingredients")
         app.buttons["食材备好了"].tap()
-        XCTAssertTrue(app.buttons["next-cooking-step"].waitForExistence(timeout: 5))
+        let nextCookingStep = app.buttons["next-cooking-step"]
+        XCTAssertTrue(nextCookingStep.waitForExistence(timeout: 5))
         XCTAssertTrue(app.otherElements["cooking-storyboard-step-1"].waitForExistence(timeout: 5))
-        app.buttons["next-cooking-step"].tap()
+        tapWhenHittable(nextCookingStep, in: app)
         XCTAssertTrue(app.otherElements["cooking-storyboard-step-2"].waitForExistence(timeout: 5))
         capture("22-shiyang-cooking")
     }
