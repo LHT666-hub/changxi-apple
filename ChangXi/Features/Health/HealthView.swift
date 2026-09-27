@@ -6,60 +6,110 @@ struct HealthView: View {
     @Environment(AuthSession.self) private var auth
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var section = "概览"
+
     var body: some View {
-        Page {
-            Picker("健康页面", selection: $section) { ForEach(["概览", "趋势", "报告", "计划"], id: \.self) { Text($0) } }.pickerStyle(.segmented)
-            switch section {
-            case "趋势": TrendContent()
-            case "报告": ReportListContent()
-            case "计划":
-                Card { RhythmView(completed: store.completed, total: store.data.plans.count) }
-                NavigationLink { PlanView() } label: { Card { RowLabel(title: "查看今日计划", subtitle: "用药、运动和日常记录", icon: "calendar") } }.buttonStyle(.plain)
-                NavigationLink { MedicationView() } label: { Card { RowLabel(title: "用药管理", icon: "pills") } }.buttonStyle(.plain)
-            default: overview
+        Page(illustrated: section == "概览") {
+            Picker("健康页面", selection: $section) {
+                ForEach(["概览", "趋势", "报告", "计划"], id: \.self) { Text($0) }
             }
+            .pickerStyle(.segmented)
+
+            switch section {
+            case "趋势":
+                TrendContent()
+            case "报告":
+                ReportListContent()
+            case "计划":
+                planContent
+            default:
+                overview
+            }
+
             DemoLabel()
-        }.navigationTitle("健康")
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { NavigationLink { MessagesView() } label: { Image(systemName: "envelope").frame(width: 44, height: 44) }.accessibilityLabel("消息中心") } }
+        }
+        .navigationTitle("健康")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink { MessagesView() } label: {
+                    Image(systemName: "envelope")
+                        .frame(width: 44, height: 44)
+                }
+                .accessibilityLabel("消息中心")
+            }
+        }
         .task { await syncOnAppear() }
     }
-    /// Task #25：进入健康页时，一次性 best-effort 绑定患者档案并拉取云端测量历史（本地优先合并去重）。
-    /// 离线（`useRemoteAPI == false`）时不发任何请求。
-    @MainActor private func syncOnAppear() async {
+
+    @MainActor
+    private func syncOnAppear() async {
         guard AppConfiguration.useRemoteAPI, AppConfiguration.supportsExtendedAPI else { return }
         let pid = PatientContext.effectiveID(auth)
         await PatientContext.bindProfileIfNeeded(auth: auth, name: store.data.name, person: store.data.person)
         await HealthSyncService.shared.pullRemote(store: store, patientID: pid)
     }
+
     private var overview: some View {
         Group {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("健康摘要")
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("今天的健康")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .tracking(0.6)
+
+                Text("一眼看清最近的变化")
                     .font(CXTypography.display)
-                Text("每一次记录，都让变化更容易被看见。")
-                    .font(.body)
+
+                Text("先看关键指标和身体感受，需要细看时再进入趋势、报告或计划。")
+                    .font(CXTypography.body)
                     .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
             }
 
             NavigationLink { HealthPortraitView() } label: {
-                Card {
-                    RowLabel(
-                        title: "我的健康画像",
-                        subtitle: "整体较稳定 · 有 2 项值得关注",
-                        icon: "circle.hexagongrid.fill",
-                        tint: CX.actionPrimary
-                    )
+                HStack(alignment: .center, spacing: CXSpacing.md) {
+                    ZStack {
+                        Circle()
+                            .fill(CX.actionPrimary.opacity(0.08))
+                            .frame(width: 62, height: 62)
+                        Image(systemName: "circle.hexagongrid.fill")
+                            .font(.title2.weight(.medium))
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(CX.actionPrimary)
+                    }
+
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("我的健康画像")
+                            .font(CXTypography.title)
+                            .foregroundStyle(CX.ink)
+                        Text("整体较稳定")
+                            .font(CXTypography.supporting)
+                            .foregroundStyle(CX.muted)
+                    }
+
+                    Spacer()
+
+                    VStack(alignment: .trailing, spacing: 5) {
+                        Text("2 项")
+                            .font(CXTypography.section)
+                            .foregroundStyle(CX.statusWarning)
+                        Text("值得关注")
+                            .font(CXTypography.micro)
+                            .foregroundStyle(CX.muted)
+                    }
                 }
+                .padding(CXSpacing.lg)
+                .cxContentSurface(cornerRadius: CXRadius.lg)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(QuietPressButton())
             .accessibilityIdentifier("open-health-portrait")
 
-            CXGlassGroup(spacing: 12) {
+            SectionEyebrow(title: "关键指标", action: "最近一次记录")
+            CXGlassGroup(spacing: CXSpacing.sm) {
                 LazyVGrid(
                     columns: typeSize.isAccessibilitySize
                         ? [GridItem(.flexible())]
-                        : [GridItem(.adaptive(minimum: 150), spacing: 12)],
-                    spacing: 12
+                        : [GridItem(.adaptive(minimum: 150), spacing: CXSpacing.sm)],
+                    spacing: CXSpacing.sm
                 ) {
                     ForEach(MetricKind.allCases) { kind in
                         NavigationLink { MetricDetailView(kind: kind) } label: {
@@ -67,7 +117,9 @@ struct HealthView: View {
                                 kind: kind,
                                 value: store.latest(kind)?.display ?? "—"
                             )
-                        }.buttonStyle(.plain).accessibilityIdentifier("metric-\(kind.rawValue)")
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("metric-\(kind.rawValue)")
                     }
 
                     NavigationLink { BMIDetailView() } label: {
@@ -77,27 +129,148 @@ struct HealthView: View {
                     .accessibilityIdentifier("metric-BMI")
                 }
             }
+
             SectionEyebrow(title: "身体感受", action: "本机记录")
             NavigationLink { PainLocationView() } label: {
-                Card {
-                    RowLabel(
-                        title: "疼痛位置记录",
-                        subtitle: "选择身体区域，并在体表图上标注具体位置",
-                        icon: "figure.stand",
-                        tint: CX.statusCritical
-                    )
+                HStack(spacing: CXSpacing.md) {
+                    Image(systemName: "figure.stand")
+                        .font(.title3.weight(.medium))
+                        .foregroundStyle(CX.statusCritical)
+                        .frame(width: 46, height: 46)
+                        .background(CX.statusCritical.opacity(0.08), in: Circle())
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("记录身体不舒服的位置")
+                            .font(CXTypography.section)
+                            .foregroundStyle(CX.ink)
+                        Text("选择身体区域，再在体表图上标注具体位置")
+                            .font(CXTypography.supporting)
+                            .foregroundStyle(CX.muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(CX.faint)
+                }
+                .padding(CXSpacing.md)
+                .background(
+                    LinearGradient(
+                        colors: [CX.surface, CX.statusCritical.opacity(0.025)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    ),
+                    in: .rect(cornerRadius: CXRadius.md, style: .continuous)
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: CXRadius.md, style: .continuous)
+                        .strokeBorder(CX.statusCritical.opacity(0.10), lineWidth: 0.5)
                 }
             }
-            .buttonStyle(.plain)
+            .buttonStyle(QuietPressButton())
             .accessibilityIdentifier("open-pain-location")
-            SectionEyebrow(title: "最近趋势", action: "7 天")
-            Card {
-                NavigationLink { MetricDetailView(kind: .pressure) } label: { RowLabel(title: "血压趋势", subtitle: "最近 7 天 · mmHg", icon: "chart.xyaxis.line") }.buttonStyle(.plain)
-                HealthChart(readings: store.readings(.pressure, days: 7), kind: .pressure)
+
+            SectionEyebrow(title: "最近变化", action: "血压 · 7 天")
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("血压趋势")
+                            .font(CXTypography.section)
+                        Text("最近 7 天的记录")
+                            .font(CXTypography.meta)
+                            .foregroundStyle(CX.muted)
+                    }
+                    Spacer()
+                    NavigationLink { MetricDetailView(kind: .pressure) } label: {
+                        Text("查看明细")
+                            .font(CXTypography.meta.weight(.semibold))
+                            .foregroundStyle(CX.actionPrimary)
+                    }
+                }
+
+                HealthChart(
+                    readings: store.readings(.pressure, days: 7),
+                    kind: .pressure
+                )
             }
-            NavigationLink { PlanView() } label: { Card { RhythmView(completed: store.completed, total: store.data.plans.count) } }.buttonStyle(.plain)
-            NavigationLink { ReportDetailView() } label: { Card { RowLabel(title: "体检报告已整理", subtitle: "查看数值、参考范围和关注事项", icon: "doc.text.magnifyingglass") } }.buttonStyle(.plain)
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
         }
+    }
+
+    private var planContent: some View {
+        Group {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("今天")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .tracking(0.6)
+                Text("把今天要做的事放在一处")
+                    .font(CXTypography.display)
+                Text("计划负责提醒节奏，用药记录负责保留事实，不必在多个页面重复找入口。")
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
+            }
+
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                RhythmView(completed: store.completed, total: store.data.plans.count)
+            }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            SectionEyebrow(title: "管理")
+            HStack(spacing: CXSpacing.sm) {
+                NavigationLink { PlanView() } label: {
+                    HealthActionTile(
+                        title: "今日计划",
+                        subtitle: "查看与完成",
+                        icon: "calendar",
+                        tint: CX.actionPrimary
+                    )
+                }
+                .buttonStyle(QuietPressButton())
+
+                NavigationLink { MedicationView() } label: {
+                    HealthActionTile(
+                        title: "用药记录",
+                        subtitle: "计划与历史",
+                        icon: "pills",
+                        tint: CX.statusPositive
+                    )
+                }
+                .buttonStyle(QuietPressButton())
+            }
+        }
+    }
+}
+
+private struct HealthActionTile: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    let tint: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: CXSpacing.sm) {
+            Image(systemName: icon)
+                .font(.title3.weight(.medium))
+                .foregroundStyle(tint)
+                .frame(width: 42, height: 42)
+                .background(tint.opacity(0.08), in: .rect(cornerRadius: 13, style: .continuous))
+
+            Text(title)
+                .font(CXTypography.section)
+                .foregroundStyle(CX.ink)
+
+            Text(subtitle)
+                .font(CXTypography.meta)
+                .foregroundStyle(CX.muted)
+        }
+        .frame(maxWidth: .infinity, minHeight: 132, alignment: .leading)
+        .padding(CXSpacing.md)
+        .cxContentSurface(cornerRadius: CXRadius.md)
     }
 }
 
