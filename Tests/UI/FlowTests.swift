@@ -121,8 +121,12 @@ final class FlowTests: XCTestCase {
         XCTAssertTrue(launch.waitForExistence(timeout: 5))
         capture("00-launch-experience")
 
-        XCTAssertTrue(app.buttons["首页"].firstMatch.waitForExistence(timeout: 8))
-        XCTAssertFalse(launch.exists)
+        let launchGone = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == false"),
+            object: launch
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [launchGone], timeout: 8), .completed)
+        XCTAssertTrue(app.buttons["首页"].firstMatch.waitForExistence(timeout: 5))
     }
 
     func testFirstRunOnboardingJourney() {
