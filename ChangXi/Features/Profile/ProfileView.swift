@@ -499,20 +499,81 @@ private struct LabeledField<Content: View>: View {
 
 struct FamilyView: View {
     @Environment(AppStore.self) private var store
+
     var body: some View {
         @Bindable var store = store
-        Form {
-            Section("服务对象") { Picker("为谁安排服务", selection: $store.data.person) { Text("\(store.data.name)（本人）").tag("\(store.data.name)（本人）"); Text("家人（示例照护对象）").tag("家人（示例照护对象）") }.pickerStyle(.inline) }
-            Section { Text("切换对象只影响新建服务意向的归属。健康记录和常曦记忆仍属于本人。家人档案需要本人授权后才能同步。") }
-            Section("照护计划") { NavigationLink("查看服务安排") { BookingsView() }; NavigationLink("查看本人的今日计划") { PlanView() } }
-            Section("紧急联系人 · 仅存本机") {
-                TextField("联系人姓名", text: $store.data.emergencyName)
-                TextField("联系电话", text: $store.data.emergencyPhone).keyboardType(.phonePad)
+
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("家人与照护")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .tracking(0.6)
+                Text("先确认这次是在照顾谁")
+                    .font(CXTypography.display)
+                Text("切换服务对象只影响新建的服务意向，不会混入本人的健康记录和常曦记忆。")
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
+            }
+
+            SectionEyebrow(title: "服务对象")
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                Picker("为谁安排服务", selection: $store.data.person) {
+                    Text("\(store.data.name)（本人）").tag("\(store.data.name)（本人）")
+                    Text("家人（示例照护对象）").tag("家人（示例照护对象）")
+                }
+                .pickerStyle(.segmented)
+
+                Label("家人档案需要本人授权后才能同步。", systemImage: "lock.shield")
+                    .font(CXTypography.meta)
+                    .foregroundStyle(CX.muted)
+            }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            SectionEyebrow(title: "照护安排")
+            VStack(spacing: CXSpacing.sm) {
+                ProfileEntryRow(
+                    title: "查看服务安排",
+                    subtitle: "本机预约与咨询草稿",
+                    icon: "calendar.badge.clock",
+                    tint: CX.actionPrimary
+                ) { BookingsView() }
+
+                ProfileEntryRow(
+                    title: "查看本人的今日计划",
+                    subtitle: "用药、运动和日常记录",
+                    icon: "checklist",
+                    tint: CX.statusPositive
+                ) { PlanView() }
+            }
+
+            SectionEyebrow(title: "紧急联系人", action: "仅存本机")
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                LabeledField(title: "联系人姓名", hint: "可选") {
+                    TextField("姓名", text: $store.data.emergencyName)
+                }
+
+                LabeledField(title: "联系电话", hint: "仅用于你主动查看或分享") {
+                    TextField("联系电话", text: $store.data.emergencyPhone)
+                        .keyboardType(.phonePad)
+                }
+
                 if !store.data.emergencyPhone.isEmpty {
-                    ShareLink("分享联系人", item: "\(store.data.emergencyName) \(store.data.emergencyPhone)")
+                    ShareLink(
+                        item: "\(store.data.emergencyName) \(store.data.emergencyPhone)"
+                    ) {
+                        Label("分享联系人", systemImage: "square.and.arrow.up")
+                            .font(CXTypography.supporting.weight(.semibold))
+                    }
                 }
             }
-        }.navigationTitle("家人与照护")
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+        }
+        .navigationTitle("家人与照护")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -546,17 +607,116 @@ struct DevicesView: View {
 struct PrivacyView: View {
     @Environment(AppStore.self) private var store
     @State private var reset = false
+
     var body: some View {
         @Bindable var store = store
-        Form {
-            Section("你的数据由你掌握") { Text("健康记录、对话、记忆和服务草稿保存在此设备的应用文档目录，并启用系统文件保护。本演示版不会把这些内容上传至常曦服务器。"); Toggle("允许确认常曦记忆", isOn: $store.data.rememberAllowed) }
-            Section("系统权限") {
-                Text("麦克风和相机只在你主动使用时申请。语音转写由 Apple 语音服务提供，部分设备或语言可能需要网络处理。照片只读取你主动选择的项目。")
-                Button("打开系统权限设置") { if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) } }
+
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("隐私与授权")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.statusPositive)
+                    .tracking(0.6)
+                Text("你的数据，由你决定怎么用")
+                    .font(CXTypography.display)
+                Text("权限只在真正需要时申请；健康记录、对话和草稿默认先留在本机。")
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
             }
-            Section("数据管理") { NavigationLink("管理常曦记忆") { MemoryView() }; ShareLink("导出本地数据", item: store.exportJSON); Button("清除本地数据并重新体验", role: .destructive) { reset = true } }
-        }.navigationTitle("隐私与授权")
-        .confirmationDialog("清除本机记录、对话与设置？", isPresented: $reset, titleVisibility: .visible) { Button("清除并重置示例", role: .destructive) { UNUserNotificationCenter.current().removeAllPendingNotificationRequests(); store.resetDemo() } }
+
+            SectionEyebrow(title: "常曦记忆")
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                Toggle(isOn: $store.data.rememberAllowed) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("允许确认常曦记忆")
+                            .font(CXTypography.section)
+                        Text("只有你确认过的内容，才会进入常曦记忆。")
+                            .font(CXTypography.meta)
+                            .foregroundStyle(CX.muted)
+                    }
+                }
+
+                NavigationLink("管理常曦记忆") { MemoryView() }
+                    .font(CXTypography.supporting.weight(.semibold))
+            }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            SectionEyebrow(title: "系统权限")
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                PrivacyPermissionRow(
+                    icon: "camera",
+                    title: "相机与照片",
+                    subtitle: "只在你主动拍摄或选择资料时使用"
+                )
+                PrivacyPermissionRow(
+                    icon: "mic",
+                    title: "麦克风与语音",
+                    subtitle: "只在你主动发起语音输入时使用"
+                )
+
+                Button("打开系统权限设置") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }
+                .font(CXTypography.supporting.weight(.semibold))
+            }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            SectionEyebrow(title: "数据管理")
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                ShareLink("导出本地数据", item: store.exportJSON)
+                    .font(CXTypography.supporting.weight(.semibold))
+
+                Divider().overlay(CX.separator.opacity(0.14))
+
+                Button("清除本地数据并重新体验", role: .destructive) {
+                    reset = true
+                }
+                .font(CXTypography.supporting.weight(.semibold))
+            }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+        }
+        .navigationTitle("隐私与授权")
+        .navigationBarTitleDisplayMode(.inline)
+        .confirmationDialog(
+            "清除本机保存的常曦体验数据？",
+            isPresented: $reset,
+            titleVisibility: .visible
+        ) {
+            Button("清除并重新体验", role: .destructive) {
+                store.resetDemo()
+            }
+        }
+    }
+}
+
+private struct PrivacyPermissionRow: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: CXSpacing.md) {
+            Image(systemName: icon)
+                .foregroundStyle(CX.actionPrimary)
+                .frame(width: 38, height: 38)
+                .background(CX.actionPrimary.opacity(0.08), in: Circle())
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(CXTypography.section)
+                Text(subtitle)
+                    .font(CXTypography.meta)
+                    .foregroundStyle(CX.muted)
+            }
+
+            Spacer(minLength: 0)
+        }
     }
 }
 
