@@ -69,13 +69,16 @@ struct ShiyangEntryCard: View {
 
 struct ShiyangRootView: View {
     @Environment(AppStore.self) private var store
+    @State private var completedInSession = false
 
     var body: some View {
         Group {
-            if store.data.shiyangOnboarded {
+            if store.data.shiyangOnboarded || completedInSession {
                 ShiyangHomeView()
             } else {
-                ShiyangOnboardingFlow()
+                ShiyangOnboardingFlow {
+                    completedInSession = true
+                }
             }
         }
         .tint(SY.apricot)
@@ -121,6 +124,7 @@ private struct ShiyangProfileDraft {
 
 private struct ShiyangOnboardingFlow: View {
     @Environment(AppStore.self) private var store
+    let onFinished: () -> Void
     @State private var stage = ShiyangOnboardingStage.intro
     @State private var draft = ShiyangProfileDraft()
     @State private var useLifestyleMemory = false
@@ -214,6 +218,7 @@ private struct ShiyangOnboardingFlow: View {
         )
         if let first = recommendations.first { store.data.shiyangSelectedRecipeID = first.recipe.id }
         store.data.shiyangOnboarded = true
+        onFinished()
         MoonHaptics.shared.play(success: true, enabled: store.data.haptics)
     }
 }
