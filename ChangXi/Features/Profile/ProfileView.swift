@@ -579,28 +579,147 @@ struct FamilyView: View {
 
 struct HealthArchiveView: View {
     @Environment(AppStore.self) private var store
+
     var body: some View {
-        Page {
-            Card {
-                ForEach(MetricKind.allCases) { kind in NavigationLink { MetricDetailView(kind: kind) } label: { RowLabel(title: kind.rawValue, subtitle: "\(store.data.readings.filter { $0.kind == kind }.count)条记录", icon: kind.icon) }.buttonStyle(.plain) }
-                NavigationLink { MedicationView() } label: { RowLabel(title: "用药管理", icon: "pills") }.buttonStyle(.plain)
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("健康档案")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .tracking(0.6)
+
+                Text("把长期记录放在一处")
+                    .font(CXTypography.display)
+
+                Text("这里看的是积累：测量、用药、报告和睡前记录，不重复展示首页的即时摘要。")
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
             }
-            ReportListContent()
-            Card { Text("睡前记录").font(.headline); Text(store.data.journal.isEmpty ? "还没有记录，今晚留一句话给自己吧。" : store.data.journal) }
-        }.navigationTitle("健康档案")
+
+            SectionEyebrow(title: "测量记录")
+            VStack(spacing: CXSpacing.sm) {
+                ForEach(MetricKind.allCases) { kind in
+                    ProfileEntryRow(
+                        title: kind.rawValue,
+                        subtitle: "\(store.data.readings.filter { $0.kind == kind }.count) 条记录",
+                        icon: kind.icon,
+                        tint: kind == .pressure ? CX.statusCritical : kind == .glucose ? CX.statusWarning : CX.actionPrimary
+                    ) {
+                        MetricDetailView(kind: kind)
+                    }
+                }
+            }
+
+            SectionEyebrow(title: "用药与报告")
+            VStack(spacing: CXSpacing.sm) {
+                ProfileEntryRow(
+                    title: "用药管理",
+                    subtitle: "\(store.data.medications.count) 项计划 · \(store.data.doseHistory.count) 条历史",
+                    icon: "pills.fill",
+                    tint: CX.statusPositive
+                ) {
+                    MedicationView()
+                }
+
+                NavigationLink {
+                    ReportListContent()
+                } label: {
+                    HStack(spacing: CXSpacing.md) {
+                        Image(systemName: "doc.text.magnifyingglass")
+                            .foregroundStyle(CX.actionPrimary)
+                            .frame(width: 42, height: 42)
+                            .background(CX.actionPrimary.opacity(0.08), in: Circle())
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("报告与资料")
+                                .font(CXTypography.section)
+                            Text("\(store.data.importedReports.count) 份本机报告")
+                                .font(CXTypography.supporting)
+                                .foregroundStyle(CX.muted)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(CX.faint)
+                    }
+                    .padding(CXSpacing.md)
+                    .cxContentSurface(cornerRadius: CXRadius.md)
+                }
+                .buttonStyle(QuietPressButton())
+            }
+
+            SectionEyebrow(title: "睡前记录")
+            VStack(alignment: .leading, spacing: CXSpacing.sm) {
+                Text(store.data.journal.isEmpty ? "今晚还没有留下记录。" : store.data.journal)
+                    .font(CXTypography.body)
+                    .foregroundStyle(store.data.journal.isEmpty ? CX.muted : CX.ink)
+                    .lineSpacing(5)
+
+                NavigationLink("查看今日计划") { PlanView() }
+                    .font(CXTypography.supporting.weight(.semibold))
+            }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+        }
+        .navigationTitle("健康档案")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
 struct DevicesView: View {
     @State private var checking = false
     @State private var checked = false
+
     var body: some View {
-        Page {
-            CXEmptyState(title: "还没有连接设备", message: "当前版本先支持手动记录；设备同步与健康 App 授权尚未开放。", icon: "applewatch")
-            Button(checking ? "正在检查…" : "检查设备支持") { checking = true }.buttonStyle(PrimaryButton()).disabled(checking)
-            if checked { Card { Text("此体验版暂无可配对设备。"); NavigationLink("手动记录健康数据") { HealthArchiveView() } } }
-        }.navigationTitle("我的设备")
-        .task(id: checking) { guard checking else { return }; do { try await Task.sleep(for: .milliseconds(700)); checked = true; checking = false } catch { checking = false } }
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("设备")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .tracking(0.6)
+                Text("先把记录方式说明白")
+                    .font(CXTypography.display)
+                Text("当前版本以手动记录为主；设备同步能力开放后，会在这里清楚说明授权范围和数据来源。")
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
+            }
+
+            CXEmptyState(
+                title: "还没有连接设备",
+                message: "现在可以继续手动记录血压、血糖和体重；设备同步与健康 App 授权尚未开放。",
+                icon: "applewatch"
+            )
+
+            Button(checking ? "正在检查" : "检查设备支持") {
+                checking = true
+            }
+            .buttonStyle(PrimaryButton())
+            .disabled(checking)
+
+            if checked {
+                VStack(alignment: .leading, spacing: CXSpacing.md) {
+                    Label("当前体验版暂无可配对设备", systemImage: "checkmark.circle")
+                        .font(CXTypography.section)
+                    NavigationLink("继续手动记录") { HealthArchiveView() }
+                        .font(CXTypography.supporting.weight(.semibold))
+                }
+                .padding(CXSpacing.lg)
+                .cxContentSurface(cornerRadius: CXRadius.lg)
+            }
+        }
+        .navigationTitle("我的设备")
+        .navigationBarTitleDisplayMode(.inline)
+        .task(id: checking) {
+            guard checking else { return }
+            do {
+                try await Task.sleep(for: .milliseconds(700))
+                checked = true
+                checking = false
+            } catch {
+                checking = false
+            }
+        }
     }
 }
 
@@ -982,16 +1101,40 @@ struct AccessibilitySettingsView: View {
 struct MotionLabView: View {
     @State private var state = MoonPoolState.idle
     @State private var amplitude = 0.3
+
     var body: some View {
         Page(illustrated: true) {
-            MoonPoolView(state: state, amplitude: amplitude)
-            Card {
-                Picker("月池状态", selection: $state) { ForEach(MoonPoolState.allCases) { Text($0.label).tag($0) } }
-                Text("声音强度演示").font(.headline)
-                Slider(value: $amplitude).accessibilityLabel("声音强度")
-                Text("月相只表达过程，健康信息由数值和文字表达。").font(.footnote).foregroundStyle(CX.muted)
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("月池体验")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .tracking(0.6)
+                Text("动效只表达状态，不替代健康信息")
+                    .font(CXTypography.display)
+                Text("月相、波纹和光晕负责节奏感；健康结论仍然只通过明确文字与数值表达。")
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
             }
-        }.navigationTitle("月池状态体验")
+
+            MoonPoolView(state: state, amplitude: amplitude)
+
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                SectionEyebrow(title: "状态")
+                Picker("月池状态", selection: $state) {
+                    ForEach(MoonPoolState.allCases) { Text($0.label).tag($0) }
+                }
+                .pickerStyle(.segmented)
+
+                SectionEyebrow(title: "波动强度")
+                Slider(value: $amplitude)
+                    .accessibilityLabel("声音强度")
+            }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+        }
+        .navigationTitle("月池状态体验")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -999,23 +1142,68 @@ struct HelpView: View {
     @Environment(AppStore.self) private var store
     @State private var feedback = ""
     @State private var saved = false
+
     var body: some View {
-        Page {
-            Card {
-                DisclosureGroup("如何记录健康数据？") { Text("在健康页选择血压、血糖或体重，点击添加记录。输入数值、时间和备注后保存。") }
-                Divider()
-                DisclosureGroup("常曦会记住哪些事情？") { Text("只有你确认的记忆才进入“已记住”。你可以随时修改或删除，也可在隐私页暂停确认记忆。") }
-                Divider()
-                DisclosureGroup("这里能联系到真实医生吗？") { Text("目前是前端体验版本，医生消息为示例。咨询和预约只保存到本机，不会发送给医疗机构。") }
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("帮助与反馈")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .tracking(0.6)
+                Text("先找到答案，再告诉我们哪里还能更好")
+                    .font(CXTypography.display)
+                Text("常见问题和反馈分开呈现，减少一页里同时出现太多操作。")
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
             }
-            Card {
-                Text("意见反馈").font(.title2.bold())
-                TextField("有什么可以做得更好？", text: $feedback, axis: .vertical).lineLimit(4...8)
-                Button(saved ? "已保存反馈草稿" : "保存反馈草稿") { store.data.feedback = feedback; saved = true }.buttonStyle(PrimaryButton()).disabled(feedback.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                ShareLink("分享反馈", item: feedback).disabled(feedback.isEmpty)
+
+            SectionEyebrow(title: "常见问题")
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                DisclosureGroup("如何记录健康数据？") {
+                    Text("在健康页选择血压、血糖或体重，进入对应页面后添加记录。")
+                        .font(CXTypography.supporting)
+                        .foregroundStyle(CX.muted)
+                }
+                Divider().overlay(CX.separator.opacity(0.14))
+                DisclosureGroup("常曦会记住哪些事情？") {
+                    Text("只有你确认过的内容才进入“已记住”，你可以随时修改或删除。")
+                        .font(CXTypography.supporting)
+                        .foregroundStyle(CX.muted)
+                }
+                Divider().overlay(CX.separator.opacity(0.14))
+                DisclosureGroup("这里能联系到真实医生吗？") {
+                    Text("当前为体验版本，咨询和预约只保存本机，不会发送给医疗机构。")
+                        .font(CXTypography.supporting)
+                        .foregroundStyle(CX.muted)
+                }
             }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            SectionEyebrow(title: "意见反馈")
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                TextField("哪里不顺、哪里不清楚，都可以写下来。", text: $feedback, axis: .vertical)
+                    .lineLimit(4...8)
+                    .padding(CXSpacing.md)
+                    .background(CX.raisedSurface, in: .rect(cornerRadius: CXRadius.sm, style: .continuous))
+
+                Button(saved ? "反馈草稿已保存" : "保存反馈草稿") {
+                    store.data.feedback = feedback
+                    saved = true
+                }
+                .buttonStyle(PrimaryButton())
+                .disabled(feedback.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                ShareLink("分享反馈", item: feedback)
+                    .font(CXTypography.supporting.weight(.semibold))
+                    .disabled(feedback.isEmpty)
+            }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
         }
         .navigationTitle("帮助与反馈")
+        .navigationBarTitleDisplayMode(.inline)
         .onAppear { feedback = store.data.feedback }
         .onChange(of: feedback) { _, _ in saved = false }
         .assistantFormContext(title: "反馈草稿", draft: feedback) { value in
