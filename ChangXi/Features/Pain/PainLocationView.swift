@@ -501,44 +501,52 @@ struct PainLocationView: View {
     }
 
     private var markToolPicker: some View {
-        ScrollView(.horizontal) {
-            HStack(spacing: CXSpacing.sm) {
-                ForEach(PainMarkKind.allCases) { tool in
-                    Button {
-                        kind = tool
-                    } label: {
-                        HStack(spacing: 8) {
-                            PainToolPreview(kind: tool)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(tool.label)
-                                    .font(CXTypography.supporting.weight(.semibold))
-                                Text(toolShortHint(tool))
-                                    .font(CXTypography.micro)
-                                    .foregroundStyle(CX.muted)
-                            }
+        LazyVGrid(
+            columns: [
+                GridItem(.flexible(), spacing: CXSpacing.sm),
+                GridItem(.flexible(), spacing: CXSpacing.sm)
+            ],
+            spacing: CXSpacing.sm
+        ) {
+            ForEach(PainMarkKind.allCases) { tool in
+                Button {
+                    kind = tool
+                } label: {
+                    HStack(spacing: 8) {
+                        PainToolPreview(kind: tool)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(tool.label)
+                                .font(CXTypography.supporting.weight(.semibold))
+                            Text(toolShortHint(tool))
+                                .font(CXTypography.micro)
+                                .foregroundStyle(CX.muted)
                         }
-                        .padding(.horizontal, 12)
-                        .frame(minWidth: 124, minHeight: 58, alignment: .leading)
-                        .background(
-                            kind == tool ? PainVisual.accentSoft : CX.surface.opacity(0.88),
-                            in: .rect(cornerRadius: 16, style: .continuous)
-                        )
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .strokeBorder(
-                                    kind == tool ? PainVisual.accent.opacity(0.36) : CX.separator.opacity(0.10),
-                                    lineWidth: kind == tool ? 1 : 0.5
-                                )
-                        }
+
+                        Spacer(minLength: 0)
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(kind == tool ? .isSelected : [])
-                    .accessibilityHint(tool.instruction)
-                    .accessibilityIdentifier("pain-tool-\(tool.label)")
+                    .padding(.horizontal, 12)
+                    .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
+                    .background(
+                        kind == tool ? PainVisual.accentSoft : CX.surface.opacity(0.88),
+                        in: .rect(cornerRadius: 16, style: .continuous)
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .strokeBorder(
+                                kind == tool
+                                    ? PainVisual.accent.opacity(0.36)
+                                    : CX.separator.opacity(0.10),
+                                lineWidth: kind == tool ? 1 : 0.5
+                            )
+                    }
                 }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(kind == tool ? .isSelected : [])
+                .accessibilityHint(tool.instruction)
+                .accessibilityIdentifier("pain-tool-\(tool.label)")
             }
         }
-        .scrollIndicators(.hidden)
     }
 
     private var markHistoryActions: some View {
