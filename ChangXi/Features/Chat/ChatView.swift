@@ -1027,28 +1027,80 @@ struct ChatHistoryView: View {
     @State private var clear = false
 
     var body: some View {
-        List {
-            Section("本机对话记录") {
-                if store.data.messages.isEmpty {
-                    ContentUnavailableView("还没有对话", systemImage: "bubble.left.and.bubble.right")
-                } else {
-                    ForEach(store.data.messages) { message in
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(message.isUser ? "我" : "常曦").font(.caption).foregroundStyle(.secondary)
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("对话历史")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .tracking(0.6)
+                Text("把之前聊过的内容留在本机")
+                    .font(CXTypography.display)
+                Text("这里只展示本机保存的对话记录，你可以随时清空。")
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
+            }
+
+            if store.data.messages.isEmpty {
+                CXEmptyState(
+                    title: "还没有对话",
+                    message: "和常曦聊过的内容会按时间保留在这里。",
+                    icon: "bubble.left.and.bubble.right"
+                )
+            } else {
+                SectionEyebrow(title: "本机记录", action: "\(store.data.messages.count) 条")
+
+                ForEach(store.data.messages) { message in
+                    HStack(alignment: .top, spacing: CXSpacing.md) {
+                        Image(systemName: message.isUser ? "person.fill" : "moon.stars.fill")
+                            .foregroundStyle(message.isUser ? CX.muted : CX.actionPrimary)
+                            .frame(width: 36, height: 36)
+                            .background(
+                                (message.isUser ? CX.muted : CX.actionPrimary).opacity(0.08),
+                                in: Circle()
+                            )
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text(message.isUser ? "我" : "常曦")
+                                    .font(CXTypography.micro.weight(.semibold))
+                                    .foregroundStyle(message.isUser ? CX.muted : CX.actionPrimary)
+                                Spacer()
+                                Text(message.date.formatted(date: .abbreviated, time: .shortened))
+                                    .font(CXTypography.micro)
+                                    .foregroundStyle(CX.faint)
+                            }
+
                             Text(message.text)
-                            Text(message.date.formatted(date: .abbreviated, time: .shortened)).font(.caption2).foregroundStyle(.secondary)
+                                .font(CXTypography.supporting)
+                                .foregroundStyle(CX.ink)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                     }
+                    .padding(CXSpacing.md)
+                    .cxContentSurface(cornerRadius: CXRadius.md)
                 }
             }
         }
         .navigationTitle("对话历史")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .cancellationAction) { Button("关闭") { dismiss() } }
-            ToolbarItem(placement: .topBarTrailing) { Button("清空", role: .destructive) { clear = true }.disabled(store.data.messages.isEmpty) }
+            ToolbarItem(placement: .cancellationAction) {
+                Button("关闭") { dismiss() }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("清空", role: .destructive) { clear = true }
+                    .disabled(store.data.messages.isEmpty)
+            }
         }
-        .confirmationDialog("清空本机对话记录？", isPresented: $clear, titleVisibility: .visible) {
-            Button("清空对话", role: .destructive) { store.data.messages = [] }
+        .confirmationDialog(
+            "清空本机对话记录？",
+            isPresented: $clear,
+            titleVisibility: .visible
+        ) {
+            Button("清空对话", role: .destructive) {
+                store.data.messages = []
+            }
         }
     }
 }
