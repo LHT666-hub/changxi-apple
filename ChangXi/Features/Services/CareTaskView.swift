@@ -20,29 +20,63 @@ struct CareTaskView: View {
     private var patientId: String { PatientContext.effectiveID(auth) }
 
     var body: some View {
-        Page {
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("照护任务")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.statusPositive)
+                    .tracking(0.6)
+
+                Text("把需要跟进的事放在一处")
+                    .font(CXTypography.display)
+
+                Text("任务来自玄同会诊流程，用来提醒下一步，不代替医生医嘱。")
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
+            }
+
             if loading {
                 HStack(spacing: 10) {
                     ProgressView()
-                    Text("正在加载照护任务…").foregroundStyle(CX.muted)
+                    Text("正在整理照护任务")
+                        .font(CXTypography.supporting)
+                        .foregroundStyle(CX.muted)
                 }
+                .frame(maxWidth: .infinity)
+                .padding(CXSpacing.xl)
+                .cxContentSurface(cornerRadius: CXRadius.lg)
             }
 
             if let errorText {
-                Card {
-                    Label(errorText, systemImage: "exclamationmark.triangle")
-                        .foregroundStyle(CX.coral)
-                    Button("重试") { Task { await load() } }
-                        .buttonStyle(PrimaryButton())
+                VStack(alignment: .leading, spacing: CXSpacing.md) {
+                    Label(errorText, systemImage: "exclamationmark.triangle.fill")
+                        .font(CXTypography.supporting)
+                        .foregroundStyle(CX.statusCritical)
+
+                    Button("重新加载") {
+                        Task { await load() }
+                    }
+                    .buttonStyle(PrimaryButton())
                 }
+                .padding(CXSpacing.lg)
+                .background(
+                    CX.statusCritical.opacity(0.05),
+                    in: .rect(cornerRadius: CXRadius.lg, style: .continuous)
+                )
             }
 
             if !loading && errorText == nil && tasks.isEmpty {
-                ContentUnavailableView(
-                    "暂无照护任务",
-                    systemImage: "checklist",
-                    description: Text("当玄同会诊发现需要跟进的健康问题时，会在这里生成照护建议。")
+                CXEmptyState(
+                    title: "暂时没有照护任务",
+                    message: "当会诊流程生成需要跟进的事项时，会集中出现在这里。",
+                    icon: "checklist",
+                    tint: CX.statusPositive
                 )
+            }
+
+            if !tasks.isEmpty {
+                SectionEyebrow(title: "待跟进", action: "\(tasks.filter { !$0.isCompleted }.count) 项")
             }
 
             ForEach(tasks) { task in
@@ -50,8 +84,10 @@ struct CareTaskView: View {
             }
 
             if !tasks.isEmpty {
-                Text("照护任务由玄同会诊自动生成，完成后可勾选标记。AI 建议不能代替医生医嘱。")
-                    .font(.footnote).foregroundStyle(CX.muted)
+                Text("完成任务只表示你已处理这一步；涉及诊疗决定时，仍应以医生意见为准。")
+                    .font(CXTypography.meta)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(4)
             }
         }
         .navigationTitle("我的照护任务")
@@ -62,26 +98,26 @@ struct CareTaskView: View {
     // MARK: - 子视图
 
     private func taskCard(_ task: CareTask) -> some View {
-        Card {
-            HStack(alignment: .top, spacing: 12) {
+        VStack(alignment: .leading, spacing: CXSpacing.md) {
+            HStack(alignment: .top, spacing: CXSpacing.md) {
                 Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
                     .foregroundStyle(task.isCompleted ? CX.teal : CX.muted.opacity(0.5))
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(task.displayTitle).font(.headline)
+                    Text(task.displayTitle).font(CXTypography.section)
                     if let description = task.description, !description.isEmpty {
-                        Text(description).font(.subheadline).foregroundStyle(CX.muted)
+                        Text(description).font(CXTypography.supporting).foregroundStyle(CX.muted)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     HStack(spacing: 8) {
                         if let priority = task.priority, !priority.isEmpty {
                             priorityBadge(priority)
                         }
-                        Text(roleLabel(task)).font(.caption).foregroundStyle(CX.muted)
+                        Text(roleLabel(task)).font(CXTypography.micro).foregroundStyle(CX.muted)
                     }
                     if let deadline = task.deadline, let date = HealthSyncService.date(fromISO: deadline) {
                         Label("截止 \(date.formatted(date: .abbreviated, time: .shortened))", systemImage: "clock")
-                            .font(.caption).foregroundStyle(CX.muted)
+                            .font(CXTypography.micro).foregroundStyle(CX.muted)
                     }
                 }
                 Spacer(minLength: 0)
@@ -89,7 +125,7 @@ struct CareTaskView: View {
 
             if task.isCompleted {
                 Label("已完成", systemImage: "checkmark.seal.fill")
-                    .font(.subheadline).foregroundStyle(CX.teal)
+                    .font(CXTypography.supporting.weight(.semibold)).foregroundStyle(CX.statusPositive)
             } else {
                 Button {
                     completeNotes = ""
@@ -101,6 +137,8 @@ struct CareTaskView: View {
                 .disabled(completing)
             }
         }
+        .padding(CXSpacing.lg)
+        .cxContentSurface(cornerRadius: CXRadius.lg)
     }
 
     private func completeSheet(_ task: CareTask) -> some View {
