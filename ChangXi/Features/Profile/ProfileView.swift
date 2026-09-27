@@ -285,7 +285,7 @@ struct MemoryView: View {
             MoonPoolView(character: true, compact: true)
             if !store.data.rememberAllowed { Label("记忆已暂停。现有记忆仍可管理。", systemImage: "pause.circle").foregroundStyle(CX.muted) }
             Picker("记忆分类", selection: $filter) { ForEach(["待确认", "已记住", "偏好", "健康档案"], id: \.self) { Text($0) } }.pickerStyle(.segmented)
-            if items.isEmpty { ContentUnavailableView("这里暂时没有记忆", systemImage: "moon.stars", description: Text("你的确认、修改和删除，都会被尊重。")) }
+            if items.isEmpty { CXEmptyState(title: "这里暂时没有记忆", message: "只有你确认过的内容，才会留在常曦记忆里。", icon: "moon.stars") }
             ForEach(items) { item in
                 Card {
                     Label(item.title, systemImage: item.category == "偏好" ? "heart.text.clipboard" : "doc.text").font(.title2.bold())
@@ -596,7 +596,7 @@ struct DevicesView: View {
     @State private var checked = false
     var body: some View {
         Page {
-            ContentUnavailableView("还没有连接设备", systemImage: "applewatch", description: Text("当前版本支持手动记录。设备同步与健康 App 授权尚未开放。"))
+            CXEmptyState(title: "还没有连接设备", message: "当前版本先支持手动记录；设备同步与健康 App 授权尚未开放。", icon: "applewatch")
             Button(checking ? "正在检查…" : "检查设备支持") { checking = true }.buttonStyle(PrimaryButton()).disabled(checking)
             if checked { Card { Text("此体验版暂无可配对设备。"); NavigationLink("手动记录健康数据") { HealthArchiveView() } } }
         }.navigationTitle("我的设备")
