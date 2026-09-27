@@ -326,103 +326,131 @@ struct BMIDetailView: View {
     private var latestWeight: HealthReading? { store.latest(.weight) }
 
     var body: some View {
-        Page {
-            VStack(alignment: .leading, spacing: 8) {
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
                 Text("体质指数")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .tracking(0.6)
+
+                Text("看懂当前 BMI，也看懂它从哪里来")
                     .font(CXTypography.display)
-                Text("由最新体重和档案身高自动计算。")
-                    .font(.body)
+
+                Text("BMI 由最新体重和档案身高自动计算，只用于体重状况筛查。")
+                    .font(CXTypography.body)
                     .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
             }
 
-            Card {
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
                 Text("当前 BMI")
-                    .font(.subheadline)
+                    .font(CXTypography.micro.weight(.semibold))
                     .foregroundStyle(CX.muted)
 
                 if let result {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Text(result.display)
-                            .font(.largeTitle.weight(.bold))
+                            .font(CXTypography.display)
                             .fontDesign(.rounded)
                             .monospacedDigit()
                             .contentTransition(.numericText())
                         Text("kg/m²")
-                            .font(.subheadline)
+                            .font(CXTypography.supporting)
                             .foregroundStyle(CX.muted)
                     }
 
                     Label(result.classification.rawValue, systemImage: result.classification.systemImage)
-                        .font(.headline)
+                        .font(CXTypography.supporting.weight(.semibold))
                         .foregroundStyle(result.classification.tint)
                         .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(result.classification.tint.opacity(0.10), in: Capsule())
+                        .frame(minHeight: 34)
+                        .background(result.classification.tint.opacity(0.09), in: Capsule())
 
                     if let latestWeight {
                         Text("按最新体重 \(latestWeight.display) kg 与身高 \(heightDisplay) cm 计算")
-                            .font(.subheadline)
+                            .font(CXTypography.meta)
                             .foregroundStyle(CX.muted)
                     }
                 } else {
-                    ContentUnavailableView(
-                        "还不能计算 BMI",
-                        systemImage: "scalemass",
-                        description: Text("先添加一条体重记录，BMI 会自动出现。")
+                    CXEmptyState(
+                        title: "还不能计算 BMI",
+                        message: "先添加一条体重记录，BMI 会自动出现。",
+                        icon: "scalemass"
                     )
                 }
             }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
             .accessibilityElement(children: .combine)
 
-            Text("中国成人 BMI 分级")
-                .font(.title2.weight(.semibold))
-
-            Card {
+            SectionEyebrow(title: "成人 BMI 分级")
+            VStack(spacing: 0) {
                 ForEach(Array(BMIClassification.allCases.enumerated()), id: \.element) { index, classification in
                     BMIRangeRow(
                         classification: classification,
                         isCurrent: result?.classification == classification
                     )
                     if index < BMIClassification.allCases.count - 1 {
-                        Divider()
+                        Divider().overlay(CX.separator.opacity(0.14))
                     }
                 }
             }
+            .padding(.horizontal, CXSpacing.md)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
 
-            Card {
-                Text("计算依据")
-                    .font(.title3.weight(.semibold))
-
+            SectionEyebrow(title: "计算依据")
+            VStack(spacing: CXSpacing.sm) {
                 NavigationLink { MetricDetailView(kind: .weight) } label: {
-                    RowLabel(
-                        title: latestWeight.map { "体重 \($0.display) kg" } ?? "添加体重记录",
-                        subtitle: latestWeight.map { "更新于 \($0.date.formatted(date: .abbreviated, time: .shortened))" } ?? "BMI 需要最新体重",
-                        icon: "scalemass",
-                        tint: CX.actionPrimary
-                    )
+                    HStack(spacing: CXSpacing.md) {
+                        Image(systemName: "scalemass")
+                            .foregroundStyle(CX.actionPrimary)
+                            .frame(width: 42, height: 42)
+                            .background(CX.actionPrimary.opacity(0.08), in: Circle())
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(latestWeight.map { "体重 \($0.display) kg" } ?? "添加体重记录")
+                                .font(CXTypography.section)
+                            Text(latestWeight.map { "更新于 \($0.date.formatted(date: .abbreviated, time: .shortened))" } ?? "BMI 需要最新体重")
+                                .font(CXTypography.meta)
+                                .foregroundStyle(CX.muted)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(CX.faint)
+                    }
+                    .padding(CXSpacing.md)
+                    .cxContentSurface(cornerRadius: CXRadius.md)
                 }
-                .buttonStyle(.plain)
-
-                Divider()
+                .buttonStyle(QuietPressButton())
 
                 NavigationLink { AccountView() } label: {
-                    RowLabel(
-                        title: "身高 \(heightDisplay) cm",
-                        subtitle: "身高变化或资料有误时，请在这里修改",
-                        icon: "ruler",
-                        tint: CX.statusPositive
-                    )
+                    HStack(spacing: CXSpacing.md) {
+                        Image(systemName: "ruler")
+                            .foregroundStyle(CX.statusPositive)
+                            .frame(width: 42, height: 42)
+                            .background(CX.statusPositive.opacity(0.08), in: Circle())
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("身高 \(heightDisplay) cm")
+                                .font(CXTypography.section)
+                            Text("资料有变化时可在个人资料中修改")
+                                .font(CXTypography.meta)
+                                .foregroundStyle(CX.muted)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(CX.faint)
+                    }
+                    .padding(CXSpacing.md)
+                    .cxContentSurface(cornerRadius: CXRadius.md)
                 }
-                .buttonStyle(.plain)
-
-                Text("BMI = 体重（kg）÷ 身高（m）²")
-                    .font(.footnote)
-                    .foregroundStyle(CX.muted)
+                .buttonStyle(QuietPressButton())
             }
 
-            Text("依据现行《成人体重判定》WS/T 428—2013，适用于 18 岁及以上一般成人。BMI 只用于体重状况筛查，运动员、孕产妇等特殊人群，以及需要个体化评估的人群，请结合医生建议判断。")
-                .font(.footnote)
+            Text("BMI = 体重（kg）÷ 身高（m）²。依据现行《成人体重判定》WS/T 428—2013，适用于 18 岁及以上一般成人；特殊人群需结合专业评估。")
+                .font(CXTypography.meta)
                 .foregroundStyle(CX.muted)
+                .lineSpacing(4)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .navigationTitle("BMI")
@@ -542,15 +570,72 @@ struct TrendContent: View {
     @Environment(AppStore.self) private var store
     @State private var kind = MetricKind.pressure
     @State private var days = 7
+
     var body: some View {
-        Picker("指标", selection: $kind) { ForEach(MetricKind.allCases) { Text($0.rawValue).tag($0) } }.pickerStyle(.segmented)
-        Picker("时间范围", selection: $days) { Text("7天").tag(7); Text("30天").tag(30); Text("90天").tag(90) }.pickerStyle(.segmented)
-        Card {
-            Text("\(kind.rawValue) · \(kind.unit)").font(.title2.bold())
-            HealthChart(readings: store.readings(kind, days: days), kind: kind)
-            Text("共 \(store.readings(kind, days: days).count) 次记录").foregroundStyle(CX.muted)
+        VStack(alignment: .leading, spacing: CXSpacing.xs) {
+            Text("趋势")
+                .font(CXTypography.micro.weight(.semibold))
+                .foregroundStyle(CX.actionPrimary)
+                .tracking(0.6)
+            Text("看变化，不只看一次数字")
+                .font(CXTypography.display)
+            Text("切换指标和时间范围，观察记录是否在发生持续变化。")
+                .font(CXTypography.body)
+                .foregroundStyle(CX.muted)
+                .lineSpacing(5)
         }
-        NavigationLink { MetricDetailView(kind: kind) } label: { Card { RowLabel(title: "查看记录明细", icon: "list.bullet") } }.buttonStyle(.plain)
+
+        VStack(alignment: .leading, spacing: CXSpacing.md) {
+            Picker("指标", selection: $kind) {
+                ForEach(MetricKind.allCases) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented)
+
+            Picker("时间范围", selection: $days) {
+                Text("7天").tag(7)
+                Text("30天").tag(30)
+                Text("90天").tag(90)
+            }
+            .pickerStyle(.segmented)
+        }
+        .padding(CXSpacing.lg)
+        .cxContentSurface(cornerRadius: CXRadius.lg)
+
+        VStack(alignment: .leading, spacing: CXSpacing.md) {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(kind.rawValue)
+                        .font(CXTypography.title)
+                    Text(kind.unit)
+                        .font(CXTypography.meta)
+                        .foregroundStyle(CX.muted)
+                }
+
+                Spacer()
+
+                Text("\(store.readings(kind, days: days).count) 次记录")
+                    .font(CXTypography.meta.weight(.semibold))
+                    .foregroundStyle(CX.muted)
+            }
+
+            HealthChart(readings: store.readings(kind, days: days), kind: kind)
+        }
+        .padding(CXSpacing.lg)
+        .cxContentSurface(cornerRadius: CXRadius.lg)
+
+        NavigationLink { MetricDetailView(kind: kind) } label: {
+            HStack {
+                Text("查看全部记录")
+                    .font(CXTypography.section)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(CX.faint)
+            }
+            .padding(CXSpacing.md)
+            .cxContentSurface(cornerRadius: CXRadius.md)
+        }
+        .buttonStyle(QuietPressButton())
     }
 }
 
