@@ -15,45 +15,121 @@ struct CloudDocumentsView: View {
     private var patientId: String { auth.currentUser?.id ?? RemoteConversationService.localPatientId }
 
     var body: some View {
-        Page {
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("云端文档")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .tracking(0.6)
+                Text("只保留你主动归档的资料")
+                    .font(CXTypography.display)
+                Text("云端副本和本机报告彼此独立；删除云端文档不会删除本机原件。")
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
+            }
+
             if loading {
-                HStack(spacing: 10) { ProgressView(); Text("正在加载云端文档…").foregroundStyle(CX.muted) }
+                HStack(spacing: 10) {
+                    ProgressView()
+                    Text("正在整理云端文档")
+                        .font(CXTypography.supporting)
+                        .foregroundStyle(CX.muted)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(CXSpacing.xl)
+                .cxContentSurface(cornerRadius: CXRadius.lg)
             }
+
             if let error {
-                Card {
-                    Text(error).foregroundStyle(CX.coral)
-                    Button("重试") { Task { await load() } }.buttonStyle(.bordered).frame(minHeight: 44)
+                VStack(alignment: .leading, spacing: CXSpacing.md) {
+                    Label(error, systemImage: "exclamationmark.triangle.fill")
+                        .font(CXTypography.supporting)
+                        .foregroundStyle(CX.statusCritical)
+                    Button("重新加载") { Task { await load() } }
+                        .buttonStyle(PrimaryButton())
                 }
+                .padding(CXSpacing.lg)
+                .background(
+                    CX.statusCritical.opacity(0.05),
+                    in: .rect(cornerRadius: CXRadius.lg, style: .continuous)
+                )
             }
+
             if !loading && error == nil && documents.isEmpty {
-                ContentUnavailableView("还没有云端文档", systemImage: "externaldrive",
-                                       description: Text("导入并识别报告后，会自动归档到这里。"))
+                CXEmptyState(
+                    title: "还没有云端文档",
+                    message: "导入并主动归档报告后，会集中出现在这里。",
+                    icon: "externaldrive"
+                )
             }
+
+            if !documents.isEmpty {
+                SectionEyebrow(title: "已归档", action: "\(documents.count) 份")
+            }
+
             ForEach(documents) { document in
-                Card {
-                    RowLabel(title: document.fileName,
-                             subtitle: "\(document.docType) · \(ByteCountFormatter.string(fromByteCount: Int64(document.fileSize), countStyle: .file))",
-                             icon: "doc.fill", chevron: false)
-                    Text(document.createdAt.formatted(date: .abbreviated, time: .shortened))
-                        .font(.caption).foregroundStyle(CX.muted)
-                    if !document.isRemoteStorage {
-                        Label("存储在本机占位路径，暂不支持在线预览。", systemImage: "info.circle")
-                            .font(.caption).foregroundStyle(CX.muted)
+                VStack(alignment: .leading, spacing: CXSpacing.md) {
+                    HStack(spacing: CXSpacing.md) {
+                        Image(systemName: "doc.fill")
+                            .foregroundStyle(CX.actionPrimary)
+                            .frame(width: 44, height: 44)
+                            .background(CX.actionPrimary.opacity(0.08), in: Circle())
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(document.fileName)
+                                .font(CXTypography.section)
+                            Text("\(document.docType) · \(ByteCountFormatter.string(fromByteCount: Int64(document.fileSize), countStyle: .file))")
+                                .font(CXTypography.meta)
+                                .foregroundStyle(CX.muted)
+                        }
+
+                        Spacer()
                     }
-                    Button(role: .destructive) { pendingDelete = document } label: {
-                        Label("删除云端文档", systemImage: "trash")
-                    }.frame(minHeight: 44)
+
+                    HStack {
+                        Text(document.createdAt.formatted(date: .abbreviated, time: .shortened))
+                            .font(CXTypography.micro)
+                            .foregroundStyle(CX.muted)
+                        Spacer()
+                        if !document.isRemoteStorage {
+                            Label("暂不支持在线预览", systemImage: "info.circle")
+                                .font(CXTypography.micro)
+                                .foregroundStyle(CX.muted)
+                        }
+                    }
+
+                    Button(role: .destructive) {
+                        pendingDelete = document
+                    } label: {
+                        Label("删除云端副本", systemImage: "trash")
+                            .font(CXTypography.meta.weight(.semibold))
+                    }
                 }
+                .padding(CXSpacing.lg)
+                .cxContentSurface(cornerRadius: CXRadius.lg)
             }
-            Text("云端文档由你主动导入并归档。删除只移除云端副本，不影响本机报告。")
-                .font(.footnote).foregroundStyle(CX.muted)
-        }.navigationTitle("云端文档")
+
+            Text("删除云端副本不会影响本机保存的报告原件。")
+                .font(CXTypography.meta)
+                .foregroundStyle(CX.muted)
+                .frame(maxWidth: .infinity, alignment: .center)
+        }
+        .navigationTitle("云端文档")
+        .navigationBarTitleDisplayMode(.inline)
         .task { await load() }
-        .confirmationDialog("删除这份云端文档？",
-                            isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }),
-                            titleVisibility: .visible) {
+        .confirmationDialog(
+            "删除这份云端文档？",
+            isPresented: Binding(
+                get: { pendingDelete != nil },
+                set: { if !$0 { pendingDelete = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
             Button("删除", role: .destructive) {
-                if let document = pendingDelete { Task { await delete(document) } }
+                if let document = pendingDelete {
+                    Task { await delete(document) }
+                }
                 pendingDelete = nil
             }
         }
