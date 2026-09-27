@@ -94,7 +94,7 @@ struct ProfileView: View {
     }
 }
 
-private struct ProfileEntryRow<Destination: View>: View {
+struct ProfileEntryRow<Destination: View>: View {
     let title: String
     let subtitle: String
     let icon: String
@@ -477,6 +477,26 @@ struct MemoryView: View {
         }
         .navigationTitle("常曦记忆")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(item: $editing) { item in
+            NavigationStack {
+                MemoryEditView(item: item)
+            }
+        }
+        .confirmationDialog(
+            deleting?.confirmed == true ? "删除这条记忆？" : "不保留这条待确认记忆？",
+            isPresented: Binding(
+                get: { deleting != nil },
+                set: { if !$0 { deleting = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button(deleting?.confirmed == true ? "删除记忆" : "不记住", role: .destructive) {
+                if let id = deleting?.id {
+                    store.data.memories.removeAll { $0.id == id }
+                }
+                deleting = nil
+            }
+        }
     }
 
     @ViewBuilder private func actions(_ item: MemoryItem) -> some View {
