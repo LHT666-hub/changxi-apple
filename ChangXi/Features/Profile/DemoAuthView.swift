@@ -266,7 +266,9 @@ private struct AuthField<Content: View>: View {
         .textContentType(contentType)
         .autocorrectionDisabled()
         .textInputAutocapitalization(.never)
-        .padding(.horizontal, CXSpacing.md)\n        .frame(minHeight: 52)\n        .background(CX.raisedSurface, in: .rect(cornerRadius: CXRadius.sm, style: .continuous))
+        .padding(.horizontal, CXSpacing.md)
+        .frame(minHeight: 52)
+        .background(CX.raisedSurface, in: .rect(cornerRadius: CXRadius.sm, style: .continuous))
         .onChange(of: text.wrappedValue) { _, _ in localError = nil; auth.clearError() }
     }
 
