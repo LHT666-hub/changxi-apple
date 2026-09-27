@@ -514,12 +514,62 @@ struct MemoryEditView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var text = ""
     @State private var category = "健康档案"
+
     var body: some View {
-        Form {
-            Section(item.title) { TextEditor(text: $text).frame(minHeight: 160); Picker("分类", selection: $category) { Text("健康档案").tag("健康档案"); Text("偏好").tag("偏好") } }
-            Section { Button("保存修改") { if let i = store.data.memories.firstIndex(where: { $0.id == item.id }) { store.data.memories[i].text = text; store.data.memories[i].category = category }; dismiss() }.disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) }
-        }.navigationTitle("修改记忆").onAppear { text = item.text; category = item.category }
-        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } } }
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("修改记忆")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .tracking(0.6)
+                Text(item.title)
+                    .font(CXTypography.display)
+                Text("修改后会覆盖这条本机记忆；你仍然可以之后删除它。")
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
+            }
+
+            SectionEyebrow(title: "记忆内容")
+            TextEditor(text: $text)
+                .font(CXTypography.body)
+                .frame(minHeight: 180)
+                .padding(CXSpacing.sm)
+                .scrollContentBackground(.hidden)
+                .background(CX.surface, in: .rect(cornerRadius: CXRadius.md, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: CXRadius.md, style: .continuous)
+                        .strokeBorder(CX.separator.opacity(0.12), lineWidth: 0.5)
+                }
+
+            SectionEyebrow(title: "分类")
+            Picker("分类", selection: $category) {
+                Text("健康档案").tag("健康档案")
+                Text("偏好").tag("偏好")
+            }
+            .pickerStyle(.segmented)
+
+            Button("保存修改") {
+                if let i = store.data.memories.firstIndex(where: { $0.id == item.id }) {
+                    store.data.memories[i].text = text
+                    store.data.memories[i].category = category
+                }
+                dismiss()
+            }
+            .buttonStyle(PrimaryButton())
+            .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        }
+        .navigationTitle("修改记忆")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            text = item.text
+            category = item.category
+        }
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("取消") { dismiss() }
+            }
+        }
     }
 }
 
