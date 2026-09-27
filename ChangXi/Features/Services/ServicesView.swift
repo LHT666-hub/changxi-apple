@@ -4,42 +4,168 @@ struct ServicesView: View {
     @Environment(AppStore.self) private var store
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var category = "医疗服务"
+
     var body: some View {
-        Page {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("家庭医生服务")
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("服务")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .tracking(0.6)
+
+                Text("需要的时候，有人接住下一步")
                     .font(CXTypography.display)
-                Text("从日常记录，到需要时有人回应。")
+
+                Text("预约、咨询、随访和社区服务都放在这里，不必一次想清所有步骤。")
+                    .font(CXTypography.body)
                     .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
             }
-            Card {
-                NavigationLink { FamilyView() } label: { RowLabel(title: "我的家庭医生", subtitle: "当前服务对象：\(store.data.person)", icon: "house.fill") }.buttonStyle(.plain)
-                Divider()
-                NavigationLink { DoctorDetailView() } label: { RowLabel(title: "蒋医生", subtitle: "海湾镇社区卫生服务中心\n全科医生 · 示例服务团队", icon: "stethoscope", tint: CX.statusPositive) }.buttonStyle(.plain)
-                NavigationLink("联系医生") { ConsultationView() }.buttonStyle(PrimaryButton())
+
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                HStack(spacing: CXSpacing.md) {
+                    Image(systemName: "stethoscope")
+                        .font(.title2.weight(.medium))
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(CX.statusPositive)
+                        .frame(width: 52, height: 52)
+                        .background(CX.statusPositive.opacity(0.08), in: Circle())
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("蒋医生")
+                            .font(CXTypography.title)
+                        Text("全科医生 · 示例家庭医生团队")
+                            .font(CXTypography.supporting)
+                            .foregroundStyle(CX.muted)
+                        Text("当前服务对象：\(store.data.person)")
+                            .font(CXTypography.meta)
+                            .foregroundStyle(CX.muted)
+                    }
+
+                    Spacer()
+                }
+
+                HStack(spacing: CXSpacing.sm) {
+                    NavigationLink { DoctorDetailView() } label: {
+                        Label("查看医生", systemImage: "person.crop.circle")
+                            .frame(maxWidth: .infinity, minHeight: 48)
+                    }
+                    .buttonStyle(.bordered)
+
+                    NavigationLink { ConsultationView() } label: {
+                        Label("联系医生", systemImage: "bubble.left.and.bubble.right")
+                            .frame(maxWidth: .infinity, minHeight: 48)
+                    }
+                    .buttonStyle(PrimaryButton())
+                }
             }
-            Picker("服务分类", selection: $category) { ForEach(["医疗服务", "活动通知", "家医课堂"], id: \.self) { Text($0) } }.pickerStyle(.segmented)
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            Picker("服务分类", selection: $category) {
+                ForEach(["医疗服务", "活动通知", "家医课堂"], id: \.self) { Text($0) }
+            }
+            .pickerStyle(.segmented)
+
             if category == "医疗服务" {
+                SectionEyebrow(title: "常用服务")
                 CXGlassGroup(spacing: 12) {
-                    LazyVGrid(columns: CXLayout.adaptiveColumns(minimum: 156, dynamicTypeSize: dynamicTypeSize), spacing: 12) {
+                    LazyVGrid(
+                        columns: CXLayout.adaptiveColumns(minimum: 156, dynamicTypeSize: dynamicTypeSize),
+                        spacing: 12
+                    ) {
                         ForEach(ServiceItem.all) { item in
                             NavigationLink { ServiceDetailView(service: item) } label: {
                                 ServiceTile(item: item)
-                            }.buttonStyle(.plain).accessibilityIdentifier("service-\(item.title)")
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("service-\(item.title)")
                         }
                     }
                 }
             } else {
+                SectionEyebrow(title: category)
                 NavigationLink { ArticleView(isClass: category == "家医课堂") } label: {
-                    Card { RowLabel(title: category == "家医课堂" ? "让健康记录更有用" : "社区月光散步计划", subtitle: category == "家医课堂" ? "3分钟阅读 · 记录方法" : "周六 18:30 · 社区花园 · 示例活动", icon: category == "家医课堂" ? "book.closed" : "figure.walk") }
-                }.buttonStyle(.plain)
+                    HStack(spacing: CXSpacing.md) {
+                        Image(systemName: category == "家医课堂" ? "book.closed" : "figure.walk")
+                            .font(.title3.weight(.medium))
+                            .foregroundStyle(CX.actionPrimary)
+                            .frame(width: 48, height: 48)
+                            .background(CX.actionPrimary.opacity(0.08), in: Circle())
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(category == "家医课堂" ? "让健康记录更有用" : "社区月光散步计划")
+                                .font(CXTypography.section)
+                            Text(category == "家医课堂" ? "3 分钟阅读 · 记录方法" : "周六 18:30 · 社区花园 · 示例活动")
+                                .font(CXTypography.supporting)
+                                .foregroundStyle(CX.muted)
+                        }
+
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(CX.faint)
+                    }
+                    .padding(CXSpacing.md)
+                    .cxContentSurface(cornerRadius: CXRadius.md)
+                }
+                .buttonStyle(QuietPressButton())
             }
-            NavigationLink { BookingsView() } label: { Card { RowLabel(title: "我的服务记录", subtitle: "\(store.data.bookings.filter { !$0.cancelled }.count) 条本地预约", icon: "calendar.badge.clock") } }.buttonStyle(.plain)
+
+            SectionEyebrow(title: "我的服务")
+            NavigationLink { BookingsView() } label: {
+                HStack(spacing: CXSpacing.md) {
+                    Image(systemName: "calendar.badge.clock")
+                        .foregroundStyle(CX.actionPrimary)
+                        .frame(width: 42, height: 42)
+                        .background(CX.actionPrimary.opacity(0.08), in: Circle())
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("服务记录")
+                            .font(CXTypography.section)
+                        Text("\(store.data.bookings.filter { !$0.cancelled }.count) 条本地记录")
+                            .font(CXTypography.supporting)
+                            .foregroundStyle(CX.muted)
+                    }
+
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(CX.faint)
+                }
+                .padding(CXSpacing.md)
+                .cxContentSurface(cornerRadius: CXRadius.md)
+            }
+            .buttonStyle(QuietPressButton())
+
             if AppConfiguration.useRemoteAPI {
-                NavigationLink { CareTaskView() } label: { Card { RowLabel(title: "我的照护任务", subtitle: "玄同会诊生成的照护建议", icon: "checklist") } }.buttonStyle(.plain)
+                NavigationLink { CareTaskView() } label: {
+                    HStack(spacing: CXSpacing.md) {
+                        Image(systemName: "checklist")
+                            .foregroundStyle(CX.statusPositive)
+                            .frame(width: 42, height: 42)
+                            .background(CX.statusPositive.opacity(0.08), in: Circle())
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("照护任务")
+                                .font(CXTypography.section)
+                            Text("玄同会诊生成的照护建议")
+                                .font(CXTypography.supporting)
+                                .foregroundStyle(CX.muted)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(CX.faint)
+                    }
+                    .padding(CXSpacing.md)
+                    .cxContentSurface(cornerRadius: CXRadius.md)
+                }
+                .buttonStyle(QuietPressButton())
             }
+
             DemoLabel()
-        }.navigationTitle("服务")
+        }
+        .navigationTitle("服务")
     }
 }
 
