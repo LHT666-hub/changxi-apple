@@ -1545,7 +1545,7 @@ struct PainMarkingSurface: View {
                         .allowsHitTesting(false)
                     }
                     .contentShape(Rectangle())
-                    .gesture(
+                    .highPriorityGesture(
                         DragGesture(minimumDistance: 0)
                             .onChanged { value in
                                 guard editable else { return }
