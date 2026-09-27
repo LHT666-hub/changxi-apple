@@ -28,61 +28,302 @@ struct ReportImportView: View {
     private var patientId: String { auth.currentUser?.id ?? RemoteConversationService.localPatientId }
 
     var body: some View {
-        Page {
-            Card {
-                RowLabel(title: "拍照 / 报告", subtitle: "只读取你主动选择的照片", icon: "camera", chevron: false)
-                if (AppConfiguration.useRemoteAPI && AppConfiguration.supportsExtendedAPI) {
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("健康资料")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .textCase(.uppercase)
+                    .tracking(0.8)
+
+                Text("添加体检报告")
+                    .font(CXTypography.display)
+
+                Text("拍摄或选择一张清晰的报告图片。常曦会先保留原图，再帮你整理其中的信息。")
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.bottom, CXSpacing.xs)
+
+            if AppConfiguration.useRemoteAPI && AppConfiguration.supportsExtendedAPI {
+                VStack(alignment: .leading, spacing: CXSpacing.sm) {
+                    SectionEyebrow(title: "识别方式", action: mode == .bp ? "血压计" : "体检报告")
                     Picker("识别类型", selection: $mode) {
-                        Text("报告识别").tag(DocumentMode.analyze)
+                        Text("体检报告").tag(DocumentMode.analyze)
                         Text("血压计").tag(DocumentMode.bp)
-                    }.pickerStyle(.segmented)
+                    }
+                    .pickerStyle(.segmented)
                 }
-                if let preview { Image(uiImage: preview).resizable().scaledToFit().frame(maxHeight: 350).clipShape(RoundedRectangle(cornerRadius: 16)).accessibilityLabel("所选报告照片预览") }
-                else { ContentUnavailableView("选择一张清晰的照片", systemImage: "doc.viewfinder", description: Text("可以拍摄报告，也可以从相册选择。")) }
-                if loading { ProgressView("正在读取照片…") }
-                PhotosPicker(selection: $photo, matching: .images) { Label("从相册选择", systemImage: "photo") }.buttonStyle(.bordered).frame(minHeight: 44)
-                Button { Task { await openCamera() } } label: { Label("拍摄照片", systemImage: "camera") }.frame(minHeight: 44)
-                if let error { Text(error).foregroundStyle(CX.coral); Button("打开系统设置") { if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) } } }
-                if preview != nil {
-                    analysisSection
-                    TextField("报告名称", text: $title)
-                    TextField("关于这份报告，想问什么？", text: $note, axis: .vertical).lineLimit(2...5)
-                    Text((AppConfiguration.useRemoteAPI && AppConfiguration.supportsExtendedAPI)
-                         ? "识别由常曦云端完成，照片仅在你主动导入时上传；即使识别失败，照片也会保留在本机。"
-                         : "此版本尚未启用云端报告识别与归档。照片先保存在本机，文字说明可以加入对话。")
-                        .font(.footnote).foregroundStyle(CX.muted)
-                    Button(saved ? "已保存到本机报告" : "保存报告到本机") { saveReport() }
-                        .buttonStyle(PrimaryButton()).disabled(saved)
-                    if archiving { HStack(spacing: 8) { ProgressView().scaleEffect(0.8); Text("正在归档到云端文档…").font(.footnote).foregroundStyle(CX.muted) } }
-                    else if archivedDocumentID != nil { Label("已归档到云端文档", systemImage: "checkmark.seal.fill").font(.footnote).foregroundStyle(CX.teal) }
-                    if let onAttach {
-                        Button("将文字说明加入对话") { onAttach(note.isEmpty ? "我选择了一份报告照片，想了解如何查看指标。" : note); dismiss() }.buttonStyle(PrimaryButton())
-                    } else {
-                        NavigationLink("查看报告演示") { ReportDetailView() }.buttonStyle(PrimaryButton())
+                .padding(CXSpacing.lg)
+                .cxContentSurface(cornerRadius: CXRadius.lg)
+            }
+
+            SectionEyebrow(title: preview == nil ? "选择报告" : "报告预览", action: preview == nil ? "照片或拍摄" : "可重新选择")
+
+            if let preview {
+                reportPreview(preview)
+                analysisSection
+                reportDetails
+
+                privacyNote
+
+                Button(saved ? "已保存到本机报告" : "保存这份报告") {
+                    saveReport()
+                }
+                .buttonStyle(PrimaryButton())
+                .disabled(saved)
+                .accessibilityIdentifier("report-import-save")
+
+                if archiving {
+                    HStack(spacing: 10) {
+                        ProgressView().scaleEffect(0.84)
+                        Text("正在同步到云端文档")
+                            .font(CXTypography.supporting)
+                            .foregroundStyle(CX.muted)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .center)
+                } else if archivedDocumentID != nil {
+                    Label("已同步到云端文档", systemImage: "checkmark.seal.fill")
+                        .font(CXTypography.supporting)
+                        .foregroundStyle(CX.statusPositive)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                }
+
+                if let onAttach {
+                    Button {
+                        onAttach(note.isEmpty ? "我选择了一份报告照片，想了解如何查看指标。" : note)
+                        dismiss()
+                    } label: {
+                        Label("带着这份报告去问常曦", systemImage: "bubble.left.and.text.bubble.right")
+                            .frame(maxWidth: .infinity, minHeight: 52)
+                    }
+                    .buttonStyle(.bordered)
+                } else {
+                    NavigationLink {
+                        ReportDetailView()
+                    } label: {
+                        Label("查看报告整理示例", systemImage: "doc.text.magnifyingglass")
+                            .frame(maxWidth: .infinity, minHeight: 52)
+                    }
+                    .buttonStyle(.bordered)
+                }
+            } else {
+                reportSourcePicker
+            }
+
+            if let error {
+                Label(error, systemImage: "exclamationmark.triangle.fill")
+                    .font(CXTypography.supporting)
+                    .foregroundStyle(CX.statusCritical)
+                    .padding(CXSpacing.md)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(CX.statusCritical.opacity(0.07), in: .rect(cornerRadius: CXRadius.md, style: .continuous))
+
+                Button("打开系统设置") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
                     }
                 }
+                .font(CXTypography.supporting.weight(.semibold))
             }
-        }.navigationTitle("添加报告")
-        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("关闭") { dismiss() } } }
-        .sheet(isPresented: $camera) { CameraCapture { image in if let image { preview = image; afterImageLoaded() }; camera = false } }
+        }
+        .navigationTitle("添加报告")
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("关闭") { dismiss() }
+            }
+        }
+        .sheet(isPresented: $camera) {
+            CameraCapture { image in
+                if let image {
+                    preview = image
+                    afterImageLoaded()
+                }
+                camera = false
+            }
+        }
         .task(id: photo) {
             guard let photo else { return }
-            loading = true; error = nil
+            loading = true
+            error = nil
             defer { loading = false }
             do {
-                guard let data = try await photo.loadTransferable(type: Data.self), let image = UIImage(data: data) else { error = "无法读取这张照片，请换一张重试。"; return }
+                guard let data = try await photo.loadTransferable(type: Data.self),
+                      let image = UIImage(data: data) else {
+                    error = "无法读取这张照片，请换一张重试。"
+                    return
+                }
                 try Task.checkCancellation()
                 preview = image
                 afterImageLoaded()
-            } catch is CancellationError { } catch { self.error = "照片读取失败，请重新选择。" }
+            } catch is CancellationError {
+            } catch {
+                self.error = "照片读取失败，请重新选择。"
+            }
         }
-        .onChange(of: mode) { _, _ in if preview != nil { readingSaved = false; runAnalysis() } }
+        .onChange(of: mode) { _, _ in
+            if preview != nil {
+                readingSaved = false
+                runAnalysis()
+            }
+        }
         .assistantFormContext(title: "报告问题", draft: note) { value in
             let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmed.isEmpty else { return false }
             note = trimmed
             return true
         }
+    }
+
+    private var reportSourcePicker: some View {
+        VStack(spacing: CXSpacing.lg) {
+            ZStack {
+                Circle()
+                    .fill(CX.actionPrimary.opacity(0.055))
+                    .frame(width: 112, height: 112)
+
+                Circle()
+                    .stroke(CX.brandMoonlight.opacity(0.18), lineWidth: 1)
+                    .frame(width: 138, height: 138)
+
+                Image(systemName: "doc.viewfinder")
+                    .font(.system(size: 42, weight: .light))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(CX.actionPrimary)
+            }
+
+            VStack(spacing: CXSpacing.xs) {
+                Text("选择一张清晰的报告图片")
+                    .font(CXTypography.title)
+                    .multilineTextAlignment(.center)
+
+                Text("尽量拍全四角、避免反光。导入后仍会保留原图，方便你随时核对。")
+                    .font(CXTypography.supporting)
+                    .foregroundStyle(CX.muted)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(4)
+                    .frame(maxWidth: 420)
+            }
+
+            if loading {
+                MoonLoadingIndicator(label: "正在读取照片")
+                    .padding(.vertical, CXSpacing.sm)
+            } else {
+                VStack(spacing: CXSpacing.sm) {
+                    PhotosPicker(selection: $photo, matching: .images) {
+                        Label("从相册选择", systemImage: "photo.on.rectangle")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(PrimaryButton())
+                    .accessibilityIdentifier("report-import-photo")
+
+                    Button {
+                        Task { await openCamera() }
+                    } label: {
+                        Label("拍摄报告", systemImage: "camera")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity, minHeight: 54)
+                    }
+                    .buttonStyle(.plain)
+                    .cxInteractiveGlass(cornerRadius: CXRadius.md)
+                    .accessibilityIdentifier("report-import-camera")
+                }
+                .frame(maxWidth: 460)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, CXSpacing.xl)
+        .padding(.horizontal, CXSpacing.lg)
+        .cxContentSurface(cornerRadius: CXRadius.lg)
+    }
+
+    private func reportPreview(_ image: UIImage) -> some View {
+        VStack(alignment: .leading, spacing: CXSpacing.md) {
+            ZStack(alignment: .topTrailing) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: .infinity, maxHeight: 360)
+                    .clipShape(.rect(cornerRadius: CXRadius.md, style: .continuous))
+                    .accessibilityLabel("所选报告照片预览")
+
+                Label("已选择", systemImage: "checkmark.circle.fill")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.ink)
+                    .padding(.horizontal, 10)
+                    .frame(minHeight: 30)
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .padding(12)
+            }
+
+            HStack(spacing: CXSpacing.sm) {
+                PhotosPicker(selection: $photo, matching: .images) {
+                    Label("换一张", systemImage: "photo")
+                        .frame(maxWidth: .infinity, minHeight: 48)
+                }
+                .buttonStyle(.bordered)
+
+                Button {
+                    Task { await openCamera() }
+                } label: {
+                    Label("重新拍", systemImage: "camera")
+                        .frame(maxWidth: .infinity, minHeight: 48)
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+        .padding(CXSpacing.md)
+        .cxContentSurface(cornerRadius: CXRadius.lg)
+    }
+
+    private var reportDetails: some View {
+        VStack(alignment: .leading, spacing: CXSpacing.md) {
+            SectionEyebrow(title: "报告信息", action: "可以稍后修改")
+
+            VStack(alignment: .leading, spacing: 7) {
+                Text("报告名称")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.muted)
+                TextField("例如：年度体检报告", text: $title)
+                    .padding(.horizontal, CXSpacing.md)
+                    .frame(minHeight: 52)
+                    .background(CX.raisedSurface, in: .rect(cornerRadius: CXRadius.sm, style: .continuous))
+            }
+
+            VStack(alignment: .leading, spacing: 7) {
+                Text("想重点了解什么？")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.muted)
+                TextField("例如：哪些指标需要继续关注？", text: $note, axis: .vertical)
+                    .lineLimit(3...6)
+                    .padding(CXSpacing.md)
+                    .background(CX.raisedSurface, in: .rect(cornerRadius: CXRadius.sm, style: .continuous))
+            }
+        }
+        .padding(CXSpacing.lg)
+        .cxContentSurface(cornerRadius: CXRadius.lg)
+    }
+
+    private var privacyNote: some View {
+        HStack(alignment: .top, spacing: CXSpacing.sm) {
+            Image(systemName: "lock.shield")
+                .foregroundStyle(CX.actionPrimary)
+                .frame(width: 28, height: 28)
+
+            Text(
+                AppConfiguration.useRemoteAPI && AppConfiguration.supportsExtendedAPI
+                    ? "只有在你主动导入时，照片才会用于识别；识别失败也不影响原图保存在本机。"
+                    : "当前版本不会把这张照片发送到云端；报告和说明先保存在本机。"
+            )
+            .font(CXTypography.meta)
+            .foregroundStyle(CX.muted)
+            .lineSpacing(4)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, CXSpacing.xs)
     }
 
     // MARK: - 识别结果
