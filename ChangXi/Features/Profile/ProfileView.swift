@@ -3,41 +3,147 @@ import UserNotifications
 
 struct ProfileView: View {
     @Environment(AppStore.self) private var store
+
     var body: some View {
-        Page {
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("我的")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .tracking(0.6)
+
+                Text(store.data.name)
+                    .font(CXTypography.display)
+
+                Text("健康资料、照护关系和常曦记忆都从这里管理。")
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
+            }
+
             NavigationLink { AccountView() } label: {
-                Card { RowLabel(title: store.data.name, subtitle: "家庭医生：蒋医生\n每一天，都值得被好好照顾", icon: "person.crop.circle.fill") }
-            }.buttonStyle(.plain)
+                HStack(spacing: CXSpacing.md) {
+                    Image(systemName: "person.crop.circle.fill")
+                        .font(.system(size: 38))
+                        .foregroundStyle(CX.actionPrimary)
+                        .frame(width: 54, height: 54)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(store.data.name)
+                            .font(CXTypography.title)
+                        Text("家庭医生：蒋医生")
+                            .font(CXTypography.supporting)
+                            .foregroundStyle(CX.muted)
+                    }
+
+                    Spacer()
+                    Text("个人资料")
+                        .font(CXTypography.meta.weight(.semibold))
+                        .foregroundStyle(CX.actionPrimary)
+                }
+                .padding(CXSpacing.lg)
+                .cxContentSurface(cornerRadius: CXRadius.lg)
+            }
+            .buttonStyle(QuietPressButton())
+
             NavigationLink { MemoryView() } label: {
                 MemorySummaryCard(
                     confirmed: store.data.memories.filter(\.confirmed).count,
                     pending: store.pendingMemories
                 )
-            }.buttonStyle(.plain)
-            Card {
-                NavigationLink { HealthArchiveView() } label: { RowLabel(title: "我的健康档案", subtitle: "健康数据 · 用药记录 · 检查报告", icon: "heart.fill", tint: CX.coral) }
-                Divider()
-                NavigationLink { FamilyView() } label: { RowLabel(title: "家人与照护", subtitle: "服务对象 · 照护计划", icon: "person.2.fill") }
-                Divider()
-                NavigationLink { DevicesView() } label: { RowLabel(title: "我的设备", subtitle: "设备管理 · 数据同步", icon: "applewatch", tint: .purple) }
-            }.buttonStyle(.plain)
-            Card {
-                NavigationLink { BackendConnectionView() } label: {
-                    RowLabel(title: "玄同连接", subtitle: "服务地址 · 连接检查", icon: "network")
-                }
-                Divider()
-                NavigationLink { PrivacyView() } label: { RowLabel(title: "隐私与授权", subtitle: "数据安全 · 权限管理", icon: "checkmark.shield.fill", tint: CX.teal) }
-                Divider()
-                NavigationLink { NotificationSettingsView() } label: { RowLabel(title: "通知设置", subtitle: "用药提醒 · 健康提醒", icon: "bell.fill", tint: .orange) }
-                Divider()
-                NavigationLink { AccessibilitySettingsView() } label: { RowLabel(title: "显示与触感", subtitle: "大字模式 · 动态效果", icon: "textformat.size") }
-                Divider()
-                NavigationLink { SpeechSettingsView() } label: { RowLabel(title: "语音输入", subtitle: "本机识别 · 云端方言识别", icon: "waveform") }
-                Divider()
-                NavigationLink { HelpView() } label: { RowLabel(title: "帮助与反馈", subtitle: "使用指南 · 常见问题", icon: "questionmark.circle.fill", tint: .purple) }
-            }.buttonStyle(.plain)
+            }
+            .buttonStyle(.plain)
+
+            SectionEyebrow(title: "健康与照护")
+            VStack(spacing: CXSpacing.sm) {
+                ProfileEntryRow(
+                    title: "我的健康档案",
+                    subtitle: "健康数据 · 用药记录 · 检查报告",
+                    icon: "heart.fill",
+                    tint: CX.statusCritical
+                ) { HealthArchiveView() }
+
+                ProfileEntryRow(
+                    title: "家人与照护",
+                    subtitle: "服务对象 · 照护计划",
+                    icon: "person.2.fill",
+                    tint: CX.actionPrimary
+                ) { FamilyView() }
+
+                ProfileEntryRow(
+                    title: "我的设备",
+                    subtitle: "设备管理 · 数据同步",
+                    icon: "applewatch",
+                    tint: CX.statusPositive
+                ) { DevicesView() }
+            }
+
+            SectionEyebrow(title: "设置")
+            VStack(spacing: CXSpacing.sm) {
+                ProfileEntryRow(title: "玄同连接", subtitle: "服务地址 · 连接检查", icon: "network", tint: CX.actionPrimary) { BackendConnectionView() }
+                ProfileEntryRow(title: "隐私与授权", subtitle: "数据安全 · 权限管理", icon: "checkmark.shield.fill", tint: CX.statusPositive) { PrivacyView() }
+                ProfileEntryRow(title: "通知设置", subtitle: "用药提醒 · 健康提醒", icon: "bell.fill", tint: CX.statusWarning) { NotificationSettingsView() }
+                ProfileEntryRow(title: "显示与触感", subtitle: "大字模式 · 动态效果", icon: "textformat.size", tint: CX.actionPrimary) { AccessibilitySettingsView() }
+                ProfileEntryRow(title: "语音输入", subtitle: "本机识别 · 云端方言识别", icon: "waveform", tint: CX.actionPrimary) { SpeechSettingsView() }
+                ProfileEntryRow(title: "帮助与反馈", subtitle: "使用指南 · 常见问题", icon: "questionmark.circle.fill", tint: CX.brandIvory) { HelpView() }
+            }
+
             DemoLabel()
-        }.navigationTitle("我的")
+        }
+        .navigationTitle("我的")
+    }
+}
+
+private struct ProfileEntryRow<Destination: View>: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    let tint: Color
+    @ViewBuilder let destination: Destination
+
+    init(
+        title: String,
+        subtitle: String,
+        icon: String,
+        tint: Color,
+        @ViewBuilder destination: () -> Destination
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.icon = icon
+        self.tint = tint
+        self.destination = destination()
+    }
+
+    var body: some View {
+        NavigationLink { destination } label: {
+            HStack(spacing: CXSpacing.md) {
+                Image(systemName: icon)
+                    .font(.body.weight(.medium))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(tint)
+                    .frame(width: 42, height: 42)
+                    .background(tint.opacity(0.08), in: .rect(cornerRadius: 13, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(CXTypography.section)
+                        .foregroundStyle(CX.ink)
+                    Text(subtitle)
+                        .font(CXTypography.supporting)
+                        .foregroundStyle(CX.muted)
+                        .lineLimit(2)
+                }
+
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(CX.faint)
+            }
+            .padding(CXSpacing.md)
+            .cxContentSurface(cornerRadius: CXRadius.md)
+        }
+        .buttonStyle(QuietPressButton())
     }
 }
 
