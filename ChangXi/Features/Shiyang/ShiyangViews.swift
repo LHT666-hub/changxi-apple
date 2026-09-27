@@ -890,7 +890,7 @@ private struct ShiyangHomeView: View {
                             .frame(width: 42, height: 42)
                             .background(SY.apricot.opacity(0.10), in: Circle())
                         VStack(alignment: .leading, spacing: 3) {
-                            Text("看看家里有什么").font(.headline)
+                            Text("看看家里有什么").font(CXTypography.section)
                             Text("勾选现有食材，再为这一顿重新定制")
                                 .font(.subheadline)
                                 .foregroundStyle(SY.muted)
@@ -916,7 +916,7 @@ private struct ShiyangHomeView: View {
                             .frame(width: 42, height: 42)
                             .background(CX.blue.opacity(0.09), in: Circle())
                         VStack(alignment: .leading, spacing: 3) {
-                            Text("我想吃……").font(.headline)
+                            Text("我想吃……").font(CXTypography.section)
                             Text("火锅、小面、外卖，也可以直接告诉常曦")
                                 .font(.subheadline)
                                 .foregroundStyle(SY.muted)
@@ -952,7 +952,7 @@ private struct ShiyangHomeView: View {
                     ShiyangProfileSettingsView()
                 } label: {
                     Label("食养档案与授权", systemImage: "person.text.rectangle")
-                        .font(.subheadline.weight(.semibold))
+                        .font(CXTypography.supporting.weight(.semibold))
                         .foregroundStyle(SY.muted)
                         .frame(maxWidth: .infinity, minHeight: 48)
                 }
@@ -1637,12 +1637,12 @@ private struct ShiyangCookingGuideView: View {
                         Text(recipe.title)
                             .font(CXTypography.title)
                         Text(showingIngredients ? "先把食材请上桌" : "第 \(stepIndex + 1) 步 · 共 \(recipe.steps.count) 步")
-                            .font(.subheadline)
+                            .font(CXTypography.supporting)
                             .foregroundStyle(SY.muted)
                     }
                     Spacer()
                     Button("临时换食材", systemImage: "arrow.left.arrow.right") { showSubstitutions = true }
-                        .font(.caption.weight(.semibold))
+                        .font(CXTypography.micro.weight(.semibold))
                         .frame(minHeight: 44)
                 }
 
@@ -1695,9 +1695,9 @@ private struct ShiyangCookingGuideView: View {
                                     .foregroundStyle(SY.tea)
                             }
                             Text(ingredient?.name ?? shownID)
-                                .font(.subheadline.weight(.semibold))
+                                .font(CXTypography.supporting.weight(.semibold))
                             Text(item.amountForTwo)
-                                .font(.caption)
+                                .font(CXTypography.micro)
                                 .foregroundStyle(SY.muted)
                         }
                         .frame(maxWidth: .infinity, minHeight: 92)
@@ -1715,7 +1715,7 @@ private struct ShiyangCookingGuideView: View {
             }
 
             Text("先认一遍食材，做饭时就不会手忙脚乱。")
-                .font(.subheadline)
+                .font(CXTypography.supporting)
                 .foregroundStyle(SY.muted)
 
             Button("食材备好了") {
@@ -1772,7 +1772,7 @@ private struct ShiyangCookingGuideView: View {
                 Text(personalized(step.title))
                     .font(CXTypography.title)
                 Text(personalized(step.detail))
-                    .font(.body)
+                    .font(CXTypography.body)
                     .foregroundStyle(SY.muted)
                     .lineSpacing(6)
             }
@@ -1839,7 +1839,8 @@ private struct ShiyangCookingGuideView: View {
                     .rotationEffect(.degrees(-90))
                 VStack(spacing: 2) {
                     Text(timeLabel)
-                        .font(.headline.monospacedDigit())
+                        .font(CXTypography.section)
+                        .monospacedDigit()
                     Image(systemName: timerRunning ? "pause.fill" : "play.fill")
                         .font(.caption2)
                 }
@@ -1999,7 +2000,7 @@ private struct ShiyangCookingStoryboard: View {
                 VStack {
                     HStack(alignment: .top) {
                         Text(kind.caption)
-                            .font(.headline.weight(.black))
+                            .font(CXTypography.section.weight(.bold))
                             .fontDesign(.rounded)
                             .foregroundStyle(.white)
                             .padding(.horizontal, 15)
@@ -2011,7 +2012,8 @@ private struct ShiyangCookingStoryboard: View {
                         Spacer()
 
                         Text("\(stepIndex + 1) / \(recipe.steps.count)")
-                            .font(.caption.monospacedDigit().weight(.bold))
+                            .font(CXTypography.micro.weight(.bold))
+                            .monospacedDigit()
                             .foregroundStyle(SY.ink.opacity(0.62))
                             .padding(.horizontal, 11)
                             .padding(.vertical, 7)
@@ -2020,7 +2022,7 @@ private struct ShiyangCookingStoryboard: View {
                     Spacer()
                     HStack {
                         Label(personalizedStepTitle, systemImage: step.symbol)
-                            .font(.subheadline.weight(.bold))
+                            .font(CXTypography.supporting.weight(.bold))
                             .foregroundStyle(SY.ink)
                             .lineLimit(2)
                             .padding(.horizontal, 13)
