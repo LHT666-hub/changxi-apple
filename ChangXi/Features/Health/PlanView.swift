@@ -2,21 +2,99 @@ import SwiftUI
 
 struct PlanView: View {
     @Environment(AppStore.self) private var store
+
     var body: some View {
-        Page {
-            Card { RhythmView(completed: store.completed, total: store.data.plans.count) }
-            Text(store.completed == store.data.plans.count ? "今天的计划都完成了，早点休息。" : "今天还剩 \(store.data.plans.count - store.completed) 件事，我陪你完成。").font(.title2.bold())
-            Card {
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("今日计划")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .tracking(0.6)
+
+                Text(store.completed == store.data.plans.count ? "今天已经完成了" : "把今天的事一件件做完")
+                    .font(CXTypography.display)
+
+                Text(
+                    store.completed == store.data.plans.count
+                        ? "今天的计划都完成了，可以把节奏慢下来。"
+                        : "还剩 \(store.data.plans.count - store.completed) 件事，不需要一次做完。"
+                )
+                .font(CXTypography.body)
+                .foregroundStyle(CX.muted)
+                .lineSpacing(5)
+            }
+
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                RhythmView(completed: store.completed, total: store.data.plans.count)
+            }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            SectionEyebrow(title: "今天")
+            VStack(spacing: CXSpacing.sm) {
                 ForEach(store.data.plans) { plan in
                     NavigationLink { PlanDetailView(planID: plan.id) } label: {
-                        RowLabel(title: plan.title, subtitle: "\(plan.time) · \(plan.completed ? "已完成" : "待完成")", icon: plan.completed ? "checkmark.circle.fill" : plan.icon, tint: plan.completed ? CX.teal : CX.blue)
-                    }.buttonStyle(.plain)
-                    if plan.id != store.data.plans.last?.id { Divider() }
+                        HStack(spacing: CXSpacing.md) {
+                            Image(systemName: plan.completed ? "checkmark.circle.fill" : plan.icon)
+                                .font(.title3.weight(.medium))
+                                .foregroundStyle(plan.completed ? CX.statusPositive : CX.actionPrimary)
+                                .frame(width: 44, height: 44)
+                                .background(
+                                    (plan.completed ? CX.statusPositive : CX.actionPrimary).opacity(0.08),
+                                    in: Circle()
+                                )
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(plan.title)
+                                    .font(CXTypography.section)
+                                    .foregroundStyle(CX.ink)
+                                Text("\(plan.time) · \(plan.completed ? "已完成" : "待完成")")
+                                    .font(CXTypography.supporting)
+                                    .foregroundStyle(plan.completed ? CX.statusPositive : CX.muted)
+                            }
+
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(CX.faint)
+                        }
+                        .padding(CXSpacing.md)
+                        .cxContentSurface(cornerRadius: CXRadius.md)
+                    }
+                    .buttonStyle(QuietPressButton())
                 }
             }
-            NavigationLink { NotificationSettingsView() } label: { Card { RowLabel(title: "调整提醒", subtitle: "选择适合自己的节奏", icon: "bell") } }.buttonStyle(.plain)
+
+            SectionEyebrow(title: "提醒")
+            NavigationLink { NotificationSettingsView() } label: {
+                HStack(spacing: CXSpacing.md) {
+                    Image(systemName: "bell")
+                        .foregroundStyle(CX.statusWarning)
+                        .frame(width: 42, height: 42)
+                        .background(CX.statusWarning.opacity(0.08), in: Circle())
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("调整提醒")
+                            .font(CXTypography.section)
+                        Text("选择适合自己的提醒节奏")
+                            .font(CXTypography.supporting)
+                            .foregroundStyle(CX.muted)
+                    }
+
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(CX.faint)
+                }
+                .padding(CXSpacing.md)
+                .cxContentSurface(cornerRadius: CXRadius.md)
+            }
+            .buttonStyle(QuietPressButton())
+
             BrandFooter()
-        }.navigationTitle("今日计划")
+        }
+        .navigationTitle("今日计划")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
