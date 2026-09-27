@@ -383,7 +383,7 @@ struct BMIDetailView: View {
             .cxContentSurface(cornerRadius: CXRadius.lg)
             .accessibilityElement(children: .combine)
 
-            SectionEyebrow(title: "成人 BMI 分级")
+            SectionEyebrow(title: "中国成人 BMI 分级")
             VStack(spacing: 0) {
                 ForEach(Array(BMIClassification.allCases.enumerated()), id: \.element) { index, classification in
                     BMIRangeRow(
