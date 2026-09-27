@@ -319,9 +319,15 @@ struct ServiceDetailView: View {
                         .font(CXTypography.supporting.weight(.semibold))
                         .foregroundStyle(CX.statusPositive)
 
-                    NavigationLink("查看服务记录") { BookingsView() }
-                        .font(CXTypography.supporting.weight(.semibold))
-                        .accessibilityIdentifier("open-bookings")
+                    NavigationLink {
+                        BookingsView()
+                    } label: {
+                        Label("查看服务记录", systemImage: "calendar.badge.clock")
+                            .font(CXTypography.supporting.weight(.semibold))
+                            .frame(maxWidth: .infinity, minHeight: 48)
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("open-bookings")
                 }
                 .frame(maxWidth: .infinity)
                 .padding(CXSpacing.md)
