@@ -321,6 +321,7 @@ struct ServiceDetailView: View {
 
                     NavigationLink("查看服务记录") { BookingsView() }
                         .font(CXTypography.supporting.weight(.semibold))
+                        .accessibilityIdentifier("open-bookings")
                 }
                 .frame(maxWidth: .infinity)
                 .padding(CXSpacing.md)
@@ -416,6 +417,7 @@ struct BookingsView: View {
                             }
                             .font(CXTypography.meta.weight(.semibold))
                             .frame(minHeight: 44)
+                            .accessibilityIdentifier("cancel-booking")
                         }
                     }
                     .padding(CXSpacing.lg)
