@@ -22,13 +22,19 @@ enum AppConfiguration {
         ProcessInfo.processInfo.arguments.contains("--onboarding-testing")
     }
 
+    /// 专门验收真实启动动画；与普通 UI 测试不同，它不会跳过启动体验。
+    static var isLaunchTesting: Bool {
+        ProcessInfo.processInfo.arguments.contains("--launch-testing")
+    }
+
     /// 是否连接远程玄同后端。
     ///
     /// - UI 测试（`--ui-testing`）下强制返回 `false`，保证测试确定性、不依赖网络；
     /// - 其余场景默认连接后端；对话连接失败明确报错，不伪装成本地示例回复。
     static var useRemoteAPI: Bool {
         if ProcessInfo.processInfo.arguments.contains("--ui-testing")
-            || ProcessInfo.processInfo.arguments.contains("--onboarding-testing") { return false }
+            || ProcessInfo.processInfo.arguments.contains("--onboarding-testing")
+            || ProcessInfo.processInfo.arguments.contains("--launch-testing") { return false }
         return true
     }
 
