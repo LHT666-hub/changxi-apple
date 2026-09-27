@@ -1555,30 +1555,91 @@ private struct PainTouchCapture: UIViewRepresentable {
     }
 }
 
-private final class PainTouchView: UIView {
+private final class PainTouchView: UIView, UIGestureRecognizerDelegate {
     var onBegan: ((CGPoint, CGSize) -> Void)?
     var onMoved: ((CGPoint, CGSize) -> Void)?
     var onEnded: (() -> Void)?
 
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first else { return }
-        onBegan?(touch.location(in: self), bounds.size)
+    private lazy var drawingPan: UIPanGestureRecognizer = {
+        let recognizer = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
+        recognizer.minimumNumberOfTouches = 1
+        recognizer.maximumNumberOfTouches = 1
+        recognizer.cancelsTouchesInView = true
+        recognizer.delegate = self
+        return recognizer
+    }()
+
+    private lazy var drawingTap: UITapGestureRecognizer = {
+        let recognizer = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
+        recognizer.numberOfTouchesRequired = 1
+        recognizer.cancelsTouchesInView = true
+        recognizer.delegate = self
+        return recognizer
+    }()
+
+    private weak var linkedScrollView: UIScrollView?
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        isUserInteractionEnabled = true
+        addGestureRecognizer(drawingPan)
+        addGestureRecognizer(drawingTap)
+        drawingTap.require(toFail: drawingPan)
     }
 
-    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first else { return }
-        onMoved?(touch.location(in: self), bounds.size)
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        isUserInteractionEnabled = true
+        addGestureRecognizer(drawingPan)
+        addGestureRecognizer(drawingTap)
+        drawingTap.require(toFail: drawingPan)
     }
 
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        guard window != nil, linkedScrollView == nil else { return }
+
+        var ancestor = superview
+        while let current = ancestor {
+            if let scrollView = current as? UIScrollView {
+                // Drawing on the body figure must win over page scrolling.
+                // The page can still scroll normally when the gesture starts outside the figure.
+                scrollView.panGestureRecognizer.require(toFail: drawingPan)
+                scrollView.delaysContentTouches = false
+                linkedScrollView = scrollView
+                break
+            }
+            ancestor = current.superview
+        }
+    }
+
+    @objc private func handleTap(_ recognizer: UITapGestureRecognizer) {
+        guard recognizer.state == .ended else { return }
+        let point = recognizer.location(in: self)
+        onBegan?(point, bounds.size)
         onEnded?()
     }
 
-    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        // A parent scroll view may cancel delivery once it recognizes a pan.
-        // The mark already exists from touchesBegan, so cancellation only
-        // finalizes it instead of silently discarding the user's stroke.
-        onEnded?()
+    @objc private func handlePan(_ recognizer: UIPanGestureRecognizer) {
+        let point = recognizer.location(in: self)
+
+        switch recognizer.state {
+        case .began:
+            onBegan?(point, bounds.size)
+        case .changed:
+            onMoved?(point, bounds.size)
+        case .ended, .cancelled, .failed:
+            onEnded?()
+        default:
+            break
+        }
+    }
+
+    func gestureRecognizer(
+        _ gestureRecognizer: UIGestureRecognizer,
+        shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+    ) -> Bool {
+        false
     }
 }
 
@@ -1620,6 +1681,8 @@ struct PainMarkingSurface: View {
                                 finishStroke()
                             }
                         )
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .contentShape(Rectangle())
                     }
                 }
                 .aspectRatio(1, contentMode: .fit)

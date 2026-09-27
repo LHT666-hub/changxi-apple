@@ -1793,6 +1793,8 @@ private struct ShiyangCookingGuideView: View {
                 }
             }
             .accessibilityLabel("已进行到第\(stepIndex + 1)步，共\(recipe.steps.count)步")
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("cooking-step-state-\(stepIndex + 1)")
 
             ZStack(alignment: .bottomTrailing) {
                 ShiyangCookingStoryboard(
@@ -2028,14 +2030,21 @@ private struct ShiyangCookingStoryboard: View {
         Set(step.ingredientIDs.map { substitutions[$0] ?? $0 })
     }
 
+    @ViewBuilder
     var body: some View {
-        TimelineView(
-            .animation(
-                minimumInterval: 1.0 / 30.0,
-                paused: reduceMotion || AppConfiguration.isUITesting
-            )
-        ) { context in
-            storyboardFrame(time: context.date.timeIntervalSinceReferenceDate)
+        Group {
+            if AppConfiguration.isUITesting {
+                storyboardFrame(time: 0)
+            } else {
+                TimelineView(
+                    .animation(
+                        minimumInterval: 1.0 / 30.0,
+                        paused: reduceMotion
+                    )
+                ) { context in
+                    storyboardFrame(time: context.date.timeIntervalSinceReferenceDate)
+                }
+            }
         }
         .clipShape(.rect(cornerRadius: 30, style: .continuous))
         .overlay {

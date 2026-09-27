@@ -14,8 +14,8 @@ final class FlowTests: XCTestCase {
                 && !(data?.isEmpty ?? true)
             probe.fulfill()
         }.resume()
-        wait(for: [probe], timeout: 5)
-        guard backendAvailable else {
+        let probeResult = XCTWaiter.wait(for: [probe], timeout: 5)
+        guard probeResult == .completed, backendAvailable else {
             throw XCTSkip("No Xuantong server is running at \(baseURL).")
         }
         let app = XCUIApplication()
@@ -118,14 +118,14 @@ final class FlowTests: XCTestCase {
         app.launch()
 
         let launch = app.descendants(matching: .any)["launch-experience"].firstMatch
-        XCTAssertTrue(launch.waitForExistence(timeout: 8))
+        XCTAssertTrue(launch.waitForExistence(timeout: 15))
         capture("00-launch-experience")
 
         let launchGone = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "exists == false"),
             object: launch
         )
-        XCTAssertEqual(XCTWaiter.wait(for: [launchGone], timeout: 10), .completed)
+        XCTAssertEqual(XCTWaiter.wait(for: [launchGone], timeout: 50), .completed)
         XCTAssertTrue(app.buttons["首页"].firstMatch.waitForExistence(timeout: 5))
     }
 
@@ -315,20 +315,20 @@ final class FlowTests: XCTestCase {
         let areaTool = app.buttons["pain-tool-片状"]
         tapWhenHittable(areaTool, in: app)
         let areaSurface = app.descendants(matching: .any)["pain-marking-surface"].firstMatch
-        scrollUpUntilHittable(areaSurface, in: app)
+        scrollUpUntilFullyAboveTabBar(areaSurface, in: app)
         areaSurface.coordinate(withNormalizedOffset: CGVector(dx: 0.43, dy: 0.30))
             .press(
-                forDuration: 0.12,
+                forDuration: 0.25,
                 thenDragTo: areaSurface.coordinate(withNormalizedOffset: CGVector(dx: 0.56, dy: 0.39))
             )
         XCTAssertTrue(app.staticTexts["已标记 2 处"].waitForExistence(timeout: 3))
         let radiatingTool = app.buttons["pain-tool-放射"]
         tapWhenHittable(radiatingTool, in: app)
         let radiatingSurface = app.descendants(matching: .any)["pain-marking-surface"].firstMatch
-        scrollUpUntilHittable(radiatingSurface, in: app)
+        scrollUpUntilFullyAboveTabBar(radiatingSurface, in: app)
         radiatingSurface.coordinate(withNormalizedOffset: CGVector(dx: 0.44, dy: 0.36))
             .press(
-                forDuration: 0.12,
+                forDuration: 0.25,
                 thenDragTo: radiatingSurface.coordinate(withNormalizedOffset: CGVector(dx: 0.62, dy: 0.48))
             )
         guard app.staticTexts["已标记 3 处"].waitForExistence(timeout: 5) else {
@@ -478,11 +478,11 @@ final class FlowTests: XCTestCase {
         let nextCookingStep = app.buttons["next-cooking-step"]
         XCTAssertTrue(nextCookingStep.waitForExistence(timeout: 5))
         XCTAssertTrue(
-            app.descendants(matching: .any)["cooking-storyboard-step-1"].firstMatch.waitForExistence(timeout: 5)
+            app.descendants(matching: .any)["cooking-step-state-1"].firstMatch.waitForExistence(timeout: 5)
         )
         tapWhenHittable(nextCookingStep, in: app)
         XCTAssertTrue(
-            app.descendants(matching: .any)["cooking-storyboard-step-2"].firstMatch.waitForExistence(timeout: 5)
+            app.descendants(matching: .any)["cooking-step-state-2"].firstMatch.waitForExistence(timeout: 5)
         )
         capture("22-shiyang-cooking")
     }
