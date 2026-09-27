@@ -53,12 +53,24 @@ struct WorkflowProgressView: View {
     }
 
     var body: some View {
-        Page {
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("玄同会诊")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .tracking(0.6)
+                Text(streaming ? "正在把这次记录交给玄同分析" : "这次会诊已经有了结果")
+                    .font(CXTypography.display)
+                Text(statusText)
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
+            }
+
             MoonPoolView(state: poolState, character: true, compact: true)
 
-            Card {
-                Text("玄同正在为您分析").font(.title2.bold())
-                Text(statusText).foregroundStyle(CX.muted)
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                SectionEyebrow(title: streaming ? "会诊进度" : "会诊过程")
                 if allNodes.isEmpty {
                     if streaming {
                         HStack(spacing: 10) {
@@ -76,16 +88,20 @@ struct WorkflowProgressView: View {
                     }
                 }
             }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
 
             if !streaming, let workflow {
                 resultCard(workflow)
             }
 
             if timedOut {
-                Card {
-                    Label("实时进度连接超时，以下结论来自会诊的最终返回结果。", systemImage: "wifi.exclamationmark")
-                        .font(.footnote).foregroundStyle(CX.muted)
-                }
+                Label("实时进度连接超时，以下结论来自会诊的最终返回结果。", systemImage: "wifi.exclamationmark")
+                    .font(CXTypography.meta)
+                    .foregroundStyle(CX.muted)
+                    .padding(CXSpacing.md)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(CX.statusWarning.opacity(0.05), in: .rect(cornerRadius: CXRadius.md, style: .continuous))
             }
 
             Button(streaming ? "跳过动画，直接查看结论" : "完成") {
@@ -113,8 +129,8 @@ struct WorkflowProgressView: View {
     }
 
     private func resultCard(_ wf: WorkflowSummary) -> some View {
-        Card {
-            Text("会诊结论").font(.title2.bold())
+        VStack(alignment: .leading, spacing: CXSpacing.md) {
+            SectionEyebrow(title: "会诊结论")
 
             if let communication = wf.patientCommunication, !communication.isEmpty {
                 Text(communication).lineSpacing(5)
@@ -141,29 +157,33 @@ struct WorkflowProgressView: View {
 
             if let summary = wf.actionSummary, !summary.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("处置建议").font(.headline)
+                    Text("处置建议").font(CXTypography.section)
                     Text(summary).foregroundStyle(CX.muted).lineSpacing(4)
                 }
             }
 
             if wf.isPendingHuman {
                 Label("本次会诊已转人工审核，家庭医生会联系您。", systemImage: "person.crop.circle.badge.questionmark")
-                    .font(.subheadline).foregroundStyle(CX.blue)
+                    .font(CXTypography.supporting).foregroundStyle(CX.actionPrimary)
             }
             if wf.isFailed {
                 Label("会诊流程部分降级，结论可能不完整。", systemImage: "exclamationmark.triangle")
-                    .font(.subheadline).foregroundStyle(CX.coral)
+                    .font(CXTypography.supporting).foregroundStyle(CX.statusCritical)
             }
 
             Text("以上为 AI 辅助分析，不能代替医生诊断。如有不适请及时就医。")
-                .font(.footnote).foregroundStyle(CX.muted)
+                .font(CXTypography.meta)
+                .foregroundStyle(CX.muted)
+                .lineSpacing(4)
         }
+        .padding(CXSpacing.lg)
+        .cxContentSurface(cornerRadius: CXRadius.lg)
     }
 
     private func riskBadge(title: String, level: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(.caption).foregroundStyle(CX.muted)
-            Text(riskLabel(level)).font(.headline).foregroundStyle(riskColor(level))
+            Text(title).font(CXTypography.micro).foregroundStyle(CX.muted)
+            Text(riskLabel(level)).font(CXTypography.section).foregroundStyle(riskColor(level))
         }
         .padding(10)
         .background(riskColor(level).opacity(0.10), in: RoundedRectangle(cornerRadius: 14))
