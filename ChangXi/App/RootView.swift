@@ -61,6 +61,7 @@ struct RootView: View {
             } else {
                 NavigationStack { WelcomeView() }
             }
+            }
 
             if showLaunchExperience {
                 ChangXiLaunchExperience()
