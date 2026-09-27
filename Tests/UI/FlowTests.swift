@@ -187,10 +187,11 @@ final class FlowTests: XCTestCase {
         app.buttons["保存预约意向"].tap()
         XCTAssertTrue(app.staticTexts["尚未提交至医疗机构"].exists)
         capture("11-booking-saved")
-        app.buttons["查看服务记录"].tap()
-        let cancelBooking = app.buttons["取消意向"].firstMatch
-        scrollUpUntilHittable(cancelBooking, in: app)
-        cancelBooking.tap()
+        let openBookings = app.buttons["open-bookings"]
+        tapWhenHittable(openBookings, in: app)
+        XCTAssertTrue(app.navigationBars["服务记录"].waitForExistence(timeout: 5))
+        let cancelBooking = app.buttons["cancel-booking"].firstMatch
+        tapWhenHittable(cancelBooking, in: app)
         XCTAssertTrue(app.buttons["确认取消"].waitForExistence(timeout: 5))
         app.buttons["确认取消"].tap()
         XCTAssertTrue(app.staticTexts["已取消本地意向"].waitForExistence(timeout: 5))
@@ -312,7 +313,7 @@ final class FlowTests: XCTestCase {
         let areaTool = app.buttons["pain-tool-片状"]
         tapWhenHittable(areaTool, in: app)
         let areaSurface = app.descendants(matching: .any)["pain-marking-surface"].firstMatch
-        scrollDownUntilHittable(areaSurface, in: app)
+        scrollUpUntilHittable(areaSurface, in: app)
         areaSurface.coordinate(withNormalizedOffset: CGVector(dx: 0.43, dy: 0.30))
             .press(
                 forDuration: 0.12,
@@ -322,7 +323,7 @@ final class FlowTests: XCTestCase {
         let radiatingTool = app.buttons["pain-tool-放射"]
         tapWhenHittable(radiatingTool, in: app)
         let radiatingSurface = app.descendants(matching: .any)["pain-marking-surface"].firstMatch
-        scrollDownUntilHittable(radiatingSurface, in: app)
+        scrollUpUntilHittable(radiatingSurface, in: app)
         radiatingSurface.coordinate(withNormalizedOffset: CGVector(dx: 0.44, dy: 0.36))
             .press(
                 forDuration: 0.12,
@@ -368,16 +369,6 @@ final class FlowTests: XCTestCase {
         XCTAssertTrue(element.isHittable, "Element never became hittable after scrolling up")
     }
 
-    private func scrollDownUntilHittable(_ element: XCUIElement, in app: XCUIApplication, maxSwipes: Int = 6) {
-        var swipes = 0
-        while (!element.exists || !element.isHittable) && swipes < maxSwipes {
-            app.swipeDown()
-            swipes += 1
-        }
-        XCTAssertTrue(element.waitForExistence(timeout: 2), "Element never appeared after scrolling down")
-        XCTAssertTrue(element.isHittable, "Element never became hittable after scrolling down")
-    }
-
     /// Taps the part of a lower card that remains above the persistent tab bar.
     /// XCTest can report these cards as non-hittable even though their top edge is visible.
     private func tapVisiblePortion(of element: XCUIElement, in app: XCUIApplication) {
@@ -411,15 +402,18 @@ final class FlowTests: XCTestCase {
         let nextQuestion = app.buttons["next-shiyang-question"]
         XCTAssertTrue(nextQuestion.waitForExistence(timeout: 5))
         capture("16-shiyang-profile")
-        for _ in 0..<7 {
+        for index in 1...6 {
             nextQuestion.tap()
+            XCTAssertTrue(app.staticTexts["\(index + 1) / 7"].waitForExistence(timeout: 3))
         }
+        nextQuestion.tap()
 
         let confirm = app.buttons["confirm-shiyang-profile"]
         XCTAssertTrue(confirm.waitForExistence(timeout: 5))
         capture("17-shiyang-summary")
-        confirm.tap()
-        XCTAssertTrue(app.staticTexts["今天，也好好吃饭。"].waitForExistence(timeout: 5))
+        tapWhenHittable(confirm, in: app)
+        XCTAssertTrue(app.descendants(matching: .any)["shiyang-home"].firstMatch.waitForExistence(timeout: 8))
+        XCTAssertTrue(app.staticTexts["今天，也好好吃饭。"].exists)
         XCTAssertTrue(app.descendants(matching: .any)["shiyang-recommendation"].firstMatch.exists)
         capture("18-shiyang-home")
 
