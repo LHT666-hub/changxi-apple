@@ -16,6 +16,8 @@ targets:
     platform: iOS
     sources:
       - path: ChangXi
+        excludes:
+          - "**/*.md"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lht.changxi
