@@ -602,21 +602,29 @@ struct WelcomeView: View {
 
     private var welcomePage: some View {
         onboardingScroll {
-            MoonPoolView(state: .idle, character: false)
+            MoonPoolView(state: .idle, character: true, compact: true)
                 .frame(maxWidth: 520)
+                .frame(height: 280)
 
             VStack(spacing: CXSpacing.sm) {
                 Text("欢迎来到常曦")
                     .font(CXTypography.display)
                     .multilineTextAlignment(.center)
 
-                Text("你的日常健康陪伴者，也是连接家人、家庭医生与服务的入口。")
+                Text("从今天起，把健康记录、日常提醒和想问的事，慢慢交给常曦一起整理。")
                     .font(CXTypography.body)
                     .foregroundStyle(CX.muted)
                     .multilineTextAlignment(.center)
                     .lineSpacing(5)
-                    .frame(maxWidth: 420)
+                    .frame(maxWidth: 430)
             }
+
+            Label("不用一次设置很多，先从最常用的开始。", systemImage: "sparkles")
+                .font(CXTypography.supporting)
+                .foregroundStyle(CX.muted)
+                .padding(.horizontal, CXSpacing.md)
+                .frame(minHeight: 42)
+                .background(CX.surface.opacity(0.84), in: Capsule())
         }
     }
 
@@ -625,11 +633,11 @@ struct WelcomeView: View {
             onboardingSymbol("sparkles", tint: CX.actionPrimary)
 
             VStack(spacing: CXSpacing.sm) {
-                Text("先从每天都用得上的事开始")
+                Text("先从每天都会遇到的事开始")
                     .font(CXTypography.title)
                     .multilineTextAlignment(.center)
 
-                Text("常曦把对话、健康记录与报告整理放在同一个入口里。")
+                Text("说一句、记一笔、看一份报告，都从同一套清晰的入口开始。")
                     .font(CXTypography.body)
                     .foregroundStyle(CX.muted)
                     .multilineTextAlignment(.center)
@@ -665,11 +673,11 @@ struct WelcomeView: View {
             onboardingSymbol("person.2.wave.2", tint: CX.statusPositive)
 
             VStack(spacing: CXSpacing.sm) {
-                Text("健康照护，从来不只属于一个人")
+                Text("需要的时候，让照护有人接住")
                     .font(CXTypography.title)
                     .multilineTextAlignment(.center)
 
-                Text("常曦希望把家人、家庭医生和服务连接起来，让提醒与任务真正有人接住。")
+                Text("常曦把家人、家庭医生和服务放在同一条照护路径里，让下一步始终清楚。")
                     .font(CXTypography.body)
                     .foregroundStyle(CX.muted)
                     .multilineTextAlignment(.center)
@@ -711,11 +719,11 @@ struct WelcomeView: View {
             .padding(.vertical, 10)
 
             VStack(spacing: CXSpacing.sm) {
-                Text("你的健康信息，由你决定怎么使用")
+                Text("你的健康信息，由你决定")
                     .font(CXTypography.title)
                     .multilineTextAlignment(.center)
 
-                Text("体验版数据默认保存在本机。需要语音、通知或其他权限时，常曦会在真正需要它的那一步再向你说明。")
+                Text("数据默认先留在本机。只有真正需要某项能力时，常曦才会说明原因并请求对应权限。")
                     .font(CXTypography.body)
                     .foregroundStyle(CX.muted)
                     .multilineTextAlignment(.center)
@@ -745,11 +753,11 @@ struct WelcomeView: View {
             onboardingSymbol("moon.stars.fill", tint: CX.actionPrimary)
 
             VStack(spacing: CXSpacing.sm) {
-                Text("最后，让常曦先认识你一点")
+                Text("最后，告诉常曦该怎么陪你")
                     .font(CXTypography.title)
                     .multilineTextAlignment(.center)
 
-                Text("这些设置以后都可以在“我的”里修改。")
+                Text("只需要一个称呼和阅读偏好，其他设置以后都能慢慢补充。")
                     .font(CXTypography.body)
                     .foregroundStyle(CX.muted)
                     .multilineTextAlignment(.center)
