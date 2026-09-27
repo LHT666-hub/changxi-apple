@@ -179,7 +179,11 @@ private struct ShiyangOnboardingFlow: View {
     }
 
     private func move(to next: ShiyangOnboardingStage) {
-        withAnimation(.spring(duration: 0.42, bounce: 0.06)) { stage = next }
+        if AppConfiguration.isUITesting {
+            stage = next
+        } else {
+            withAnimation(.spring(duration: 0.42, bounce: 0.06)) { stage = next }
+        }
     }
 
     private func confirmProfile() {
@@ -330,6 +334,8 @@ private struct ShiyangProfileQuestionsView: View {
             Button(question == total - 1 ? "看看常曦记住了什么" : "下一题") {
                 if question == total - 1 {
                     onComplete()
+                } else if AppConfiguration.isUITesting {
+                    question += 1
                 } else {
                     withAnimation(.spring(duration: 0.38, bounce: 0.04)) { question += 1 }
                 }
@@ -975,6 +981,7 @@ private struct ShiyangHomeView: View {
             NavigationStack { ChatView(initialPrompt: foodChatPrompt) }
         }
         .onAppear { selectFirstAvailableIfNeeded() }
+        .accessibilityIdentifier("shiyang-home")
     }
 
     private var header: some View {
