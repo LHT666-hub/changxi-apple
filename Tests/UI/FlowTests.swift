@@ -112,6 +112,19 @@ final class FlowTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["症状自述"].exists)
         capture("09-memory-confirmed")
     }
+    func testLaunchExperienceTransitionsIntoHome() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--launch-testing"]
+        app.launch()
+
+        let launch = app.descendants(matching: .any)["launch-experience"].firstMatch
+        XCTAssertTrue(launch.waitForExistence(timeout: 5))
+        capture("00-launch-experience")
+
+        XCTAssertTrue(app.buttons["首页"].firstMatch.waitForExistence(timeout: 8))
+        XCTAssertFalse(launch.exists)
+    }
+
     func testFirstRunOnboardingJourney() {
         let app = XCUIApplication()
         app.launchArguments = ["--onboarding-testing"]
