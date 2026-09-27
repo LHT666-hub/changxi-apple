@@ -3,37 +3,109 @@ import SwiftUI
 /// Patient descriptions, not a validated diagnostic score or an automated triage assessment.
 struct PainAssessmentForm: View {
     @Binding var assessment: PainAssessment
+
     var body: some View {
-        Card {
-            Text("疼痛经过与影响").font(.title3.weight(.semibold))
-            Text("按“发生—变化—影响”补充；这些都可以跳过。")
-                .font(.footnote).foregroundStyle(CX.muted)
-            Picker("谁在描述", selection: $assessment.reporter) {
-                Text("本人描述").tag("本人描述")
-                Text("家人协助转述").tag("家人协助转述")
+        VStack(alignment: .leading, spacing: CXSpacing.lg) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("疼痛经过与影响")
+                    .font(CXTypography.title)
+                Text("按“发生—变化—影响”慢慢补充；不确定的项目可以先跳过。")
+                    .font(CXTypography.supporting)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(4)
             }
-            Picker("一直疼，还是一阵一阵", selection: $assessment.pattern) {
-                ForEach(["还没选", "一直疼", "一阵一阵", "偶尔一下", "说不清"], id: \.self) { Text($0) }
+
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                SectionEyebrow(title: "发生方式")
+                Picker("谁在描述", selection: $assessment.reporter) {
+                    Text("本人描述").tag("本人描述")
+                    Text("家人协助转述").tag("家人协助转述")
+                }
+                .pickerStyle(.segmented)
+
+                Picker("疼痛规律", selection: $assessment.pattern) {
+                    ForEach(["还没选", "一直疼", "一阵一阵", "偶尔一下", "说不清"], id: \.self) {
+                        Text($0)
+                    }
+                }
+                .pickerStyle(.menu)
+
+                PainTextArea(
+                    title: "每次大约疼多久？",
+                    text: $assessment.duration
+                )
+                PainTextArea(
+                    title: "还会扩散到哪里？例如从腰窜到腿",
+                    text: $assessment.radiation
+                )
             }
-            TextField("每次大约疼多久？", text: $assessment.duration, axis: .vertical)
-            TextField("还会扩散到哪里？例如从腰窜到腿", text: $assessment.radiation, axis: .vertical)
-            TextField("什么情况下更疼？例如走路、转头", text: $assessment.aggravating, axis: .vertical)
-            TextField("怎样会好一些？例如休息", text: $assessment.relieving, axis: .vertical)
-            Picker("对日常活动的影响", selection: $assessment.dailyImpact) {
-                ForEach(["还没选", "没有影响", "有些影响", "很受影响", "说不清"], id: \.self) { Text($0) }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                SectionEyebrow(title: "什么会让它变化")
+                PainTextArea(
+                    title: "什么情况下更疼？例如走路、转头",
+                    text: $assessment.aggravating
+                )
+                PainTextArea(
+                    title: "怎样会好一些？例如休息",
+                    text: $assessment.relieving
+                )
             }
-            Picker("对睡眠的影响", selection: $assessment.sleepImpact) {
-                ForEach(["还没选", "没有影响", "难以入睡", "疼醒", "说不清"], id: \.self) { Text($0) }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                SectionEyebrow(title: "对日常的影响")
+                Picker("日常活动", selection: $assessment.dailyImpact) {
+                    ForEach(["还没选", "没有影响", "有些影响", "很受影响", "说不清"], id: \.self) {
+                        Text($0)
+                    }
+                }
+                .pickerStyle(.menu)
+
+                Picker("睡眠", selection: $assessment.sleepImpact) {
+                    ForEach(["还没选", "没有影响", "难以入睡", "疼醒", "说不清"], id: \.self) {
+                        Text($0)
+                    }
+                }
+                .pickerStyle(.menu)
+            }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            DisclosureGroup("哪些情况应先求助？") {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("如果头痛突然发生且极其剧烈，或伴说话困难、肢体无力、意识异常；或者突发胸痛伴呼吸困难、冷汗，应先呼叫急救，不要等填完记录。中国大陆可拨打120，其他地区请使用当地急救号码。")
+                    Text("这不是完整的急症筛查，也不能用来排除危险。")
+                    Link("查看国家卫健委急救说明", destination: URL(string: "https://www.nhc.gov.cn/xcs/c100122/202411/81a60171b43d43ff98cc6110d65a4136.shtml")!)
+                    Link("查看 NHS 头痛求助说明", destination: URL(string: "https://www.nhs.uk/symptoms/headaches/")!)
+                }
+                .font(CXTypography.meta)
+                .foregroundStyle(CX.muted)
+                .padding(.top, 10)
+            }
+            .font(CXTypography.section)
+            .padding(CXSpacing.lg)
+            .background(CX.statusWarning.opacity(0.04), in: .rect(cornerRadius: CXRadius.lg, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: CXRadius.lg, style: .continuous)
+                    .strokeBorder(CX.statusWarning.opacity(0.10), lineWidth: 0.5)
             }
         }
-        DisclosureGroup("哪些情况应先求助？") {
-            VStack(alignment: .leading, spacing: 10) {
-                Text("如果头痛突然发生且极其剧烈，或伴说话困难、肢体无力、意识异常；或者突发胸痛伴呼吸困难、冷汗，应先呼叫急救，不要等填完记录。中国大陆可拨打120，其他地区请使用当地急救号码。")
-                Text("这不是完整的急症筛查，也不能用来排除危险。")
-                Link("查看国家卫健委急救说明", destination: URL(string: "https://www.nhc.gov.cn/xcs/c100122/202411/81a60171b43d43ff98cc6110d65a4136.shtml")!)
-                Link("查看 NHS 头痛求助说明", destination: URL(string: "https://www.nhs.uk/symptoms/headaches/")!)
-            }.font(.footnote).foregroundStyle(CX.muted).padding(.top, 10)
-        }.padding(18).background(CX.surface, in: .rect(cornerRadius: 20))
+    }
+}
+
+private struct PainTextArea: View {
+    let title: String
+    @Binding var text: String
+
+    var body: some View {
+        TextField(title, text: $text, axis: .vertical)
+            .lineLimit(2...5)
+            .padding(CXSpacing.md)
+            .background(CX.raisedSurface, in: .rect(cornerRadius: CXRadius.sm, style: .continuous))
     }
 }
 
