@@ -178,14 +178,12 @@ struct PainAssessmentSummary: View {
                     .foregroundStyle(CX.muted)
             }
 
-            let visible = fields.filter { !$0.1.isEmpty && $0.1 != "还没选" }
-
-            if visible.isEmpty {
+            if visibleFields.isEmpty {
                 Text("这次没有补充更多经过与影响。")
                     .font(CXTypography.supporting)
                     .foregroundStyle(CX.muted)
             } else {
-                ForEach(Array(visible.enumerated()), id: \.offset) { index, field in
+                ForEach(Array(visibleFields.enumerated()), id: \.offset) { index, field in
                     HStack(alignment: .top, spacing: CXSpacing.md) {
                         Text(field.0)
                             .font(CXTypography.meta)
@@ -197,12 +195,16 @@ struct PainAssessmentSummary: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
 
-                    if index < visible.count - 1 {
+                    if index < visibleFields.count - 1 {
                         Divider().overlay(CX.separator.opacity(0.10))
                     }
                 }
             }
         }
+    }
+
+    private var visibleFields: [(String, String)] {
+        fields.filter { !$0.1.isEmpty && $0.1 != "还没选" }
     }
 
     private var fields: [(String, String)] {
