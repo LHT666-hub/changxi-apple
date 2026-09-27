@@ -45,8 +45,8 @@ struct WorkflowProgressView: View {
     }
 
     private var statusText: String {
-        if timedOut { return "实时进度连接超时，以下为会诊返回的结论" }
-        if streaming { return "8 位 AI 专家正在实时会诊，请稍候…" }
+        if timedOut { return "进度更新稍有延迟，以下为已返回的结果" }
+        if streaming { return "正在整理这次记录，请稍候…" }
         if workflow?.isPendingHuman ?? false { return "已转人工审核，家庭医生会尽快联系您" }
         if workflow?.isFailed ?? false { return "会诊流程未能完整完成，已保留您的记录" }
         return "会诊已完成"
@@ -55,11 +55,11 @@ struct WorkflowProgressView: View {
     var body: some View {
         Page(illustrated: true) {
             VStack(alignment: .leading, spacing: CXSpacing.xs) {
-                Text("玄同会诊")
+                Text("健康分析")
                     .font(CXTypography.micro.weight(.semibold))
                     .foregroundStyle(CX.actionPrimary)
                     .tracking(0.6)
-                Text(streaming ? "正在把这次记录交给玄同分析" : "这次会诊已经有了结果")
+                Text(streaming ? "正在整理这次记录" : "这次记录已经有了结果")
                     .font(CXTypography.display)
                 Text(statusText)
                     .font(CXTypography.body)
@@ -70,15 +70,15 @@ struct WorkflowProgressView: View {
             MoonPoolView(state: poolState, character: true, compact: true)
 
             VStack(alignment: .leading, spacing: CXSpacing.md) {
-                SectionEyebrow(title: streaming ? "会诊进度" : "会诊过程")
+                SectionEyebrow(title: streaming ? "分析进度" : "分析过程")
                 if allNodes.isEmpty {
                     if streaming {
                         HStack(spacing: 10) {
                             ProgressView()
-                            Text("正在连接会诊进度…").foregroundStyle(CX.muted)
+                            Text("正在更新进度…").foregroundStyle(CX.muted)
                         }
                     } else {
-                        Text("会诊已结束。").foregroundStyle(CX.muted)
+                        Text("分析已完成。").foregroundStyle(CX.muted)
                     }
                 } else {
                     VStack(alignment: .leading, spacing: 12) {
@@ -96,7 +96,7 @@ struct WorkflowProgressView: View {
             }
 
             if timedOut {
-                Label("实时进度连接超时，以下结论来自会诊的最终返回结果。", systemImage: "wifi.exclamationmark")
+                Label("进度更新稍有延迟，以下为已返回的结果。", systemImage: "wifi.exclamationmark")
                     .font(CXTypography.meta)
                     .foregroundStyle(CX.muted)
                     .padding(CXSpacing.md)
@@ -110,7 +110,7 @@ struct WorkflowProgressView: View {
             .buttonStyle(PrimaryButton())
             .accessibilityIdentifier("workflow-done")
         }
-        .navigationTitle("玄同会诊")
+        .navigationTitle("健康分析")
         .task { await run() }
     }
 
@@ -130,7 +130,7 @@ struct WorkflowProgressView: View {
 
     private func resultCard(_ wf: WorkflowSummary) -> some View {
         VStack(alignment: .leading, spacing: CXSpacing.md) {
-            SectionEyebrow(title: "会诊结论")
+            SectionEyebrow(title: "分析结果")
 
             if let communication = wf.patientCommunication, !communication.isEmpty {
                 Text(communication).lineSpacing(5)
@@ -171,7 +171,7 @@ struct WorkflowProgressView: View {
                     .font(CXTypography.supporting).foregroundStyle(CX.statusCritical)
             }
 
-            Text("以上为 AI 辅助分析，不能代替医生诊断。如有不适请及时就医。")
+            Text("以上内容仅供健康管理参考，不能代替医生诊断。如有不适请及时就医。")
                 .font(CXTypography.meta)
                 .foregroundStyle(CX.muted)
                 .lineSpacing(4)

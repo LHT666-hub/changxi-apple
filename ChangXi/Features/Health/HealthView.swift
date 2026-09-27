@@ -24,8 +24,6 @@ struct HealthView: View {
             default:
                 overview
             }
-
-            DemoLabel()
         }
         .navigationTitle("健康")
         .toolbar {

@@ -521,9 +521,9 @@ struct ChatView: View {
             if let activeStarterID,
                let starter = starterPrompts.first(where: { $0.id == activeStarterID }) {
                 store.data.messages.append(ConversationMessage(isUser: false, text: starter.fallback))
-                self.error = "网络有些波动，常曦先为这个快捷入口展示了安全引导；连接恢复后仍可继续追问。"
+                self.error = "网络有些波动，稍后可以继续追问。"
             } else {
-                self.error = "暂时没有连接上玄同，未生成云端回复。请在「我的 → 玄同连接」检查服务地址，然后重试。"
+                self.error = "暂时没有连接上服务，请稍后重试。"
             }
             finishTurn()
         }

@@ -39,7 +39,7 @@ struct ReportImportView: View {
                 Text("添加体检报告")
                     .font(CXTypography.display)
 
-                Text("拍摄或选择一张清晰的报告图片。常曦会先保留原图，再帮你整理其中的信息。")
+                Text("拍摄或选择一张报告图片，常曦会帮你整理重点。")
                     .font(CXTypography.body)
                     .foregroundStyle(CX.muted)
                     .lineSpacing(5)
@@ -79,13 +79,13 @@ struct ReportImportView: View {
                 if archiving {
                     HStack(spacing: 10) {
                         ProgressView().scaleEffect(0.84)
-                        Text("正在同步到云端文档")
+                        Text("正在同步报告")
                             .font(CXTypography.supporting)
                             .foregroundStyle(CX.muted)
                     }
                     .frame(maxWidth: .infinity, alignment: .center)
                 } else if archivedDocumentID != nil {
-                    Label("已同步到云端文档", systemImage: "checkmark.seal.fill")
+                    Label("报告已同步", systemImage: "checkmark.seal.fill")
                         .font(CXTypography.supporting)
                         .foregroundStyle(CX.statusPositive)
                         .frame(maxWidth: .infinity, alignment: .center)
@@ -104,7 +104,7 @@ struct ReportImportView: View {
                     NavigationLink {
                         ReportDetailView()
                     } label: {
-                        Label("查看报告整理示例", systemImage: "doc.text.magnifyingglass")
+                        Label("查看报告整理", systemImage: "doc.text.magnifyingglass")
                             .frame(maxWidth: .infinity, minHeight: 52)
                     }
                     .buttonStyle(.bordered)
@@ -199,7 +199,7 @@ struct ReportImportView: View {
                     .font(CXTypography.title)
                     .multilineTextAlignment(.center)
 
-                Text("尽量拍全四角、避免反光。导入后仍会保留原图，方便你随时核对。")
+                Text("尽量拍全四角、避免反光。")
                     .font(CXTypography.supporting)
                     .foregroundStyle(CX.muted)
                     .multilineTextAlignment(.center)
@@ -310,17 +310,9 @@ struct ReportImportView: View {
         HStack(alignment: .top, spacing: CXSpacing.sm) {
             Image(systemName: "lock.shield")
                 .foregroundStyle(CX.actionPrimary)
-                .frame(width: 28, height: 28)
-
-            Text(
-                AppConfiguration.useRemoteAPI && AppConfiguration.supportsExtendedAPI
-                    ? "只有在你主动导入时，照片才会用于识别；识别失败也不影响原图保存在本机。"
-                    : "当前版本不会把这张照片发送到云端；报告和说明先保存在本机。"
-            )
-            .font(CXTypography.meta)
-            .foregroundStyle(CX.muted)
-            .lineSpacing(4)
-
+            Text("只有你主动导入的报告才会被处理。")
+                .font(CXTypography.meta)
+                .foregroundStyle(CX.muted)
             Spacer(minLength: 0)
         }
         .padding(.horizontal, CXSpacing.xs)

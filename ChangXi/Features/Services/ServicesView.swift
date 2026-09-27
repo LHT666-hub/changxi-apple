@@ -81,7 +81,7 @@ struct ServicesView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(category == "家医课堂" ? "让健康记录更有用" : "社区月光散步计划")
                                 .font(CXTypography.section)
-                            Text(category == "家医课堂" ? "3 分钟阅读 · 记录方法" : "周六 18:30 · 社区花园 · 示例活动")
+                            Text(category == "家医课堂" ? "3 分钟阅读 · 记录方法" : "周六 18:30 · 社区花园")
                                 .font(CXTypography.supporting)
                                 .foregroundStyle(CX.muted)
                         }
@@ -108,7 +108,7 @@ struct ServicesView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("服务记录")
                             .font(CXTypography.section)
-                        Text("\(store.data.bookings.filter { !$0.cancelled }.count) 条本地记录")
+                        Text("\(store.data.bookings.filter { !$0.cancelled }.count) 条记录")
                             .font(CXTypography.supporting)
                             .foregroundStyle(CX.muted)
                     }
@@ -133,7 +133,7 @@ struct ServicesView: View {
                         VStack(alignment: .leading, spacing: 3) {
                             Text("照护任务")
                                 .font(CXTypography.section)
-                            Text("玄同会诊生成的照护建议")
+                            Text("需要跟进的照护事项")
                                 .font(CXTypography.supporting)
                                 .foregroundStyle(CX.muted)
                         }
@@ -148,7 +148,6 @@ struct ServicesView: View {
                 .buttonStyle(QuietPressButton())
             }
 
-            DemoLabel()
         }
         .navigationTitle("服务")
     }
@@ -211,7 +210,7 @@ struct DoctorDetailView: View {
                 Image(systemName: "person.crop.circle.fill.badge.checkmark").font(.system(size: 64)).foregroundStyle(CX.actionPrimary).frame(maxWidth: .infinity)
                 Text("蒋医生").font(.title.bold()).frame(maxWidth: .infinity)
                 Text("全科医生 · 海湾镇社区卫生服务中心").foregroundStyle(CX.muted)
-                Text("服务方向：日常健康管理、慢病随访、报告沟通。此医生资料为产品演示示例。")
+                Text("服务方向：日常健康管理、慢病随访、报告沟通。")
                 NavigationLink("发起咨询") { ConsultationView() }.buttonStyle(PrimaryButton())
             }
             Card {
@@ -220,7 +219,7 @@ struct DoctorDetailView: View {
                     NavigationLink { ServiceDetailView(service: item) } label: { RowLabel(title: item.title, subtitle: item.subtitle, icon: item.icon) }.buttonStyle(.plain)
                 }
             }
-            DemoLabel()
+
         }.navigationTitle("家庭医生")
     }
 }
@@ -584,7 +583,7 @@ struct MessagesView: View {
             VStack(spacing: CXSpacing.sm) {
                 ProfileEntryRow(
                     title: "蒋医生的回复",
-                    subtitle: store.data.doctorMessageRead ? "已读 · 示例消息" : "未读 · 示例消息",
+                    subtitle: store.data.doctorMessageRead ? "已读" : "未读",
                     icon: "stethoscope",
                     tint: CX.statusPositive
                 ) {
@@ -632,7 +631,7 @@ struct DoctorMessageView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("蒋医生")
                             .font(CXTypography.title)
-                        Text("示例消息 · 今天 17:30")
+                        Text("今天 17:30")
                             .font(CXTypography.meta)
                             .foregroundStyle(CX.muted)
                     }
@@ -652,7 +651,6 @@ struct DoctorMessageView: View {
             .padding(CXSpacing.lg)
             .cxContentSurface(cornerRadius: CXRadius.lg)
 
-            DemoLabel()
         }
         .navigationTitle("医生回复")
         .navigationBarTitleDisplayMode(.inline)

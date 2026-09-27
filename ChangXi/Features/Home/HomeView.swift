@@ -68,9 +68,6 @@ struct HomeView: View {
                     TodaySummaryCard(nextPlan: nextPlan)
                         .entrance(index: 7, appeared: appeared, reduceMotion: reduceMotion)
 
-                    DemoLabel()
-                        .frame(maxWidth: .infinity)
-                        .entrance(index: 11, appeared: appeared, reduceMotion: reduceMotion)
                 }
                 .frame(maxWidth: 700)
                 .padding(.horizontal, CXSpacing.page)

@@ -13,101 +13,53 @@ struct SpeechSettingsView: View {
 
     var body: some View {
         Page(illustrated: true) {
-            VStack(alignment: .leading, spacing: CXSpacing.xs) {
-                Text("语音输入")
-                    .font(CXTypography.micro.weight(.semibold))
-                    .foregroundStyle(CX.actionPrimary)
-                    .tracking(0.6)
+            Text("语音输入")
+                .font(CXTypography.display)
 
-                Text("说话，也应该知道声音去了哪里")
-                    .font(CXTypography.display)
-
-                Text("默认优先使用本机识别；只有你主动开启云端识别后，录音才会上传用于转写。")
-                    .font(CXTypography.body)
-                    .foregroundStyle(CX.muted)
-                    .lineSpacing(5)
-            }
-
-            SectionEyebrow(title: "识别方式")
-            VStack(alignment: .leading, spacing: CXSpacing.md) {
-                Toggle(isOn: $cloudEnabled) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("云端语音识别")
-                            .font(CXTypography.section)
-                        Text("支持方言与地区口音；不可用时会回落本机识别")
-                            .font(CXTypography.meta)
-                            .foregroundStyle(CX.muted)
-                    }
-                }
-
-                HStack(alignment: .top, spacing: CXSpacing.sm) {
-                    Image(systemName: cloudEnabled ? "cloud.fill" : "iphone")
-                        .foregroundStyle(CX.actionPrimary)
-                    Text(speechPrivacyDescription)
-                        .font(CXTypography.meta)
-                        .foregroundStyle(CX.muted)
-                        .lineSpacing(4)
-                    Spacer(minLength: 0)
-                }
-            }
-            .padding(CXSpacing.lg)
-            .cxContentSurface(cornerRadius: CXRadius.lg)
-
-            if cloudEnabled {
-                SectionEyebrow(title: "方言与地区口音")
+            if AppConfiguration.supportsExtendedAPI {
                 VStack(alignment: .leading, spacing: CXSpacing.md) {
-                    Picker("方言", selection: $dialectRawValue) {
-                        ForEach(SpeechDialect.allCases) { dialect in
-                            Text(dialect.label).tag(dialect.rawValue)
-                        }
+                    Toggle(isOn: $cloudEnabled) {
+                        Text("增强语音识别")
+                            .font(CXTypography.section)
                     }
-                    .pickerStyle(.menu)
 
-                    Text("方言识别是可选增强，实际效果取决于识别模型和录音环境。")
-                        .font(CXTypography.meta)
-                        .foregroundStyle(CX.muted)
-                        .lineSpacing(4)
+                    if cloudEnabled {
+                        Divider().overlay(CX.separator.opacity(0.16))
+                        Picker("常用口音", selection: $dialectRawValue) {
+                            ForEach(SpeechDialect.allCases) { dialect in
+                                Text(dialect.label).tag(dialect.rawValue)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                    }
+                }
+                .padding(CXSpacing.lg)
+                .cxContentSurface(cornerRadius: CXRadius.lg)
+            } else {
+                HStack(spacing: CXSpacing.md) {
+                    Image(systemName: "waveform")
+                        .foregroundStyle(CX.actionPrimary)
+                        .frame(width: 42, height: 42)
+                        .background(CX.actionPrimary.opacity(0.08), in: Circle())
+                    Text("语音输入")
+                        .font(CXTypography.section)
+                    Spacer()
+                    Text("已开启")
+                        .font(CXTypography.meta.weight(.semibold))
+                        .foregroundStyle(CX.statusPositive)
                 }
                 .padding(CXSpacing.lg)
                 .cxContentSurface(cornerRadius: CXRadius.lg)
             }
 
-            if !AppConfiguration.supportsExtendedAPI {
-                CXEmptyState(
-                    title: "云端转写尚未启用",
-                    message: "你的方言偏好会保留；在云端能力接入前，语音仍只使用 Apple 本机识别。",
-                    icon: "icloud.slash"
-                )
-            } else if !AppConfiguration.useRemoteAPI {
-                HStack(alignment: .top, spacing: CXSpacing.sm) {
-                    Image(systemName: "wifi.slash")
-                        .foregroundStyle(CX.statusWarning)
-                    Text("当前为离线体验模式，云端识别不会发起网络请求。")
-                        .font(CXTypography.meta)
-                        .foregroundStyle(CX.muted)
-                    Spacer(minLength: 0)
-                }
-                .padding(CXSpacing.md)
-                .background(
-                    CX.statusWarning.opacity(0.05),
-                    in: .rect(cornerRadius: CXRadius.md, style: .continuous)
-                )
-            }
+            Text("只有你主动使用语音时才会处理录音。")
+                .font(CXTypography.meta)
+                .foregroundStyle(CX.muted)
         }
         .navigationTitle("语音输入")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             dialectRawValue = SpeechDialect.fromStoredValue(dialectRawValue).rawValue
         }
-    }
-
-    private var speechPrivacyDescription: String {
-        guard cloudEnabled else {
-            return "关闭时只使用 Apple 本机语音识别，语音不会上传。"
-        }
-        guard AppConfiguration.supportsExtendedAPI else {
-            return "方言偏好已保存。云端能力接入前，录音仍只使用本机识别。"
-        }
-        return "开启后，你主动录制的语音会上传到常曦后端用于转写；失败时自动回落本机识别。"
     }
 }

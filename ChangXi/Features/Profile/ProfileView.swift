@@ -6,9 +6,6 @@ struct ProfileView: View {
 
     var body: some View {
         Page(illustrated: true) {
-            Text(store.data.name)
-                .font(CXTypography.display)
-
             NavigationLink { AccountView() } label: {
                 HStack(spacing: CXSpacing.md) {
                     Image(systemName: "person.crop.circle.fill")
@@ -46,21 +43,21 @@ struct ProfileView: View {
             VStack(spacing: CXSpacing.sm) {
                 ProfileEntryRow(
                     title: "我的健康档案",
-                    subtitle: "健康数据 · 用药记录 · 检查报告",
+                    subtitle: "",
                     icon: "heart.fill",
                     tint: CX.statusCritical
                 ) { HealthArchiveView() }
 
                 ProfileEntryRow(
                     title: "家人与照护",
-                    subtitle: "服务对象 · 照护计划",
+                    subtitle: "",
                     icon: "person.2.fill",
                     tint: CX.actionPrimary
                 ) { FamilyView() }
 
                 ProfileEntryRow(
                     title: "我的设备",
-                    subtitle: "设备管理 · 数据同步",
+                    subtitle: "",
                     icon: "applewatch",
                     tint: CX.statusPositive
                 ) { DevicesView() }
@@ -68,15 +65,13 @@ struct ProfileView: View {
 
             SectionEyebrow(title: "设置")
             VStack(spacing: CXSpacing.sm) {
-                ProfileEntryRow(title: "玄同连接", subtitle: "服务地址 · 连接检查", icon: "network", tint: CX.actionPrimary) { BackendConnectionView() }
-                ProfileEntryRow(title: "隐私与授权", subtitle: "数据安全 · 权限管理", icon: "checkmark.shield.fill", tint: CX.statusPositive) { PrivacyView() }
-                ProfileEntryRow(title: "通知设置", subtitle: "用药提醒 · 健康提醒", icon: "bell.fill", tint: CX.statusWarning) { NotificationSettingsView() }
-                ProfileEntryRow(title: "显示与触感", subtitle: "大字模式 · 动态效果", icon: "textformat.size", tint: CX.actionPrimary) { AccessibilitySettingsView() }
-                ProfileEntryRow(title: "语音输入", subtitle: "本机识别 · 云端方言识别", icon: "waveform", tint: CX.actionPrimary) { SpeechSettingsView() }
-                ProfileEntryRow(title: "帮助与反馈", subtitle: "使用指南 · 常见问题", icon: "questionmark.circle.fill", tint: CX.brandIvory) { HelpView() }
+                ProfileEntryRow(title: "玄同连接", subtitle: "", icon: "network", tint: CX.actionPrimary) { BackendConnectionView() }
+                ProfileEntryRow(title: "隐私与授权", subtitle: "", icon: "checkmark.shield.fill", tint: CX.statusPositive) { PrivacyView() }
+                ProfileEntryRow(title: "通知设置", subtitle: "", icon: "bell.fill", tint: CX.statusWarning) { NotificationSettingsView() }
+                ProfileEntryRow(title: "显示与触感", subtitle: "", icon: "textformat.size", tint: CX.actionPrimary) { AccessibilitySettingsView() }
+                ProfileEntryRow(title: "语音输入", subtitle: "", icon: "waveform", tint: CX.actionPrimary) { SpeechSettingsView() }
+                ProfileEntryRow(title: "帮助与反馈", subtitle: "", icon: "questionmark.circle.fill", tint: CX.brandIvory) { HelpView() }
             }
-
-            DemoLabel()
         }
         .navigationTitle("我的")
     }
@@ -117,10 +112,12 @@ struct ProfileEntryRow<Destination: View>: View {
                     Text(title)
                         .font(CXTypography.section)
                         .foregroundStyle(CX.ink)
-                    Text(subtitle)
-                        .font(CXTypography.supporting)
-                        .foregroundStyle(CX.muted)
-                        .lineLimit(2)
+                    if !subtitle.isEmpty {
+                        Text(subtitle)
+                            .font(CXTypography.supporting)
+                            .foregroundStyle(CX.muted)
+                            .lineLimit(2)
+                    }
                 }
 
                 Spacer()
@@ -139,29 +136,36 @@ struct BackendConnectionView: View {
     @Environment(AuthSession.self) private var auth
     @State private var address = AppConfiguration.apiBaseURL.absoluteString
     @State private var checking = false
-    @State private var status = "尚未检查连接"
+    @State private var status = "尚未检查"
     @State private var connected = false
 
     var body: some View {
         Page(illustrated: true) {
-            VStack(alignment: .leading, spacing: CXSpacing.xs) {
-                Text("玄同连接")
-                    .font(CXTypography.micro.weight(.semibold))
-                    .foregroundStyle(CX.actionPrimary)
-                    .tracking(0.6)
+            Text("玄同连接")
+                .font(CXTypography.display)
 
-                Text("让常曦连接正在运行的玄同服务")
-                    .font(CXTypography.display)
+            HStack(alignment: .center, spacing: CXSpacing.md) {
+                Image(systemName: connected ? "checkmark.circle.fill" : "network")
+                    .font(.title3.weight(.medium))
+                    .foregroundStyle(connected ? CX.statusPositive : CX.actionPrimary)
+                    .frame(width: 44, height: 44)
+                    .background((connected ? CX.statusPositive : CX.actionPrimary).opacity(0.08), in: Circle())
 
-                Text("这里填写的是服务地址，不是代码仓库地址。连接成功后，常曦才能调用玄同提供的联网能力。")
-                    .font(CXTypography.body)
-                    .foregroundStyle(CX.muted)
-                    .lineSpacing(5)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(connected ? "已连接" : "连接状态")
+                        .font(CXTypography.section)
+                    Text(status)
+                        .font(CXTypography.supporting)
+                        .foregroundStyle(connected ? CX.statusPositive : CX.muted)
+                }
+                Spacer(minLength: 0)
             }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+            .accessibilityIdentifier("backend-status")
 
-            SectionEyebrow(title: "服务地址")
             VStack(alignment: .leading, spacing: CXSpacing.md) {
-                TextField("https://你的服务器地址", text: $address)
+                TextField("连接地址", text: $address)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .keyboardType(.URL)
@@ -174,10 +178,8 @@ struct BackendConnectionView: View {
                     Task { await connect() }
                 } label: {
                     HStack(spacing: 10) {
-                        if checking {
-                            ProgressView().tint(.white)
-                        }
-                        Text(checking ? "正在检查连接" : "检查并使用这个地址")
+                        if checking { ProgressView().tint(.white) }
+                        Text(checking ? "正在检查" : "检查连接")
                     }
                 }
                 .buttonStyle(PrimaryButton())
@@ -186,81 +188,24 @@ struct BackendConnectionView: View {
             }
             .padding(CXSpacing.lg)
             .cxContentSurface(cornerRadius: CXRadius.lg)
-
-            HStack(alignment: .top, spacing: CXSpacing.md) {
-                Image(systemName: connected ? "checkmark.circle.fill" : "network")
-                    .font(.title3.weight(.medium))
-                    .foregroundStyle(connected ? CX.statusPositive : CX.actionPrimary)
-                    .frame(width: 44, height: 44)
-                    .background(
-                        (connected ? CX.statusPositive : CX.actionPrimary).opacity(0.08),
-                        in: Circle()
-                    )
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(connected ? "已连接" : "连接状态")
-                        .font(CXTypography.section)
-                    Text(status)
-                        .font(CXTypography.supporting)
-                        .foregroundStyle(connected ? CX.statusPositive : CX.muted)
-                        .lineSpacing(4)
-                }
-
-                Spacer(minLength: 0)
-            }
-            .padding(CXSpacing.lg)
-            .cxContentSurface(cornerRadius: CXRadius.lg)
-            .accessibilityIdentifier("backend-status")
-
-            SectionEyebrow(title: "当前能力")
-            VStack(alignment: .leading, spacing: CXSpacing.md) {
-                BackendCapabilityRow(
-                    icon: "bubble.left.and.text.bubble.right",
-                    title: "对话事件",
-                    subtitle: "把常曦对话发送给玄同处理"
-                )
-                BackendCapabilityRow(
-                    icon: "waveform.path.ecg",
-                    title: "健康测量事件",
-                    subtitle: "同步你主动保存的健康记录"
-                )
-                BackendCapabilityRow(
-                    icon: "checklist",
-                    title: "照护任务",
-                    subtitle: "读取和完成玄同生成的照护任务"
-                )
-            }
-            .padding(CXSpacing.lg)
-            .cxContentSurface(cornerRadius: CXRadius.lg)
-
-            HStack(alignment: .top, spacing: CXSpacing.sm) {
-                Image(systemName: "info.circle")
-                    .foregroundStyle(CX.actionPrimary)
-                Text("真机需要填写手机能够访问的服务器地址；127.0.0.1 只适用于同一台 Mac 上运行的模拟器。")
-                    .font(CXTypography.meta)
-                    .foregroundStyle(CX.muted)
-                    .lineSpacing(4)
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, CXSpacing.xs)
         }
         .navigationTitle("玄同连接")
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: address) {
             connected = false
-            status = "地址已更改，请重新检查"
+            status = "地址已更改"
         }
     }
 
     @MainActor private func connect() async {
         guard let url = AppConfiguration.sanitizedURL(address),
               url.scheme == "https" || AppConfiguration.allowsInsecureHTTP(url) else {
-            status = "请输入服务的根地址，例如 https://api.example.com，不要填 GitHub 仓库地址。"
+            status = "请输入有效的连接地址"
             return
         }
         #if !targetEnvironment(simulator)
         if AppConfiguration.isLocalDevelopment(url) {
-            status = "这个地址指向手机自己，请改为后端服务器地址。"
+            status = "当前地址不可用，请更换后重试"
             return
         }
         #endif
@@ -268,21 +213,13 @@ struct BackendConnectionView: View {
         connected = false
         defer { checking = false }
         do {
-            let probe = try await BackendProbe.check(url)
-            if url != AppConfiguration.apiBaseURL {
-                auth.logout()
-            }
+            _ = try await BackendProbe.check(url)
+            if url != AppConfiguration.apiBaseURL { auth.logout() }
             UserDefaults.standard.set(url.absoluteString, forKey: "cx.backend.url")
             connected = true
-            if probe.provider == "mock" {
-                status = "已连接玄同 · 当前为 Mock 测试模型，非真实 AI"
-            } else if let provider = probe.provider {
-                status = "已连接玄同 · \(provider)"
-            } else {
-                status = "已连接玄同"
-            }
+            status = "连接正常"
         } catch {
-            status = "未能连接，地址没有更改。请确认玄同已经启动、网络可达。"
+            status = "暂时无法连接，请稍后重试"
         }
     }
 }

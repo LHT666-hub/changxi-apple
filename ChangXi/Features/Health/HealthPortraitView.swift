@@ -166,7 +166,6 @@ private struct HealthDimensionDetailView: View {
                     .foregroundStyle(CX.muted)
                 if painEntry { NavigationLink("记录身体感受") { PainLocationView() }.buttonStyle(PrimaryButton()) }
             }
-            DemoLabel()
         }.navigationTitle(dimension.title)
     }
 }

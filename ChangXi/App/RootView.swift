@@ -778,7 +778,7 @@ struct WelcomeView: View {
                 OnboardingFeatureRow(
                     icon: "iphone",
                     title: "本机优先",
-                    subtitle: "示例数据与操作先保留在当前设备。"
+                    subtitle: "重要资料优先保留在当前设备。"
                 )
                 Divider().overlay(CX.separator.opacity(0.16))
                 OnboardingFeatureRow(
@@ -822,9 +822,6 @@ struct WelcomeView: View {
                         .frame(minHeight: 54)
                         .background(CX.raisedSurface, in: .rect(cornerRadius: CXRadius.sm, style: .continuous))
 
-                    Text("这个称呼只用于常曦与你对话时的表达。")
-                        .font(CXTypography.meta)
-                        .foregroundStyle(CX.muted)
                 }
                 .padding(CXSpacing.lg)
                 .cxContentSurface(cornerRadius: CXRadius.lg)
@@ -834,9 +831,6 @@ struct WelcomeView: View {
                         VStack(alignment: .leading, spacing: 3) {
                             Text("大字阅读")
                                 .font(CXTypography.section)
-                            Text("需要更大的阅读尺寸时可以直接开启")
-                                .font(CXTypography.meta)
-                                .foregroundStyle(CX.muted)
                         }
                     }
 
@@ -844,20 +838,17 @@ struct WelcomeView: View {
 
                     Toggle(isOn: $accepted) {
                         VStack(alignment: .leading, spacing: 3) {
-                            Text("我已了解体验说明")
+                            Text("我已了解使用说明")
                                 .font(CXTypography.section)
-                            Text("这一步只确认你知道当前版本的使用边界")
-                                .font(CXTypography.meta)
-                                .foregroundStyle(CX.muted)
                         }
                     }
-                    .accessibilityLabel("我已阅读并了解体验说明")
+                    .accessibilityLabel("我已阅读并了解使用说明")
 
                     HStack(spacing: CXSpacing.md) {
-                        NavigationLink("体验说明") {
+                        NavigationLink("使用说明") {
                             InfoView(
-                                title: "体验说明",
-                                text: "这是常曦的前端体验版本。健康数据、医生消息、预约和对话回复均可能包含示例内容，不提供真实诊疗、医生通信或挂号服务。你可以不登录直接体验。"
+                                title: "使用说明",
+                                text: "常曦用于健康记录、信息整理与日常照护协助，不能代替医生诊断或治疗建议。部分服务需要联网或由实际服务方提供，以页面状态为准。"
                             )
                         }
 

@@ -30,7 +30,7 @@ struct CareTaskView: View {
                 Text("把需要跟进的事放在一处")
                     .font(CXTypography.display)
 
-                Text("任务来自玄同会诊流程，用来提醒下一步，不代替医生医嘱。")
+                Text("这些任务用于提醒下一步，不代替医生医嘱。")
                     .font(CXTypography.body)
                     .foregroundStyle(CX.muted)
                     .lineSpacing(5)
@@ -69,7 +69,7 @@ struct CareTaskView: View {
             if !loading && errorText == nil && tasks.isEmpty {
                 CXEmptyState(
                     title: "暂时没有照护任务",
-                    message: "当会诊流程生成需要跟进的事项时，会集中出现在这里。",
+                    message: "需要跟进的事项会集中出现在这里。",
                     icon: "checklist",
                     tint: CX.statusPositive
                 )
