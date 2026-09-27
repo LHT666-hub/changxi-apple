@@ -94,17 +94,44 @@ struct PainLocationView: View {
         }
         .fullScreenCover(isPresented: $enlarged) {
             NavigationStack {
-                ScrollView {
-                    VStack(spacing: 20) {
-                        anglePicker
-                        PainMarkingSurface(region: draft.region, angle: angle, kind: kind, marks: $draft.marks)
-                        markTools
+                Page(illustrated: true) {
+                    VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                        Text(draft.region.rawValue)
+                            .font(CXTypography.micro.weight(.semibold))
+                            .foregroundStyle(CX.actionPrimary)
+                            .tracking(0.6)
+
+                        Text("放大标记")
+                            .font(CXTypography.display)
+
+                        Text("在更大的轮廓上补充位置；返回后会保留这里的标记。")
+                            .font(CXTypography.body)
+                            .foregroundStyle(CX.muted)
+                            .lineSpacing(5)
                     }
-                    .padding(20)
+
+                    SectionEyebrow(title: "视角")
+                    anglePicker
+
+                    SectionEyebrow(title: "标记方式")
+                    markToolPicker
+
+                    PainMarkingSurface(
+                        region: draft.region,
+                        angle: angle,
+                        kind: kind,
+                        marks: $draft.marks
+                    )
+
+                    markHistoryActions
                 }
-                .cxMoonScreenBackground()
-                .navigationTitle("细标疼痛位置")
-                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { enlarged = false } } }
+                .navigationTitle("细标位置")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("完成") { enlarged = false }
+                    }
+                }
             }
         }
         .alert("暂时没有保存", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
@@ -546,15 +573,37 @@ struct PainLocationView: View {
     }
 
     private var landmarks: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("也可以直接选位置").font(.subheadline).foregroundStyle(CX.muted)
-            LazyVGrid(columns: CXLayout.adaptiveColumns(minimum: 100, dynamicTypeSize: dynamicTypeSize)) {
-                ForEach(headLandmarks, id: \.name) { item in
-                    Button(item.name) {
-                        draft.marks.append(PainMark(angle: angle, kind: .point, points: [PainCoordinate(x: item.x, y: item.y)], name: item.name))
-                    }.buttonStyle(.bordered).frame(minHeight: 44)
+        VStack(alignment: .leading, spacing: CXSpacing.sm) {
+            SectionEyebrow(title: "头部常见位置", action: "也可以直接选")
+
+            ScrollView(.horizontal) {
+                HStack(spacing: CXSpacing.sm) {
+                    ForEach(headLandmarks, id: \.name) { item in
+                        Button {
+                            draft.marks.append(
+                                PainMark(
+                                    angle: angle,
+                                    kind: .point,
+                                    points: [PainCoordinate(x: item.x, y: item.y)],
+                                    name: item.name
+                                )
+                            )
+                        } label: {
+                            Text(item.name)
+                                .font(CXTypography.supporting.weight(.semibold))
+                                .foregroundStyle(CX.ink)
+                                .padding(.horizontal, 14)
+                                .frame(minHeight: 42)
+                                .background(
+                                    CX.actionPrimary.opacity(0.055),
+                                    in: Capsule()
+                                )
+                        }
+                        .buttonStyle(QuietPressButton())
+                    }
                 }
             }
+            .scrollIndicators(.hidden)
         }
     }
 
@@ -920,33 +969,41 @@ struct PainLocationView: View {
     private var footer: some View {
         Group {
             if dynamicTypeSize.isAccessibilitySize {
-                VStack(spacing: 10) {
+                VStack(spacing: CXSpacing.sm) {
                     primaryStepButton
-                    backStepButton.frame(maxWidth: .infinity)
+                    backStepButton
+                        .frame(maxWidth: .infinity)
                 }
             } else {
-                HStack(spacing: 12) {
+                HStack(spacing: CXSpacing.sm) {
                     backStepButton
                     primaryStepButton
                 }
             }
         }
-        .padding(10)
-        .background(.regularMaterial, in: .rect(cornerRadius: 24, style: .continuous))
+        .padding(CXSpacing.sm)
+        .background(.ultraThinMaterial, in: .rect(cornerRadius: 22, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.66), lineWidth: 0.8)
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .strokeBorder(CX.separator.opacity(0.10), lineWidth: 0.6)
         }
-        .shadow(color: .black.opacity(0.10), radius: 18, y: 8)
+        .shadow(color: .black.opacity(0.055), radius: 16, y: 7)
     }
 
     private var backStepButton: some View {
-        Button("上一步") { advance(step - 1) }
-            .frame(minWidth: 80, minHeight: 48)
+        Button {
+            advance(max(0, step - 1))
+        } label: {
+            Label("上一步", systemImage: "chevron.left")
+                .font(CXTypography.supporting.weight(.semibold))
+                .frame(minWidth: 92, minHeight: 50)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(CX.muted)
     }
 
     private var primaryStepButton: some View {
-        Button(step == 3 ? "保存这次记录" : step == 1 ? "下一步：选感觉和强度" : "看看记录") {
+        Button(step == 3 ? "保存这次记录" : step == 1 ? "继续描述感受" : "核对这次记录") {
             if step < 3 { advance(step + 1) }
             else {
                 do { draft.date = .now; try journal.save(draft); saved = true }
@@ -960,12 +1017,47 @@ struct PainLocationView: View {
     }
 
     private var success: some View {
-        Card {
-            Label("已保存在这台设备", systemImage: "checkmark.circle.fill").foregroundStyle(CX.teal)
-            Text(draft.summary).font(.title3)
-            Button("再记一个部位") { draft = PainRecord(); saved = false; advance(0) }.buttonStyle(PrimaryButton())
-            Button("查看记录本") { history = true }
+        VStack(spacing: CXSpacing.xl) {
+            ZStack {
+                Circle()
+                    .fill(CX.statusPositive.opacity(0.08))
+                    .frame(width: 88, height: 88)
+
+                Image(systemName: "checkmark")
+                    .font(.system(size: 30, weight: .semibold))
+                    .foregroundStyle(CX.statusPositive)
+            }
+
+            VStack(spacing: CXSpacing.sm) {
+                Text("这次感受，已经记下来了")
+                    .font(CXTypography.title)
+                    .multilineTextAlignment(.center)
+
+                Text(draft.summary)
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(5)
+            }
+
+            VStack(spacing: CXSpacing.sm) {
+                Button("再记一个部位") {
+                    draft = PainRecord()
+                    saved = false
+                    advance(0)
+                }
+                .buttonStyle(PrimaryButton())
+
+                Button("查看记录本") {
+                    history = true
+                }
+                .font(CXTypography.supporting.weight(.semibold))
+                .frame(minHeight: 44)
+            }
+            .frame(maxWidth: 420)
         }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, CXSpacing.xl)
     }
 
     private var painQualities: [(title: String, detail: String)] {
