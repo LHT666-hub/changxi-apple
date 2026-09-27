@@ -14,6 +14,12 @@ enum AppConfiguration {
     static var isUITesting: Bool {
         ProcessInfo.processInfo.arguments.contains("--ui-testing")
             || ProcessInfo.processInfo.arguments.contains("--integration-testing")
+            || ProcessInfo.processInfo.arguments.contains("--onboarding-testing")
+    }
+
+    /// 专门用于首次引导 UI 验收：保持离线和确定性，但让 AppStore 从未完成引导的状态启动。
+    static var isOnboardingTesting: Bool {
+        ProcessInfo.processInfo.arguments.contains("--onboarding-testing")
     }
 
     /// 是否连接远程玄同后端。
@@ -21,7 +27,8 @@ enum AppConfiguration {
     /// - UI 测试（`--ui-testing`）下强制返回 `false`，保证测试确定性、不依赖网络；
     /// - 其余场景默认连接后端；对话连接失败明确报错，不伪装成本地示例回复。
     static var useRemoteAPI: Bool {
-        if ProcessInfo.processInfo.arguments.contains("--ui-testing") { return false }
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing")
+            || ProcessInfo.processInfo.arguments.contains("--onboarding-testing") { return false }
         return true
     }
 
