@@ -97,7 +97,7 @@ struct RootView: View {
         .task {
             if showLaunchExperience {
                 try? await Task.sleep(
-                    nanoseconds: AppConfiguration.isLaunchTesting ? 2_500_000_000 : 1_650_000_000
+                    nanoseconds: AppConfiguration.isLaunchTesting ? 6_000_000_000 : 1_650_000_000
                 )
                 withAnimation(.easeOut(duration: 0.42)) {
                     showLaunchExperience = false
