@@ -582,6 +582,7 @@ struct WelcomeView: View {
     @State private var useLargeText = false
 
     private let stageCount = 5
+    private let stageTitles = ["相识", "日常", "照护", "隐私", "设置"]
 
     var body: some View {
         ZStack {
@@ -625,10 +626,16 @@ struct WelcomeView: View {
 
             Spacer()
 
-            Text("\(stage + 1) / \(stageCount)")
-                .font(CXTypography.micro.weight(.semibold))
-                .foregroundStyle(CX.muted)
-                .monospacedDigit()
+            HStack(spacing: 8) {
+                Text(stageTitles[stage])
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.ink.opacity(0.72))
+
+                Text("\(stage + 1) / \(stageCount)")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.muted)
+                    .monospacedDigit()
+            }
         }
         .frame(minHeight: 44)
     }
@@ -869,7 +876,7 @@ struct WelcomeView: View {
                         move(to: stage + 1)
                     } label: {
                         HStack {
-                            Text(stage == 0 ? "开始了解" : "继续")
+                            Text(stage == 0 ? "认识常曦" : "继续")
                             Spacer()
                             Image(systemName: "arrow.right")
                         }
