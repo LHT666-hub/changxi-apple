@@ -806,44 +806,67 @@ struct WelcomeView: View {
                     .multilineTextAlignment(.center)
             }
 
-            Card {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("希望常曦怎么称呼你")
-                        .font(.subheadline.weight(.semibold))
+            VStack(spacing: CXSpacing.sm) {
+                VStack(alignment: .leading, spacing: CXSpacing.sm) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "person.crop.circle")
+                            .foregroundStyle(CX.actionPrimary)
+                        Text("怎么称呼你")
+                            .font(CXTypography.section)
+                    }
 
                     TextField("例如：张阿姨", text: $name)
                         .textContentType(.nickname)
                         .submitLabel(.done)
-                        .padding(.horizontal, 16)
-                        .frame(minHeight: 52)
+                        .padding(.horizontal, CXSpacing.md)
+                        .frame(minHeight: 54)
                         .background(CX.raisedSurface, in: .rect(cornerRadius: CXRadius.sm, style: .continuous))
-                }
 
-                Toggle(isOn: $useLargeText) {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("大字模式")
-                            .font(.headline)
-                        Text("需要更大的阅读尺寸时可以直接开启")
-                            .font(.caption)
-                            .foregroundStyle(CX.muted)
+                    Text("这个称呼只用于常曦与你对话时的表达。")
+                        .font(CXTypography.meta)
+                        .foregroundStyle(CX.muted)
+                }
+                .padding(CXSpacing.lg)
+                .cxContentSurface(cornerRadius: CXRadius.lg)
+
+                VStack(alignment: .leading, spacing: CXSpacing.md) {
+                    Toggle(isOn: $useLargeText) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("大字阅读")
+                                .font(CXTypography.section)
+                            Text("需要更大的阅读尺寸时可以直接开启")
+                                .font(CXTypography.meta)
+                                .foregroundStyle(CX.muted)
+                        }
                     }
-                }
 
-                Divider().overlay(CX.separator.opacity(0.16))
+                    Divider().overlay(CX.separator.opacity(0.16))
 
-                Toggle("我已阅读并了解体验说明", isOn: $accepted)
-
-                HStack {
-                    NavigationLink("体验说明") {
-                        InfoView(
-                            title: "体验说明",
-                            text: "这是常曦的前端体验版本。健康数据、医生消息、预约和对话回复均可能包含示例内容，不提供真实诊疗、医生通信或挂号服务。你可以不登录直接体验。"
-                        )
+                    Toggle(isOn: $accepted) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("我已了解体验说明")
+                                .font(CXTypography.section)
+                            Text("这一步只确认你知道当前版本的使用边界")
+                                .font(CXTypography.meta)
+                                .foregroundStyle(CX.muted)
+                        }
                     }
-                    Spacer()
-                    NavigationLink("隐私说明") { PrivacyView() }
+                    .accessibilityLabel("我已阅读并了解体验说明")
+
+                    HStack(spacing: CXSpacing.md) {
+                        NavigationLink("体验说明") {
+                            InfoView(
+                                title: "体验说明",
+                                text: "这是常曦的前端体验版本。健康数据、医生消息、预约和对话回复均可能包含示例内容，不提供真实诊疗、医生通信或挂号服务。你可以不登录直接体验。"
+                            )
+                        }
+
+                        NavigationLink("隐私说明") { PrivacyView() }
+                    }
+                    .font(CXTypography.supporting.weight(.semibold))
                 }
-                .font(CXTypography.supporting)
+                .padding(CXSpacing.lg)
+                .cxContentSurface(cornerRadius: CXRadius.lg)
             }
             .frame(maxWidth: 540)
         }
