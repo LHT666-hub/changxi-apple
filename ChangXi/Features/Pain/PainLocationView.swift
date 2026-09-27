@@ -1,5 +1,14 @@
 import SwiftUI
 
+private enum PainVisual {
+    static let accent = Color(red: 0.66, green: 0.36, blue: 0.34)
+    static let accentSoft = Color(red: 0.66, green: 0.36, blue: 0.34).opacity(0.10)
+    static let accentLine = Color(red: 0.66, green: 0.36, blue: 0.34).opacity(0.72)
+    static let bodyTop = Color(red: 0.91, green: 0.94, blue: 0.95)
+    static let bodyBottom = Color(red: 0.76, green: 0.82, blue: 0.85)
+    static let guide = CX.actionPrimary.opacity(0.16)
+}
+
 /// Native body-sensation entry used by the health portrait and Health tab.
 struct PainLocationView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -33,19 +42,6 @@ struct PainLocationView: View {
                 if step != 1 { header }
                 if saved { success }
                 else {
-                    if step == 0 {
-                        Button { voiceLocation = true } label: {
-                            HStack(spacing: 12) {
-                                Image(systemName: "waveform.badge.mic").font(.title2)
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("也可以说给常曦听").font(.headline)
-                                    Text("我来标，你来确认").font(.subheadline).foregroundStyle(CX.muted)
-                                }
-                                Spacer()
-                                Image(systemName: "chevron.right").font(.caption)
-                            }.padding(18).cxInteractiveGlass(cornerRadius: 22)
-                        }.buttonStyle(.plain)
-                    }
                     switch step {
                     case 0: regionGrid
                     case 1: location
@@ -121,65 +117,168 @@ struct PainLocationView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: CXSpacing.md) {
+            HStack {
+                Text("身体感受")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .tracking(0.6)
+
+                Spacer()
+
+                Text("\(step + 1) / 4")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.muted)
+                    .monospacedDigit()
+            }
+
             HStack(spacing: 6) {
                 ForEach(0..<4) { index in
-                    Capsule().fill(index <= step ? CX.moonlight : CX.moonlight.opacity(0.18)).frame(height: 3)
+                    Capsule()
+                        .fill(index <= step ? CX.actionPrimary : CX.actionPrimary.opacity(0.10))
+                        .frame(height: 5)
                 }
-            }.accessibilityLabel("第\(step + 1)步，共4步")
-            HStack(alignment: .center, spacing: 12) {
-                Image(systemName: "cross.case.fill")
-                    .font(.title3)
-                    .foregroundStyle(CX.blue)
-                    .frame(width: 42, height: 42)
-                    .background(CX.moonlight.opacity(0.14), in: Circle())
-                Text("按实际感受记录即可；无法确定时，可先选择最接近的区域。")
-                    .font(.subheadline)
-                    .foregroundStyle(CX.muted)
             }
-            Text(saved ? "这次感受，记下来了" : title)
+            .accessibilityLabel("第\(step + 1)步，共4步")
+
+            Text(saved ? "这次感受，已经记下来了" : title)
                 .font(CXTypography.display)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text(stepGuidance)
+                .font(CXTypography.body)
+                .foregroundStyle(CX.muted)
+                .lineSpacing(5)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
 
-    private var regionGrid: some View {
-        VStack(spacing: 16) {
-            Text("选择最接近的身体区域；下一步可切换正面、侧面和背面，进一步标注具体位置。")
-                .font(.subheadline)
-                .foregroundStyle(CX.muted)
-                .frame(maxWidth: .infinity, alignment: .leading)
+    private var stepGuidance: String {
+        switch step {
+        case 0:
+            "先选一个大致区域。下一步再在人体轮廓上标出更具体的位置，不需要一次选得很精确。"
+        case 2:
+            "位置记好以后，再描述疼痛的强度和感觉。位置与强度是两件不同的事。"
+        case 3:
+            "最后核对一次位置、感觉和时间；只有你点保存后，这次记录才会留在本机。"
+        default:
+            "按你的实际感受标记即可；画面只是帮助描述位置，不代表诊断。"
+        }
+    }
 
-            LazyVGrid(columns: CXLayout.adaptiveColumns(minimum: 156, spacing: 12, dynamicTypeSize: dynamicTypeSize), spacing: 12) {
+    private var regionGrid: some View {
+        VStack(alignment: .leading, spacing: CXSpacing.lg) {
+            VStack(spacing: CXSpacing.sm) {
+                HStack(spacing: CXSpacing.xl) {
+                    GentlePainFigure(region: nil, angle: .front)
+                        .frame(width: 104, height: 188)
+                    GentlePainFigure(region: nil, angle: .back)
+                        .frame(width: 104, height: 188)
+                }
+
+                HStack(spacing: 34) {
+                    Text("正面")
+                    Text("背面")
+                }
+                .font(CXTypography.micro.weight(.semibold))
+                .foregroundStyle(CX.muted)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, CXSpacing.md)
+            .background(
+                LinearGradient(
+                    colors: [CX.surface.opacity(0.96), CX.moonlight.opacity(0.035)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                ),
+                in: .rect(cornerRadius: CXRadius.lg, style: .continuous)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: CXRadius.lg, style: .continuous)
+                    .strokeBorder(CX.separator.opacity(0.10), lineWidth: 0.5)
+            }
+            .accessibilityHidden(true)
+
+            SectionEyebrow(title: "哪里不舒服", action: "先选大致区域")
+
+            LazyVGrid(
+                columns: CXLayout.adaptiveColumns(
+                    minimum: 152,
+                    spacing: CXSpacing.sm,
+                    dynamicTypeSize: dynamicTypeSize
+                ),
+                spacing: CXSpacing.sm
+            ) {
                 ForEach(PainRegion.allCases) { region in
                     Button {
                         draft = PainRecord(region: region)
                         angle = region == .back ? .back : .front
                         advance(1)
                     } label: {
-                        HStack(spacing: 12) {
-                            Image(systemName: regionSymbol(region))
-                                .font(.title3.weight(.medium))
-                                .foregroundStyle(CX.blue)
-                                .frame(width: 42, height: 42)
-                                .background(CX.moonlight.opacity(0.14), in: Circle())
+                        VStack(alignment: .leading, spacing: CXSpacing.sm) {
+                            GentlePainFigure(
+                                region: region,
+                                angle: region == .back ? .back : .front
+                            )
+                            .frame(height: 104)
+                            .frame(maxWidth: .infinity)
+                            .background(CX.moonlight.opacity(0.035), in: .rect(cornerRadius: 16, style: .continuous))
+                            .accessibilityHidden(true)
+
                             VStack(alignment: .leading, spacing: 3) {
-                                Text(region.rawValue).font(.headline)
-                                Text(regionHint(region)).font(.caption).foregroundStyle(CX.muted)
+                                Text(region.rawValue)
+                                    .font(CXTypography.section)
+                                    .foregroundStyle(CX.ink)
+
+                                Text(regionHint(region))
+                                    .font(CXTypography.meta)
+                                    .foregroundStyle(CX.muted)
                             }
-                            Spacer(minLength: 4)
-                            Image(systemName: "chevron.right")
-                                .font(.caption.weight(.semibold)).foregroundStyle(CX.faint)
+
+                            HStack {
+                                Text("选择")
+                                    .font(CXTypography.micro.weight(.semibold))
+                                    .foregroundStyle(CX.actionPrimary)
+                                Spacer()
+                                Image(systemName: "arrow.right")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(CX.faint)
+                            }
                         }
-                        .padding(.horizontal, 14)
-                        .frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
-                        .cxInteractiveGlass(cornerRadius: 22)
-                        .contentShape(.rect(cornerRadius: 22))
+                        .padding(CXSpacing.md)
+                        .frame(maxWidth: .infinity, minHeight: 190, alignment: .leading)
+                        .cxContentSurface(cornerRadius: CXRadius.md)
+                        .contentShape(.rect(cornerRadius: CXRadius.md, style: .continuous))
                     }
                     .buttonStyle(QuietPressButton())
                     .accessibilityIdentifier("pain-region-\(region.anatomyAssetName)")
                 }
             }
+
+            Button { voiceLocation = true } label: {
+                HStack(spacing: CXSpacing.md) {
+                    Image(systemName: "waveform")
+                        .foregroundStyle(CX.actionPrimary)
+                        .frame(width: 42, height: 42)
+                        .background(CX.actionPrimary.opacity(0.08), in: Circle())
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("不确定区域？直接说给常曦听")
+                            .font(CXTypography.section)
+                        Text("例如“左边太阳穴一跳一跳地疼”")
+                            .font(CXTypography.meta)
+                            .foregroundStyle(CX.muted)
+                    }
+
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(CX.faint)
+                }
+                .padding(CXSpacing.md)
+                .cxContentSurface(cornerRadius: CXRadius.md)
+            }
+            .buttonStyle(QuietPressButton())
         }
     }
 
