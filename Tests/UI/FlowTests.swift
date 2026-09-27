@@ -112,6 +112,45 @@ final class FlowTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["症状自述"].exists)
         capture("09-memory-confirmed")
     }
+    func testFirstRunOnboardingJourney() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--onboarding-testing"]
+        app.launch()
+
+        XCTAssertTrue(app.staticTexts["欢迎来到常曦"].waitForExistence(timeout: 10))
+        capture("00-onboarding-welcome")
+
+        let next = app.buttons["开始了解"]
+        XCTAssertTrue(next.waitForExistence(timeout: 5))
+        next.tap()
+
+        XCTAssertTrue(app.staticTexts["先从每天都会遇到的事开始"].waitForExistence(timeout: 5))
+        capture("00b-onboarding-daily")
+
+        app.buttons["继续"].tap()
+        XCTAssertTrue(app.staticTexts["需要的时候，让照护有人接住"].waitForExistence(timeout: 5))
+        capture("00c-onboarding-care")
+
+        app.buttons["继续"].tap()
+        XCTAssertTrue(app.staticTexts["你的健康信息，由你决定"].waitForExistence(timeout: 5))
+        capture("00d-onboarding-privacy")
+
+        app.buttons["继续"].tap()
+        XCTAssertTrue(app.staticTexts["最后，告诉常曦该怎么陪你"].waitForExistence(timeout: 5))
+        capture("00e-onboarding-setup")
+
+        let consent = app.switches["我已阅读并了解体验说明"]
+        XCTAssertTrue(consent.waitForExistence(timeout: 5))
+        consent.tap()
+
+        let finish = app.buttons["finish-onboarding"]
+        XCTAssertTrue(finish.waitForExistence(timeout: 5))
+        finish.tap()
+
+        XCTAssertTrue(app.buttons["首页"].firstMatch.waitForExistence(timeout: 10))
+        capture("00f-onboarding-finished")
+    }
+
     func testRecordAndServiceJourney() {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing"]
