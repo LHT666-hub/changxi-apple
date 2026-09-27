@@ -578,8 +578,10 @@ struct MessagesView: View {
                     .font(CXTypography.micro.weight(.semibold))
                     .foregroundStyle(CX.actionPrimary)
                     .tracking(0.6)
+
                 Text("把需要你看一眼的事放在这里")
                     .font(CXTypography.display)
+
                 Text("医生示例回复、今日计划和待确认记忆分开呈现，不和服务入口混在一起。")
                     .font(CXTypography.body)
                     .foregroundStyle(CX.muted)
@@ -587,7 +589,40 @@ struct MessagesView: View {
             }
 
             VStack(spacing: CXSpacing.sm) {
-        struct DoctorMessageView: View {
+                ProfileEntryRow(
+                    title: "蒋医生的回复",
+                    subtitle: store.data.doctorMessageRead ? "已读 · 示例消息" : "未读 · 示例消息",
+                    icon: "stethoscope",
+                    tint: CX.statusPositive
+                ) {
+                    DoctorMessageView()
+                }
+
+                ProfileEntryRow(
+                    title: "今日计划",
+                    subtitle: "还有 \(store.data.plans.count - store.completed) 项待完成",
+                    icon: "bell",
+                    tint: CX.statusWarning
+                ) {
+                    PlanView()
+                }
+
+                ProfileEntryRow(
+                    title: "常曦记忆待确认",
+                    subtitle: "\(store.pendingMemories) 条等待你确认",
+                    icon: "sparkles",
+                    tint: CX.actionPrimary
+                ) {
+                    MemoryView()
+                }
+            }
+        }
+        .navigationTitle("消息中心")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+struct DoctorMessageView: View {
     @Environment(AppStore.self) private var store
 
     var body: some View {
@@ -616,8 +651,10 @@ struct MessagesView: View {
                     .font(CXTypography.body)
                     .lineSpacing(6)
 
-                NavigationLink("整理我的回复") { ConsultationView() }
-                    .buttonStyle(PrimaryButton())
+                NavigationLink("整理我的回复") {
+                    ConsultationView()
+                }
+                .buttonStyle(PrimaryButton())
             }
             .padding(CXSpacing.lg)
             .cxContentSurface(cornerRadius: CXRadius.lg)
@@ -629,20 +666,5 @@ struct MessagesView: View {
         .onAppear {
             store.data.doctorMessageRead = true
         }
-    }
-}
-
-struct DoctorMessageView: View {
-    @Environment(AppStore.self) private var store
-    var body: some View {
-        Page {
-            MoonPoolView(state: .doctorReply, character: true, compact: true)
-            Card {
-                RowLabel(title: "蒋医生", subtitle: "示例消息 · 今天 17:30", icon: "stethoscope", chevron: false)
-                Text("下次沟通时，可以带上最近一周的测量记录和完整体检报告，我们一起回顾变化。").lineSpacing(6)
-                NavigationLink("整理我的回复") { ConsultationView() }.buttonStyle(PrimaryButton())
-            }
-            DemoLabel()
-        }.navigationTitle("医生回复").onAppear { store.data.doctorMessageRead = true }
     }
 }
