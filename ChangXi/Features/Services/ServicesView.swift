@@ -349,7 +349,7 @@ struct BookingsView: View {
     @State private var cancelID: UUID?
     var body: some View {
         Page {
-            if store.data.bookings.isEmpty { ContentUnavailableView("还没有服务记录", systemImage: "calendar", description: Text("在服务页选择需要的服务，安排一个合适的时间。")) }
+            if store.data.bookings.isEmpty { CXEmptyState(title: "还没有服务记录", message: "从服务页选择需要的服务，保存一次本机意向后会出现在这里。", icon: "calendar.badge.clock") }
             ForEach(store.data.bookings.reversed()) { booking in
                 Card {
                     RowLabel(title: booking.service, subtitle: booking.person, icon: "calendar", chevron: false)
