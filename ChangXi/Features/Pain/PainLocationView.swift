@@ -1,6 +1,6 @@
 import SwiftUI
 
-private enum PainVisual {
+enum PainVisual {
     static let accent = Color(red: 0.66, green: 0.36, blue: 0.34)
     static let accentSoft = Color(red: 0.66, green: 0.36, blue: 0.34).opacity(0.10)
     static let accentLine = Color(red: 0.66, green: 0.36, blue: 0.34).opacity(0.72)
