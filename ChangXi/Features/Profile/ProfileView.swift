@@ -724,17 +724,106 @@ struct NotificationSettingsView: View {
     @Environment(AppStore.self) private var store
     @State private var error: String?
     @State private var busy = false
+
     var body: some View {
-        Form {
-            Section("每日提醒") {
-                Toggle("20:00 用药计划提醒", isOn: Binding(get: { store.data.medicationReminders }, set: { update(medication: true, enabled: $0) })).disabled(busy)
-                Toggle("22:00 睡前记录提醒", isOn: Binding(get: { store.data.healthReminders }, set: { update(medication: false, enabled: $0) })).disabled(busy)
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("通知")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.statusWarning)
+                    .tracking(0.6)
+
+                Text("只在真正有用的时候提醒你")
+                    .font(CXTypography.display)
+
+                Text("提醒由本机系统安排，不包含医生消息，也不会因为开启提醒而上传健康内容。")
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
             }
-            Section { Text("开启时才向系统请求通知权限。这些提醒在本机安排，不包含远程医生消息推送。") }
-            if let error { Section { Text(error).foregroundStyle(CX.coral); Button("打开系统设置") { if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) } } } }
-        }.navigationTitle("通知设置")
-        .task { let settings = await UNUserNotificationCenter.current().notificationSettings(); if settings.authorizationStatus == .denied { error = "通知权限已关闭，请到系统设置中开启。" } }
+
+            SectionEyebrow(title: "每日提醒")
+            VStack(spacing: CXSpacing.md) {
+                ReminderSettingRow(
+                    icon: "pills.fill",
+                    tint: CX.statusPositive,
+                    title: "晚间用药",
+                    subtitle: "每天 20:00",
+                    isOn: Binding(
+                        get: { store.data.medicationReminders },
+                        set: { update(medication: true, enabled: $0) }
+                    )
+                )
+                .disabled(busy)
+
+                Divider().overlay(CX.separator.opacity(0.14))
+
+                ReminderSettingRow(
+                    icon: "moon.stars.fill",
+                    tint: CX.actionPrimary,
+                    title: "睡前记录",
+                    subtitle: "每天 22:00",
+                    isOn: Binding(
+                        get: { store.data.healthReminders },
+                        set: { update(medication: false, enabled: $0) }
+                    )
+                )
+                .disabled(busy)
+            }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            HStack(alignment: .top, spacing: CXSpacing.sm) {
+                Image(systemName: "lock.shield")
+                    .foregroundStyle(CX.actionPrimary)
+                Text("只有在你开启某项提醒时，常曦才会向系统申请通知权限。")
+                    .font(CXTypography.meta)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(4)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, CXSpacing.xs)
+
+            if busy {
+                HStack(spacing: 10) {
+                    ProgressView()
+                    Text("正在保存提醒设置")
+                        .font(CXTypography.supporting)
+                        .foregroundStyle(CX.muted)
+                }
+                .frame(maxWidth: .infinity)
+            }
+
+            if let error {
+                VStack(alignment: .leading, spacing: CXSpacing.md) {
+                    Label(error, systemImage: "exclamationmark.triangle.fill")
+                        .font(CXTypography.supporting)
+                        .foregroundStyle(CX.statusCritical)
+
+                    Button("打开系统设置") {
+                        if let url = URL(string: UIApplication.openSettingsURLString) {
+                            UIApplication.shared.open(url)
+                        }
+                    }
+                    .font(CXTypography.supporting.weight(.semibold))
+                }
+                .padding(CXSpacing.lg)
+                .background(
+                    CX.statusCritical.opacity(0.05),
+                    in: .rect(cornerRadius: CXRadius.lg, style: .continuous)
+                )
+            }
+        }
+        .navigationTitle("通知设置")
+        .navigationBarTitleDisplayMode(.inline)
+        .task {
+            let settings = await UNUserNotificationCenter.current().notificationSettings()
+            if settings.authorizationStatus == .denied {
+                error = "通知权限已关闭，请到系统设置中开启。"
+            }
+        }
     }
+
     private func update(medication: Bool, enabled: Bool) {
         busy = true
         Task { @MainActor in
@@ -743,17 +832,63 @@ struct NotificationSettingsView: View {
             let id = medication ? "changxi-medication" : "changxi-journal"
             do {
                 if enabled {
-                    guard try await center.requestAuthorization(options: [.alert, .sound]) else { error = "未获得通知权限，你仍可在应用内查看计划。"; return }
+                    guard try await center.requestAuthorization(options: [.alert, .sound]) else {
+                        error = "未获得通知权限，你仍可在应用内查看计划。"
+                        return
+                    }
                     let content = UNMutableNotificationContent()
                     content.title = "常曦 · 今日计划"
-                    content.body = medication ? "到了查看晚间用药计划的时间。" : "记下今天的感受，慢慢照顾自己。"
+                    content.body = medication
+                        ? "到了查看晚间用药计划的时间。"
+                        : "记下今天的感受，慢慢照顾自己。"
                     content.sound = .default
-                    let trigger = UNCalendarNotificationTrigger(dateMatching: DateComponents(hour: medication ? 20 : 22, minute: 0), repeats: true)
-                    try await center.add(UNNotificationRequest(identifier: id, content: content, trigger: trigger))
-                } else { center.removePendingNotificationRequests(withIdentifiers: [id]) }
-                if medication { store.data.medicationReminders = enabled } else { store.data.healthReminders = enabled }
+                    let trigger = UNCalendarNotificationTrigger(
+                        dateMatching: DateComponents(hour: medication ? 20 : 22, minute: 0),
+                        repeats: true
+                    )
+                    try await center.add(
+                        UNNotificationRequest(identifier: id, content: content, trigger: trigger)
+                    )
+                } else {
+                    center.removePendingNotificationRequests(withIdentifiers: [id])
+                }
+
+                if medication {
+                    store.data.medicationReminders = enabled
+                } else {
+                    store.data.healthReminders = enabled
+                }
                 error = nil
-            } catch { self.error = "提醒未能保存，请稍后重试。" }
+            } catch {
+                self.error = "提醒未能保存，请稍后重试。"
+            }
+        }
+    }
+}
+
+private struct ReminderSettingRow: View {
+    let icon: String
+    let tint: Color
+    let title: String
+    let subtitle: String
+    @Binding var isOn: Bool
+
+    var body: some View {
+        Toggle(isOn: $isOn) {
+            HStack(spacing: CXSpacing.md) {
+                Image(systemName: icon)
+                    .foregroundStyle(tint)
+                    .frame(width: 42, height: 42)
+                    .background(tint.opacity(0.08), in: Circle())
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(CXTypography.section)
+                    Text(subtitle)
+                        .font(CXTypography.meta)
+                        .foregroundStyle(CX.muted)
+                }
+            }
         }
     }
 }
@@ -761,14 +896,86 @@ struct NotificationSettingsView: View {
 struct AccessibilitySettingsView: View {
     @Environment(AppStore.self) private var store
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         @Bindable var store = store
-        Form {
-            Toggle("大字模式", isOn: $store.data.largeText)
-            Toggle("轻柔触觉反馈", isOn: $store.data.haptics)
-            Section("动态效果") { Text(reduceMotion ? "已跟随系统减少动态效果。月池保持静止，状态通过文字表达。" : "月池跟随系统“减少动态效果”设置。可在系统设置 → 辅助功能 → 动态效果中调整。") }
-            NavigationLink("体验月池状态") { MotionLabView() }
-        }.navigationTitle("显示与触感")
+
+        Page(illustrated: true) {
+            VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                Text("显示与触感")
+                    .font(CXTypography.micro.weight(.semibold))
+                    .foregroundStyle(CX.actionPrimary)
+                    .tracking(0.6)
+
+                Text("让常曦更适合你的阅读习惯")
+                    .font(CXTypography.display)
+
+                Text("字号、触觉和动态效果都应该帮助理解，而不是增加负担。")
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(5)
+            }
+
+            SectionEyebrow(title: "阅读")
+            VStack(spacing: CXSpacing.md) {
+                Toggle(isOn: $store.data.largeText) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("大字模式")
+                            .font(CXTypography.section)
+                        Text("在应用内进一步放大主要文字与交互控件")
+                            .font(CXTypography.meta)
+                            .foregroundStyle(CX.muted)
+                    }
+                }
+
+                Divider().overlay(CX.separator.opacity(0.14))
+
+                Toggle(isOn: $store.data.haptics) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("轻柔触觉")
+                            .font(CXTypography.section)
+                        Text("只在完成、切换等关键动作提供轻反馈")
+                            .font(CXTypography.meta)
+                            .foregroundStyle(CX.muted)
+                    }
+                }
+            }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            SectionEyebrow(title: "动态效果")
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                HStack(spacing: CXSpacing.md) {
+                    Image(systemName: reduceMotion ? "figure.walk.motion.trianglebadge.exclamationmark" : "sparkles")
+                        .foregroundStyle(reduceMotion ? CX.statusWarning : CX.actionPrimary)
+                        .frame(width: 42, height: 42)
+                        .background(
+                            (reduceMotion ? CX.statusWarning : CX.actionPrimary).opacity(0.08),
+                            in: Circle()
+                        )
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(reduceMotion ? "已减少动态效果" : "跟随系统动态设置")
+                            .font(CXTypography.section)
+                        Text(
+                            reduceMotion
+                                ? "月池会保持更安静，状态主要通过文字和颜色表达。"
+                                : "月池和页面转场会使用轻柔动画；系统开启“减少动态效果”后会自动收敛。"
+                        )
+                        .font(CXTypography.meta)
+                        .foregroundStyle(CX.muted)
+                        .lineSpacing(4)
+                    }
+                }
+
+                NavigationLink("体验月池状态") { MotionLabView() }
+                    .font(CXTypography.supporting.weight(.semibold))
+            }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+        }
+        .navigationTitle("显示与触感")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
