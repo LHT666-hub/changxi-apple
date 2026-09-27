@@ -7,16 +7,22 @@ struct HealthPortraitView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("我的健康画像")
+                VStack(alignment: .leading, spacing: CXSpacing.xs) {
+                    Text("健康画像")
+                        .font(CXTypography.micro.weight(.semibold))
+                        .foregroundStyle(CX.actionPrimary)
+                        .tracking(0.6)
+                    Text("把不同维度放在一起看")
                         .font(CXTypography.display)
-                    Text("整体较稳定，有 2 项值得继续关注。")
-                        .font(.title3).foregroundStyle(CX.muted)
+                    Text("整体较稳定，目前有 2 个维度值得继续关注。")
+                        .font(CXTypography.body)
+                        .foregroundStyle(CX.muted)
+                        .lineSpacing(5)
                 }
 
-                Card {
-                    portraitSummary
-                }
+                portraitSummary
+                    .padding(CXSpacing.lg)
+                    .cxContentSurface(cornerRadius: CXRadius.lg)
 
                 SectionEyebrow(title: "六维画像", action: "事实 · 状态 · 需要 · 行动")
                 LazyVGrid(columns: CXLayout.adaptiveColumns(minimum: 155, dynamicTypeSize: dynamicTypeSize), spacing: 12) {
@@ -27,15 +33,29 @@ struct HealthPortraitView: View {
                     }
                 }
 
-                Card {
-                    Text("常曦正在留意").font(.title3.weight(.semibold))
-                    Text("近期最大的变化是活动量下降。我想继续了解，是天气原因，还是腿脚最近不舒服？")
-                        .foregroundStyle(CX.muted).lineSpacing(5)
+                SectionEyebrow(title: "常曦正在留意")
+                VStack(alignment: .leading, spacing: CXSpacing.md) {
+                    HStack(alignment: .top, spacing: CXSpacing.md) {
+                        Image(systemName: "sparkles")
+                            .foregroundStyle(CX.statusWarning)
+                            .frame(width: 40, height: 40)
+                            .background(CX.statusWarning.opacity(0.08), in: Circle())
+                        Text("近期最大的变化是活动量下降。我想继续了解，是天气原因，还是腿脚最近不舒服？")
+                            .font(CXTypography.body)
+                            .foregroundStyle(CX.ink)
+                            .lineSpacing(5)
+                    }
+
                     NavigationLink("记录身体感受") { PainLocationView() }
                         .buttonStyle(PrimaryButton())
                 }
+                .padding(CXSpacing.lg)
+                .background(CX.statusWarning.opacity(0.04), in: .rect(cornerRadius: CXRadius.lg, style: .continuous))
+
                 Text("健康画像用于整理变化与管理需求，不生成疾病诊断。需要专业判断的内容由家庭医生确认。")
-                    .font(.footnote).foregroundStyle(CX.muted)
+                    .font(CXTypography.meta)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(4)
             }
             .frame(maxWidth: 680).padding(20).frame(maxWidth: .infinity)
         }
@@ -49,13 +69,13 @@ struct HealthPortraitView: View {
             .frame(width: 142, height: 142)
         let copy = VStack(alignment: .leading, spacing: 8) {
             Label("重点关注", systemImage: "circle.lefthalf.filled")
-                .font(.headline)
-                .foregroundStyle(CX.gold)
+                .font(CXTypography.section)
+                .foregroundStyle(CX.statusWarning)
             Text("最近活动量有所下降，下肢力量也需要继续观察。")
-                .font(.subheadline)
+                .font(CXTypography.supporting)
                 .foregroundStyle(CX.muted)
-            Text("画像会随着记录逐步更新")
-                .font(.caption)
+            Text("画像会随着新的记录逐步更新")
+                .font(CXTypography.micro)
                 .foregroundStyle(CX.faint)
         }
 
@@ -108,10 +128,10 @@ private struct HealthPortraitCard: View {
                 Spacer()
                 Circle().fill(dimension.tint).frame(width: 9, height: 9)
             }
-            Text(dimension.title).font(.headline)
-            Text(dimension.state).font(.subheadline.weight(.semibold)).foregroundStyle(dimension.tint)
+            Text(dimension.title).font(CXTypography.section)
+            Text(dimension.state).font(CXTypography.supporting.weight(.semibold)).foregroundStyle(dimension.tint)
             Text(dimension.detail)
-                .font(.caption)
+                .font(CXTypography.meta)
                 .foregroundStyle(CX.muted)
                 .lineLimit(dynamicTypeSize >= .xxxLarge ? nil : 2)
             Image(systemName: "chevron.right").font(.caption).foregroundStyle(CX.faint).frame(maxWidth: .infinity, alignment: .trailing)
@@ -132,8 +152,8 @@ private struct SixDimensionRing: View {
                     .rotationEffect(.degrees(-90))
             }
             VStack(spacing: 2) {
-                Text("6").font(.title.bold()).monospacedDigit()
-                Text("个维度").font(.caption).foregroundStyle(CX.muted)
+                Text("6").font(CXTypography.title).monospacedDigit()
+                Text("个维度").font(CXTypography.micro).foregroundStyle(CX.muted)
             }
         }.accessibilityLabel("六维健康画像，其中两项需要关注")
     }
