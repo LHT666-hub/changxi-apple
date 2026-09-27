@@ -568,124 +568,353 @@ struct PainLocationView: View {
     }
 
     private var descriptionForm: some View {
-        VStack(spacing: 20) {
-            Card {
+        VStack(alignment: .leading, spacing: CXSpacing.xl) {
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
                 HStack(alignment: .firstTextBaseline) {
-                    Text("有多疼").font(.title3.weight(.semibold))
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("现在有多疼？")
+                            .font(CXTypography.title)
+                        Text("先选最接近的一句，不必纠结数字。")
+                            .font(CXTypography.supporting)
+                            .foregroundStyle(CX.muted)
+                    }
+
                     Spacer()
+
                     if draft.intensityConfirmed == true {
-                        Text("\(draft.intensity)").font(.system(size: 34, weight: .semibold, design: .rounded)).foregroundStyle(CX.blue)
-                        Text("/ 10").font(.subheadline).foregroundStyle(CX.muted)
-                    } else { Text("尚未确认").foregroundStyle(CX.muted) }
+                        HStack(alignment: .firstTextBaseline, spacing: 3) {
+                            Text("\(draft.intensity)")
+                                .font(CXTypography.display)
+                                .fontDesign(.rounded)
+                                .monospacedDigit()
+                                .foregroundStyle(PainVisual.accent)
+                            Text("/10")
+                                .font(CXTypography.meta)
+                                .foregroundStyle(CX.muted)
+                        }
+                    }
                 }
-                Text("先选一句最接近你现在的感受")
-                    .font(.subheadline)
-                    .foregroundStyle(CX.muted)
-                VStack(spacing: 8) {
+
+                VStack(spacing: CXSpacing.sm) {
                     ForEach(intensityChoices, id: \.score) { choice in
+                        let selected = draft.intensity == choice.score && draft.intensityConfirmed == true
+
                         Button {
                             draft.intensity = choice.score
                             draft.intensityConfirmed = true
+                            MoonHaptics.shared.play(success: false, enabled: true)
                         } label: {
-                            HStack(spacing: 12) {
+                            HStack(spacing: CXSpacing.md) {
                                 Text("\(choice.score)")
-                                    .font(.headline.monospacedDigit())
-                                    .foregroundStyle(draft.intensity == choice.score && draft.intensityConfirmed == true ? .white : CX.blue)
-                                    .frame(width: 34, height: 34)
+                                    .font(CXTypography.section)
+                                    .monospacedDigit()
+                                    .foregroundStyle(selected ? .white : PainVisual.accent)
+                                    .frame(width: 38, height: 38)
                                     .background(
-                                        draft.intensity == choice.score && draft.intensityConfirmed == true ? CX.blue : CX.blue.opacity(0.10),
+                                        selected ? PainVisual.accent : PainVisual.accentSoft,
                                         in: Circle()
                                     )
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(choice.title).font(.subheadline.weight(.semibold))
-                                    Text(choice.detail).font(.caption).foregroundStyle(CX.muted)
+
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(choice.title)
+                                        .font(CXTypography.section)
+                                        .foregroundStyle(CX.ink)
+                                    Text(choice.detail)
+                                        .font(CXTypography.meta)
+                                        .foregroundStyle(CX.muted)
+                                        .fixedSize(horizontal: false, vertical: true)
                                 }
-                                Spacer()
-                                if draft.intensity == choice.score && draft.intensityConfirmed == true {
-                                    Image(systemName: "checkmark.circle.fill").foregroundStyle(CX.blue)
+
+                                Spacer(minLength: CXSpacing.sm)
+
+                                if selected {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(PainVisual.accent)
                                 }
                             }
-                            .padding(12)
+                            .padding(.horizontal, CXSpacing.md)
+                            .frame(maxWidth: .infinity, minHeight: 62)
                             .background(
-                                draft.intensity == choice.score && draft.intensityConfirmed == true ? CX.blue.opacity(0.10) : CX.mist.opacity(0.72),
-                                in: .rect(cornerRadius: 16)
+                                selected ? PainVisual.accentSoft : CX.surface,
+                                in: .rect(cornerRadius: CXRadius.md, style: .continuous)
                             )
+                            .overlay {
+                                RoundedRectangle(cornerRadius: CXRadius.md, style: .continuous)
+                                    .strokeBorder(
+                                        selected ? PainVisual.accent.opacity(0.28) : CX.separator.opacity(0.09),
+                                        lineWidth: selected ? 1 : 0.5
+                                    )
+                            }
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(QuietPressButton())
                         .accessibilityLabel("\(choice.score)分，\(choice.title)，\(choice.detail)")
-                        .accessibilityAddTraits(draft.intensity == choice.score && draft.intensityConfirmed == true ? .isSelected : [])
+                        .accessibilityAddTraits(selected ? .isSelected : [])
                         .accessibilityIdentifier("pain-intensity-\(choice.score)")
                     }
                 }
-                Text("想记得更精确，可以再微调")
-                    .font(.caption)
-                    .foregroundStyle(CX.muted)
-                Slider(value: Binding(get: { Double(draft.intensity) }, set: { draft.intensity = Int($0); draft.intensityConfirmed = true }), in: 0...10, step: 1)
-                    .accessibilityLabel("疼痛程度").accessibilityValue("\(draft.intensity)分")
-                HStack { Text("0 · 不疼"); Spacer(); Text("10 · 能想象的最疼") }.font(.footnote).foregroundStyle(CX.muted)
+
                 if draft.intensityConfirmed == true {
-                    HStack(spacing: 10) {
+                    HStack(alignment: .top, spacing: CXSpacing.sm) {
                         Text(PainIntensityScale.band(for: draft.intensity).rawValue)
-                            .font(.caption.weight(.semibold)).foregroundStyle(CX.blue)
-                            .padding(.horizontal, 9).padding(.vertical, 5).background(CX.blue.opacity(0.10), in: Capsule())
+                            .font(CXTypography.micro.weight(.semibold))
+                            .foregroundStyle(PainVisual.accent)
+                            .padding(.horizontal, 10)
+                            .frame(minHeight: 30)
+                            .background(PainVisual.accentSoft, in: Capsule())
+
                         Text(PainIntensityScale.explanation(for: draft.intensity))
-                            .font(.subheadline).foregroundStyle(CX.ink)
+                            .font(CXTypography.supporting)
+                            .foregroundStyle(CX.ink)
+
+                        Spacer(minLength: 0)
                     }
                 }
-                Button(draft.intensityConfirmed == true ? "已确认这个分数" : "就记这个分数") { draft.intensityConfirmed = true }
-                Text("分级用于记录和沟通，不用于自行判断病情轻重。")
-                    .font(.footnote).foregroundStyle(CX.muted)
+
+                DisclosureGroup("需要更精确？微调 0–10") {
+                    VStack(spacing: CXSpacing.sm) {
+                        Slider(
+                            value: Binding(
+                                get: { Double(draft.intensity) },
+                                set: {
+                                    draft.intensity = Int($0)
+                                    draft.intensityConfirmed = true
+                                }
+                            ),
+                            in: 0...10,
+                            step: 1
+                        )
+                        .tint(PainVisual.accent)
+                        .accessibilityLabel("疼痛程度")
+                        .accessibilityValue("\(draft.intensity)分")
+
+                        HStack {
+                            Text("0 · 不疼")
+                            Spacer()
+                            Text("10 · 最强烈")
+                        }
+                        .font(CXTypography.micro)
+                        .foregroundStyle(CX.muted)
+                    }
+                    .padding(.top, CXSpacing.sm)
+                }
+                .font(CXTypography.supporting.weight(.semibold))
+
+                Text("强度只用于记录和沟通，不用于自己判断病情严重程度。")
+                    .font(CXTypography.meta)
+                    .foregroundStyle(CX.muted)
+                    .lineSpacing(4)
             }
-            Card {
-                Text("疼起来像什么").font(.title3.weight(.semibold))
-                Text("选择最接近的一种感觉；它和疼痛强度是两回事。")
-                    .font(.footnote).foregroundStyle(CX.muted)
-                LazyVGrid(columns: CXLayout.adaptiveColumns(minimum: 128, dynamicTypeSize: dynamicTypeSize)) {
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                SectionEyebrow(title: "疼起来像什么", action: "选择最接近的一项")
+
+                LazyVGrid(
+                    columns: CXLayout.adaptiveColumns(
+                        minimum: 126,
+                        spacing: CXSpacing.sm,
+                        dynamicTypeSize: dynamicTypeSize
+                    ),
+                    spacing: CXSpacing.sm
+                ) {
                     ForEach(painQualities, id: \.title) { item in
-                        Button { draft.sensation = item.title } label: {
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(item.title).font(.subheadline.weight(.semibold))
-                                Text(item.detail).font(.caption).foregroundStyle(CX.muted)
+                        let selected = draft.sensation == item.title
+
+                        Button {
+                            draft.sensation = item.title
+                        } label: {
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack {
+                                    Text(item.title)
+                                        .font(CXTypography.supporting.weight(.semibold))
+                                        .foregroundStyle(CX.ink)
+
+                                    Spacer()
+
+                                    if selected {
+                                        Image(systemName: "checkmark")
+                                            .font(.caption.weight(.bold))
+                                            .foregroundStyle(PainVisual.accent)
+                                    }
+                                }
+
+                                Text(item.detail)
+                                    .font(CXTypography.micro)
+                                    .foregroundStyle(CX.muted)
+                                    .lineLimit(2)
                             }
-                            .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
-                            .padding(.horizontal, 12)
-                            .background(draft.sensation == item.title ? CX.blue.opacity(0.15) : CX.mist, in: .rect(cornerRadius: 16))
-                        }.buttonStyle(.plain).accessibilityAddTraits(draft.sensation == item.title ? .isSelected : [])
+                            .padding(CXSpacing.md)
+                            .frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
+                            .background(
+                                selected ? PainVisual.accentSoft : CX.surface,
+                                in: .rect(cornerRadius: 16, style: .continuous)
+                            )
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .strokeBorder(
+                                        selected ? PainVisual.accent.opacity(0.24) : CX.separator.opacity(0.08),
+                                        lineWidth: 0.7
+                                    )
+                            }
+                        }
+                        .buttonStyle(QuietPressButton())
+                        .accessibilityAddTraits(selected ? .isSelected : [])
                     }
                 }
             }
-            Card {
-                Text("什么时候开始").font(.title3.weight(.semibold))
+
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                SectionEyebrow(title: "什么时候开始")
+
                 Picker("开始时间", selection: $draft.onset) {
-                    ForEach(["开始时间未填写", "刚刚开始", "今天开始", "已经几天", "更久了", "记不清"], id: \.self) { Text($0) }
-                }.pickerStyle(.menu)
+                    ForEach(
+                        ["开始时间未填写", "刚刚开始", "今天开始", "已经几天", "更久了", "记不清"],
+                        id: \.self
+                    ) {
+                        Text($0)
+                    }
+                }
+                .pickerStyle(.menu)
+                .padding(.horizontal, CXSpacing.md)
+                .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
+                .background(CX.raisedSurface, in: .rect(cornerRadius: CXRadius.sm, style: .continuous))
+
                 TextField("还有什么想补充的？（选填）", text: $draft.note, axis: .vertical)
-                    .lineLimit(3...6).padding(14).background(CX.mist, in: .rect(cornerRadius: 16))
+                    .lineLimit(3...6)
+                    .padding(CXSpacing.md)
+                    .background(CX.raisedSurface, in: .rect(cornerRadius: CXRadius.sm, style: .continuous))
             }
-            PainAssessmentForm(assessment: Binding(get: { draft.assessment ?? PainAssessment() }, set: { draft.assessment = $0 }))
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            PainAssessmentForm(
+                assessment: Binding(
+                    get: { draft.assessment ?? PainAssessment() },
+                    set: { draft.assessment = $0 }
+                )
+            )
         }
     }
 
     private var review: some View {
-        VStack(spacing: 20) {
+        VStack(alignment: .leading, spacing: CXSpacing.xl) {
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                HStack(spacing: CXSpacing.md) {
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.title2)
+                        .foregroundStyle(CX.statusPositive)
+                        .frame(width: 48, height: 48)
+                        .background(CX.statusPositive.opacity(0.08), in: Circle())
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("最后核对一次")
+                            .font(CXTypography.title)
+                        Text("位置、感觉和时间都可以返回修改。")
+                            .font(CXTypography.supporting)
+                            .foregroundStyle(CX.muted)
+                    }
+
+                    Spacer()
+                }
+
+                HStack(spacing: CXSpacing.sm) {
+                    PainReviewFact(
+                        title: "部位",
+                        value: draft.region.rawValue,
+                        tint: CX.actionPrimary
+                    )
+                    PainReviewFact(
+                        title: "强度",
+                        value: draft.intensityConfirmed == true ? "\(draft.intensity)/10" : "未确认",
+                        tint: PainVisual.accent
+                    )
+                    PainReviewFact(
+                        title: "感觉",
+                        value: draft.sensation,
+                        tint: CX.statusPositive
+                    )
+                }
+            }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            if draft.marks.contains(where: { !$0.hasSurfaceLocation }) {
+                SectionEyebrow(title: "标记的位置")
+
+                LazyVGrid(
+                    columns: CXLayout.adaptiveColumns(
+                        minimum: 146,
+                        spacing: CXSpacing.sm,
+                        dynamicTypeSize: dynamicTypeSize
+                    ),
+                    spacing: CXSpacing.sm
+                ) {
+                    ForEach(
+                        PainAngle.allCases.filter { a in
+                            draft.marks.contains { $0.angle == a && !$0.hasSurfaceLocation }
+                        }
+                    ) { a in
+                        VStack(alignment: .leading, spacing: CXSpacing.sm) {
+                            HStack {
+                                Text(a.rawValue)
+                                    .font(CXTypography.supporting.weight(.semibold))
+                                Spacer()
+                                Text("\(draft.marks.filter { $0.angle == a && !$0.hasSurfaceLocation }.count)处")
+                                    .font(CXTypography.micro)
+                                    .foregroundStyle(CX.muted)
+                            }
+
+                            PainMarkingSurface(
+                                region: draft.region,
+                                angle: a,
+                                kind: .point,
+                                marks: .constant(draft.marks),
+                                editable: false
+                            )
+                        }
+                        .padding(CXSpacing.md)
+                        .cxContentSurface(cornerRadius: CXRadius.md)
+                    }
+                }
+            }
+
             if draft.marks.contains(where: \.hasSurfaceLocation) {
-                LegacySurfaceMarkSummary(count: draft.marks.filter(\.hasSurfaceLocation).count)
+                LegacySurfaceMarkSummary(
+                    count: draft.marks.filter(\.hasSurfaceLocation).count
+                )
             }
-            ForEach(PainAngle.allCases.filter { a in draft.marks.contains { $0.angle == a && !$0.hasSurfaceLocation } }) { a in
-                VStack(alignment: .leading) {
-                    Text(a.rawValue).font(.headline)
-                    PainMarkingSurface(region: draft.region, angle: a, kind: kind, marks: .constant(draft.marks), editable: false)
+
+            VStack(alignment: .leading, spacing: CXSpacing.md) {
+                SectionEyebrow(title: "这次记录")
+
+                PainReviewRow(title: "开始时间", value: draft.onset)
+                Divider().overlay(CX.separator.opacity(0.12))
+                PainReviewRow(
+                    title: "疼痛感觉",
+                    value: draft.sensation
+                )
+
+                if !draft.note.isEmpty {
+                    Divider().overlay(CX.separator.opacity(0.12))
+                    PainReviewRow(title: "补充说明", value: draft.note)
+                }
+
+                if let assessment = draft.assessment {
+                    Divider().overlay(CX.separator.opacity(0.12))
+                    PainAssessmentSummary(assessment: assessment)
                 }
             }
-            Card {
-                Text(draft.summary).font(.title3).lineSpacing(7)
-                ForEach(draft.marks) { mark in
-                    Text("\(!mark.hasSurfaceLocation ? mark.angle.rawValue : "三维表面") · \(mark.name ?? mark.kind.label)").font(.subheadline).foregroundStyle(CX.muted)
-                }
-                if !draft.note.isEmpty { Text(draft.note) }
-                if let assessment = draft.assessment { PainAssessmentSummary(assessment: assessment) }
-                Button("重新标注位置") { advance(1) }
+            .padding(CXSpacing.lg)
+            .cxContentSurface(cornerRadius: CXRadius.lg)
+
+            Button {
+                advance(1)
+            } label: {
+                Label("重新标注位置", systemImage: "pencil.tip")
+                    .frame(maxWidth: .infinity, minHeight: 48)
             }
+            .buttonStyle(.bordered)
         }
     }
 
@@ -759,6 +988,46 @@ struct PainLocationView: View {
 
     private func advance(_ value: Int) {
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) { step = value }
+    }
+}
+
+private struct PainReviewFact: View {
+    let title: String
+    let value: String
+    let tint: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title)
+                .font(CXTypography.micro)
+                .foregroundStyle(CX.muted)
+
+            Text(value)
+                .font(CXTypography.supporting.weight(.semibold))
+                .foregroundStyle(CX.ink)
+                .lineLimit(2)
+        }
+        .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
+        .padding(CXSpacing.sm)
+        .background(tint.opacity(0.055), in: .rect(cornerRadius: 14, style: .continuous))
+    }
+}
+
+private struct PainReviewRow: View {
+    let title: String
+    let value: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: CXSpacing.md) {
+            Text(title)
+                .font(CXTypography.supporting)
+                .foregroundStyle(CX.muted)
+                .frame(width: 74, alignment: .leading)
+
+            Text(value)
+                .font(CXTypography.supporting.weight(.semibold))
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 }
 
