@@ -105,11 +105,12 @@ struct MoonPoolView: View {
                     reflection(time: time)
                     waterSurface(time: time)
 
-                    if character {
-                        signatureMark(time: time)
-                    }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+            }
+
+            if character {
+                characterView
             }
 
             MoonStatusPill(state: state, reduceTransparency: reduceTransparency)
@@ -407,23 +408,132 @@ struct MoonPoolView: View {
         .allowsHitTesting(false)
     }
 
-    private func signatureMark(time: TimeInterval) -> some View {
-        let opacity = reduceTransparency ? 0.06 : 0.12
-        let drift = paused ? 0 : sin(time * 0.34 + 1.2) * 2
-
-        return Image(decorative: "ChangXiCharacter")
+    private var characterView: some View {
+        Image(decorative: "ChangXiCharacter")
             .resizable()
             .scaledToFit()
-            .frame(height: compact ? 42 : 58)
-            .opacity(opacity)
-            .saturation(0.18)
-            .blur(radius: 0.15)
-            .offset(x: compact ? moonSize * 0.58 : moonSize * 0.66, y: (compact ? -48 : -68) + drift)
+            .frame(height: compact ? 142 : 226)
+            .phaseAnimator(paused ? [CharacterRestPhase.still] : CharacterRestPhase.allCases) { content, phase in
+                content
+                    .scaleEffect(x: phase.scaleX, y: phase.scaleY, anchor: .bottom)
+                    .rotationEffect(.degrees(phase.rotation), anchor: .bottom)
+                    .offset(y: phase.offset)
+            } animation: { phase in
+                phase.animation
+            }
+            .keyframeAnimator(
+                initialValue: CharacterResponse(),
+                trigger: reduceMotion ? MoonPoolState.idle : state
+            ) { content, value in
+                content
+                    .scaleEffect(value.scale, anchor: .bottom)
+                    .rotationEffect(.degrees(value.rotation), anchor: .bottom)
+                    .offset(x: value.x, y: value.y)
+            } keyframes: { _ in
+                KeyframeTrack(\.scale) {
+                    CubicKeyframe(state.response.scale, duration: 0.12)
+                    SpringKeyframe(1, duration: 0.36)
+                }
+                KeyframeTrack(\.rotation) {
+                    CubicKeyframe(state.response.rotation, duration: 0.14)
+                    SpringKeyframe(0, duration: 0.38)
+                }
+                KeyframeTrack(\.x) {
+                    CubicKeyframe(state.response.x, duration: 0.11)
+                    SpringKeyframe(0, duration: 0.34)
+                }
+                KeyframeTrack(\.y) {
+                    CubicKeyframe(state.response.y, duration: 0.14)
+                    SpringKeyframe(0, duration: 0.38)
+                }
+            }
+            .offset(x: compact ? -4 : -14, y: compact ? -34 : -55)
+            .shadow(color: .white.opacity(reduceTransparency ? 0.04 : 0.28), radius: 7, y: -2)
+            .shadow(color: state.accent.opacity(0.12), radius: 14, y: 8)
             .allowsHitTesting(false)
     }
 
     private func normalizedSine(_ value: Double) -> CGFloat {
         CGFloat((sin(value) + 1) / 2)
+    }
+}
+
+private enum CharacterRestPhase: CaseIterable {
+    case still, inhale, hover, exhale
+
+    var offset: CGFloat {
+        switch self {
+        case .still: 0
+        case .inhale: -1.5
+        case .hover: -3.5
+        case .exhale: -1
+        }
+    }
+
+    var scaleX: CGFloat {
+        switch self {
+        case .still: 1
+        case .inhale: 0.997
+        case .hover: 1.002
+        case .exhale: 1
+        }
+    }
+
+    var scaleY: CGFloat {
+        switch self {
+        case .still: 1
+        case .inhale: 1.006
+        case .hover: 1.011
+        case .exhale: 1.003
+        }
+    }
+
+    var rotation: Double {
+        switch self {
+        case .still: 0
+        case .inhale: -0.22
+        case .hover: 0.26
+        case .exhale: 0.08
+        }
+    }
+
+    var animation: Animation {
+        switch self {
+        case .still: .easeInOut(duration: 0.9)
+        case .inhale: .easeInOut(duration: 1.35)
+        case .hover: .easeInOut(duration: 1.65)
+        case .exhale: .easeInOut(duration: 1.2)
+        }
+    }
+}
+
+private struct CharacterResponse {
+    var scale: CGFloat = 1
+    var rotation: Double = 0
+    var x: CGFloat = 0
+    var y: CGFloat = 0
+}
+
+private extension MoonPoolState {
+    var response: CharacterResponse {
+        switch self {
+        case .idle:
+            CharacterResponse()
+        case .listening:
+            CharacterResponse(scale: 1.012, rotation: -1.4, x: -1, y: -2)
+        case .thinking:
+            CharacterResponse(scale: 1.008, rotation: 1.8, x: 2, y: -1)
+        case .responding:
+            CharacterResponse(scale: 1.022, rotation: -0.6, x: -1, y: -3)
+        case .success:
+            CharacterResponse(scale: 1.04, rotation: 0, x: 0, y: -5)
+        case .notification:
+            CharacterResponse(scale: 1.018, rotation: -1.8, x: -3, y: -2)
+        case .doctorReply:
+            CharacterResponse(scale: 1.026, rotation: 1.3, x: 2, y: -3)
+        case .quietAlert:
+            CharacterResponse(scale: 0.995, rotation: 0, x: 0, y: 1)
+        }
     }
 }
 
