@@ -367,6 +367,7 @@ private struct MetricSummaryTile: View {
 
 struct TrendContent: View {
     @Environment(AppStore.self) private var store
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var kind = MetricKind.pressure
     @State private var days = 7
     @State private var showRecord = false
@@ -407,31 +408,25 @@ struct TrendContent: View {
         return "\(rangeLabel) · \(readings.count) 次记录"
     }
 
+    private var chartTransitionKey: String {
+        "\(kind.rawValue)-\(days)-\(readings.count)"
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(CXTypography.display)
-            Text(subtitle)
-                .font(.body)
-                .foregroundStyle(CX.muted)
-        }
-        .animation(.snappy, value: kind)
-        .animation(.snappy, value: days)
-        .animation(.snappy, value: readings.count)
-
-        VStack(spacing: 12) {
-            Picker("指标", selection: $kind) {
-                ForEach(MetricKind.allCases) { Text($0.rawValue).tag($0) }
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .top, spacing: CXSpacing.md) {
+                TrendHeaderCopy(title: title, subtitle: subtitle)
+                Spacer(minLength: CXSpacing.sm)
+                TrendRangeMenu(days: $days)
             }
-            .pickerStyle(.segmented)
 
-            Picker("时间范围", selection: $days) {
-                Text("7天").tag(7)
-                Text("30天").tag(30)
-                Text("90天").tag(90)
+            VStack(alignment: .leading, spacing: CXSpacing.sm) {
+                TrendHeaderCopy(title: title, subtitle: subtitle)
+                TrendRangeMenu(days: $days)
             }
-            .pickerStyle(.segmented)
         }
+
+        TrendMetricSwitcher(selection: $kind)
 
         Card {
             if readings.isEmpty {
@@ -451,12 +446,14 @@ struct TrendContent: View {
                         showRecord = true
                     }
                     .buttonStyle(.borderedProminent)
+                    .tint(CX.actionPrimary)
                 }
             } else {
                 HStack(alignment: .firstTextBaseline) {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(kind.rawValue)
                             .font(.headline)
+                            .contentTransition(.opacity)
                         Text(kind.unit)
                             .font(.caption)
                             .foregroundStyle(CX.muted)
@@ -464,17 +461,23 @@ struct TrendContent: View {
                     Spacer()
                     Text("\(readings.count) 次")
                         .font(.subheadline)
+                        .monospacedDigit()
                         .foregroundStyle(CX.muted)
+                        .contentTransition(.numericText())
                 }
 
                 HealthChart(readings: readings, kind: kind)
+                    .id(chartTransitionKey)
+                    .transition(.opacity.combined(with: .scale(scale: 0.992)))
 
                 Button("添加记录") {
                     showRecord = true
                 }
                 .buttonStyle(.bordered)
+                .tint(CX.actionPrimary)
             }
         }
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.24), value: chartTransitionKey)
 
         NavigationLink { MetricDetailView(kind: kind) } label: {
             Card {
@@ -489,6 +492,127 @@ struct TrendContent: View {
             NavigationStack {
                 RecordReadingView(kind: kind)
             }
+        }
+    }
+}
+
+private struct TrendHeaderCopy: View {
+    let title: String
+    let subtitle: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title)
+                .font(CXTypography.title)
+                .contentTransition(.opacity)
+
+            Text(subtitle)
+                .font(CXTypography.supporting)
+                .foregroundStyle(CX.muted)
+                .contentTransition(.opacity)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+private struct TrendRangeMenu: View {
+    @Binding var days: Int
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        Menu {
+            ForEach([7, 30, 90], id: \.self) { option in
+                Button {
+                    withAnimation(reduceMotion ? nil : .snappy(duration: 0.26)) {
+                        days = option
+                    }
+                } label: {
+                    if days == option {
+                        Label("\(option) 天", systemImage: "checkmark")
+                    } else {
+                        Text("\(option) 天")
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Text("近 \(days) 天")
+                    .font(.subheadline.weight(.semibold))
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+
+                Image(systemName: "chevron.down")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(CX.muted)
+            }
+            .foregroundStyle(CX.ink)
+            .padding(.horizontal, 12)
+            .frame(minHeight: 38)
+            .cxInteractiveGlass(cornerRadius: 19)
+        }
+        .buttonStyle(.plain)
+        .fixedSize()
+        .sensoryFeedback(.selection, trigger: days)
+        .accessibilityLabel("时间范围，近 \(days) 天")
+    }
+}
+
+private struct TrendMetricSwitcher: View {
+    @Binding var selection: MetricKind
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Namespace private var glassNamespace
+
+    var body: some View {
+        GlassEffectContainer(spacing: 8) {
+            HStack(spacing: 4) {
+                ForEach(MetricKind.allCases) { kind in
+                    Button {
+                        guard selection != kind else { return }
+                        withAnimation(reduceMotion ? nil : .snappy(duration: 0.28)) {
+                            selection = kind
+                        }
+                    } label: {
+                        metricLabel(kind)
+                    }
+                    .buttonStyle(QuietPressButton())
+                    .accessibilityLabel(kind.rawValue)
+                    .accessibilityValue(selection == kind ? "已选择" : "")
+                }
+            }
+        }
+        .sensoryFeedback(.selection, trigger: selection)
+    }
+
+    @ViewBuilder
+    private func metricLabel(_ kind: MetricKind) -> some View {
+        let isSelected = selection == kind
+        let label = Text(kind.rawValue)
+            .font(.subheadline.weight(isSelected ? .semibold : .medium))
+            .foregroundStyle(isSelected ? CX.ink : CX.muted)
+            .frame(maxWidth: .infinity, minHeight: 40)
+            .padding(.horizontal, 10)
+            .contentShape(Capsule())
+
+        if isSelected {
+            if reduceTransparency {
+                label
+                    .background(CX.actionPrimarySoft.opacity(0.78), in: Capsule())
+                    .overlay {
+                        Capsule()
+                            .strokeBorder(CX.separator.opacity(0.16), lineWidth: 0.5)
+                    }
+            } else {
+                label
+                    .glassEffect(
+                        .regular.tint(CX.actionPrimary.opacity(0.12)).interactive(),
+                        in: .capsule
+                    )
+                    .glassEffectID(kind.rawValue, in: glassNamespace)
+                    .glassEffectTransition(.matchedGeometry)
+            }
+        } else {
+            label
         }
     }
 }
