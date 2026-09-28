@@ -369,15 +369,127 @@ struct TrendContent: View {
     @Environment(AppStore.self) private var store
     @State private var kind = MetricKind.pressure
     @State private var days = 7
-    var body: some View {
-        Picker("指标", selection: $kind) { ForEach(MetricKind.allCases) { Text($0.rawValue).tag($0) } }.pickerStyle(.segmented)
-        Picker("时间范围", selection: $days) { Text("7天").tag(7); Text("30天").tag(30); Text("90天").tag(90) }.pickerStyle(.segmented)
-        Card {
-            Text("\(kind.rawValue) · \(kind.unit)").font(.title2.bold())
-            HealthChart(readings: store.readings(kind, days: days), kind: kind)
-            Text("共 \(store.readings(kind, days: days).count) 次记录").foregroundStyle(CX.muted)
+    @State private var showRecord = false
+
+    private var readings: [HealthReading] {
+        store.readings(kind, days: days)
+    }
+
+    private var historicalCount: Int {
+        store.data.readings.filter { $0.kind == kind }.count
+    }
+
+    private var rangeLabel: String {
+        "近 \(days) 天"
+    }
+
+    private var title: String {
+        if readings.isEmpty {
+            return historicalCount > 0
+                ? "\(rangeLabel)没有\(kind.rawValue)记录"
+                : "从第一次\(kind.rawValue)记录开始"
         }
-        NavigationLink { MetricDetailView(kind: kind) } label: { Card { RowLabel(title: "查看记录明细", icon: "list.bullet") } }.buttonStyle(.plain)
+        if readings.count == 1 {
+            return "再记录一次，就能看到变化"
+        }
+        return "\(kind.rawValue)趋势"
+    }
+
+    private var subtitle: String {
+        if readings.isEmpty {
+            return historicalCount > 0
+                ? "你有更早的记录，可以切换到更长时间范围查看。"
+                : "添加一次测量后，这里会开始显示\(kind.rawValue)的变化。"
+        }
+        if readings.count == 1 {
+            return "\(rangeLabel)内已有 1 次记录，再有一次就能形成趋势。"
+        }
+        return "\(rangeLabel) · \(readings.count) 次记录"
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(CXTypography.display)
+            Text(subtitle)
+                .font(.body)
+                .foregroundStyle(CX.muted)
+        }
+        .animation(.snappy, value: kind)
+        .animation(.snappy, value: days)
+        .animation(.snappy, value: readings.count)
+
+        VStack(spacing: 12) {
+            Picker("指标", selection: $kind) {
+                ForEach(MetricKind.allCases) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented)
+
+            Picker("时间范围", selection: $days) {
+                Text("7天").tag(7)
+                Text("30天").tag(30)
+                Text("90天").tag(90)
+            }
+            .pickerStyle(.segmented)
+        }
+
+        Card {
+            if readings.isEmpty {
+                ContentUnavailableView {
+                    Label(
+                        historicalCount > 0 ? "这个时间范围没有记录" : "还没有\(kind.rawValue)记录",
+                        systemImage: "chart.xyaxis.line"
+                    )
+                } description: {
+                    Text(
+                        historicalCount > 0
+                            ? "试试 30 天或 90 天，或者添加一条新记录。"
+                            : "记录一次测量后，趋势图会从这里开始。"
+                    )
+                } actions: {
+                    Button("添加\(kind.rawValue)记录") {
+                        showRecord = true
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+            } else {
+                HStack(alignment: .firstTextBaseline) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(kind.rawValue)
+                            .font(.headline)
+                        Text(kind.unit)
+                            .font(.caption)
+                            .foregroundStyle(CX.muted)
+                    }
+                    Spacer()
+                    Text("\(readings.count) 次")
+                        .font(.subheadline)
+                        .foregroundStyle(CX.muted)
+                }
+
+                HealthChart(readings: readings, kind: kind)
+
+                Button("添加记录") {
+                    showRecord = true
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+
+        NavigationLink { MetricDetailView(kind: kind) } label: {
+            Card {
+                RowLabel(
+                    title: readings.isEmpty ? "查看历史记录" : "查看全部记录",
+                    icon: "list.bullet"
+                )
+            }
+        }
+        .buttonStyle(.plain)
+        .sheet(isPresented: $showRecord) {
+            NavigationStack {
+                RecordReadingView(kind: kind)
+            }
+        }
     }
 }
 
@@ -386,7 +498,7 @@ struct HealthChart: View {
     var kind: MetricKind
     var body: some View {
         if readings.isEmpty {
-            ContentUnavailableView("还没有记录", systemImage: "chart.xyaxis.line", description: Text("添加一次测量，开始记录你的月影。"))
+            ContentUnavailableView("还没有记录", systemImage: "chart.xyaxis.line", description: Text("添加一次测量后，这里会显示变化趋势。"))
         } else {
             Chart {
                 ForEach(readings) { reading in
