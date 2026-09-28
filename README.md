@@ -1,5 +1,7 @@
 # 常曦 · ChangXi
 
+当前软著提交基线：**常曦家庭健康管理软件 V1.0**。登记范围、运行边界与材料准备见 [软著基线说明](docs/SOFTWARE_COPYRIGHT_BASELINE.md)。
+
 > 本仓库是开发验证版，不是已完成线上验收的医疗产品。能力边界见 [连接状态](docs/LOCAL_BACKEND.md)，分支取舍与验证见 [前端合并审查](docs/FRONTEND_MERGE_REVIEW.md)。玄同最新开发在 `master`，不是旧 `main`；GitHub 仓库本身不是正在运行的后端。
 
 原生 SwiftUI 健康陪伴应用，使用 Xcode 26 / iOS 26 SDK 构建，支持 iPhone / iPad，最低 iOS 26。导航与悬浮操作使用玻璃材质，内容卡片保持清晰的阅读层次。
