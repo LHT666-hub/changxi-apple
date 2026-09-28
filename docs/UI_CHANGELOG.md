@@ -126,6 +126,19 @@
 - 图形：LunarGlyph 已进入 Home / Onboarding 品牌位置。
 - Surface：共享 Card 已退出 regularMaterial；Glass 继续保留给导航和控制层。
 
+
+### Health 趋势页真实状态与 Liquid Glass 控件
+- Commits:
+  - `9d9c6fef9fc5cc5212db4bcc426b9fb461398b63` 数据状态与空状态重写
+  - `92c8382032d63a780eea58f7ec8adc9cc810e439` 指标 / 时间控件与动效重构
+- 趋势页标题与说明改为跟随真实数据状态：无记录、仅 1 条、当前区间无记录但有历史、已形成趋势分别处理。
+- 删除两排厚重 segmented control：指标改为横向轻量切换；时间范围改为右上角 Menu。
+- iOS 26 下使用 GlassEffectContainer + glassEffectID + matchedGeometry，让当前指标的 Liquid Glass 选中态在切换时自然形变。
+- 时间范围作为独立交互控件使用 Liquid Glass；趋势卡继续保持实体 surface，延续“Glass 只属于控制层”的材质分工。
+- 指标和时间切换增加 selection sensory feedback；图表切换使用短时淡入 / 轻微缩放。
+- Reduce Motion / Reduce Transparency 均有对应降级处理。
+- 趋势页二级标题从 display 降为 title2 级，避免与导航标题争夺视觉层级。
+
 ---
 
 ## 下一步
