@@ -10,7 +10,11 @@ import XCTest
         let patientID = store.data.patientID
         store.data.name = "测试用户"
         store.data.heightCentimeters = 172
-        let id = store.data.plans[2].id
+        let plan = DailyPlan(title: "测试计划", time: "20:00", icon: "checkmark", detail: "测试")
+        let memory = MemoryItem(title: "测试记忆", text: "测试", category: "测试")
+        store.data.plans.append(plan)
+        store.data.memories.append(memory)
+        let id = plan.id
         store.togglePlan(id)
         store.data.memories[0].confirmed = true
         store.data.readings.append(HealthReading(kind: .pressure, value: 121, secondary: 76))
@@ -63,11 +67,23 @@ import XCTest
     }
     func testTrendFiltersAndDeletionPersist() {
         let store = AppStore(fileURL: file)
+        store.data.readings = LocalState.sampleReadings
+        store.data.memories = [MemoryItem(title: "测试记忆", text: "测试", category: "测试")]
         XCTAssertEqual(store.readings(.pressure, days: 7).count, 7)
         XCTAssertEqual(store.readings(.pressure, days: 30).count, 30)
         let id = store.data.memories[0].id
         store.data.memories.removeAll { $0.id == id }
         XCTAssertFalse(AppStore(fileURL: file).data.memories.contains { $0.id == id })
+    }
+
+    func testNewStoreStartsWithoutDemoData() {
+        let store = AppStore(fileURL: file)
+        XCTAssertEqual(store.data.name, "")
+        XCTAssertFalse(store.data.onboarded)
+        XCTAssertTrue(store.data.plans.isEmpty)
+        XCTAssertTrue(store.data.memories.isEmpty)
+        XCTAssertTrue(store.data.readings.isEmpty)
+        XCTAssertTrue(store.data.importedReports.isEmpty)
     }
     func testMedicationAndBookingHistoryPersistIndependently() {
         let store = AppStore(fileURL: file)

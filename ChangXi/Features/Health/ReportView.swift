@@ -8,10 +8,6 @@ struct ReportListContent: View {
         VStack(alignment: .leading, spacing: CXSpacing.xs) {
             Text("报告与资料")
                 .font(CXTypography.display)
-            Text("保留原始报告，再把值得关注的内容慢慢整理出来。")
-                .font(CXTypography.body)
-                .foregroundStyle(CX.muted)
-                .lineSpacing(5)
         }
 
         if !store.data.importedReports.isEmpty {
@@ -33,17 +29,13 @@ struct ReportListContent: View {
             }
         }
 
-        SectionEyebrow(title: "体验示例", action: "示例数据")
-        NavigationLink { ReportDetailView() } label: {
-            ReportListRow(
-                title: "9月5日体检报告",
-                subtitle: "3 组指标已整理",
-                status: "1 项值得关注",
-                icon: "doc.text.magnifyingglass",
-                tint: CX.statusWarning
-            )
+        if store.data.importedReports.isEmpty {
+            ContentUnavailableView {
+                Label("还没有报告", systemImage: "doc.text")
+            } description: {
+                Text("可拍照或从相册添加。")
+            }
         }
-        .buttonStyle(QuietPressButton())
 
         Button {
             upload = true

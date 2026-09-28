@@ -211,7 +211,7 @@ struct MemoryItem: Codable, Identifiable {
     var text: String
     var category: String
     var confirmed = false
-    var source = "示例对话 · 9月6日"
+    var source = "本机记录"
 }
 
 struct ConversationMessage: Codable, Identifiable {
@@ -304,35 +304,32 @@ struct ImportedReport: Codable, Identifiable {
 }
 
 struct LocalState: Codable {
+    var dataVersion = 2
     var patientID = UUID().uuidString
-    var name = "张阿姨"
-    var person = "张阿姨（本人）"
-    /// 演示档案身高。真实使用时可在「个人资料」中修改，BMI 会据此自动重算。
-    var heightCentimeters = 165.0
+    var name = ""
+    var person = "本人"
+    var heightCentimeters = 0.0
     var onboarded = false
+    var isGuestMode = false
+    var healthFocuses: [String] = []
+    var chronicConditions: [String] = []
+    var usesLongTermMedication: Bool?
+    var supportPreference = ""
+    var homePriority = ""
     var rememberAllowed = true
     var medicationReminders = false
     var healthReminders = false
     var haptics = true
     var largeText = false
     var lastPlanDay = Calendar.current.startOfDay(for: .now)
-    var plans = [
-        DailyPlan(title: "测血压", time: "08:00", icon: "heart.fill", detail: "记录今天的血压和测量时间。", completed: true),
-        DailyPlan(title: "散步20分钟", time: "16:00", icon: "figure.walk", detail: "按自己的节奏，完成后记下一笔。", completed: true),
-        DailyPlan(title: "晚间用药", time: "20:00", icon: "pills.fill", detail: "按本人处方核对药名、剂量和时间。此处为演示计划。"),
-        DailyPlan(title: "睡前记录", time: "22:00", icon: "moon.zzz.fill", detail: "记下今天的感受，为明天留一份参考。")
-    ]
-    var memories = [
-        MemoryItem(title: "症状自述", text: "最近一周早晨偶尔头晕，通常起床几分钟后缓解。", category: "健康档案"),
-        MemoryItem(title: "用药记录", text: "有一份每日晚间用药计划，药名和剂量待本人核对。", category: "健康档案"),
-        MemoryItem(title: "交流偏好", text: "喜欢用语音交流，希望提醒简短清楚。", category: "偏好", confirmed: true)
-    ]
-    var readings: [HealthReading] = Self.sampleReadings
+    var plans: [DailyPlan] = []
+    var memories: [MemoryItem] = []
+    var readings: [HealthReading] = []
     var messages: [ConversationMessage] = []
     var bookings: [ServiceBooking] = []
     var journal = ""
     var feedback = ""
-    var doctorMessageRead = false
+    var doctorMessageRead = true
     var medications: [Medication] = []
     var doseHistory: [DoseRecord] = []
     var demoSignedIn = false
@@ -341,14 +338,14 @@ struct LocalState: Codable {
     var importedReports: [ImportedReport] = []
     // 食养业务域保留自己的可撤回档案；旧版本地 JSON 缺少这些键时会由默认值补齐。
     var shiyangOnboarded = false
-    var shiyangPantryIngredientIDs = ["tomato", "egg", "mushroom", "rice", "bokchoy"]
+    var shiyangPantryIngredientIDs: [String] = []
     var shiyangExcludedIngredientIDs: [String] = []
-    var shiyangSelectedRecipeID = "tomato-scrambled-eggs"
+    var shiyangSelectedRecipeID = ""
     var shiyangRecommendationSummary = ""
-    var shiyangCity = "上海"
-    var shiyangMealContext = "经常外卖"
-    var shiyangStaplePreference = "都可以"
-    var shiyangGoal = "吃得均衡"
+    var shiyangCity = ""
+    var shiyangMealContext = ""
+    var shiyangStaplePreference = ""
+    var shiyangGoal = ""
     var shiyangAvoidanceNote = ""
     var shiyangHealthNote = ""
     var shiyangMedicationNote = ""
@@ -357,8 +354,94 @@ struct LocalState: Codable {
     var shiyangUseMedicationData = false
     var shiyangServings = 2
     var shiyangAvailableMinutes = 30
-    var shiyangLowSalt = true
-    var shiyangLikesSpicy = true
+    var shiyangLowSalt = false
+    var shiyangLikesSpicy = false
+
+    mutating func migrateLegacyDemoStateIfNeeded(from version: Int) {
+        guard version < 2 else { return }
+        dataVersion = 2
+
+        let hasDemoProfile = name == "张阿姨" && person == "张阿姨（本人）"
+        if hasDemoProfile {
+            name = ""
+            person = "本人"
+            heightCentimeters = 0
+            onboarded = false
+            isGuestMode = false
+            doctorMessageRead = true
+            demoSignedIn = false
+        }
+
+        let demoPlanTitles = ["测血压", "散步20分钟", "晚间用药", "睡前记录"]
+        if plans.map(\.title) == demoPlanTitles,
+           plans.contains(where: { $0.detail.contains("演示计划") }) {
+            plans.removeAll()
+        }
+
+        let demoMemoryTitles = ["症状自述", "用药记录", "交流偏好"]
+        if memories.map(\.title) == demoMemoryTitles,
+           memories.allSatisfy({ $0.source == "示例对话 · 9月6日" }) {
+            memories.removeAll()
+        }
+
+        if matchesLegacySampleReadings {
+            readings.removeAll()
+        }
+
+        if shiyangPantryIngredientIDs == ["tomato", "egg", "mushroom", "rice", "bokchoy"],
+           shiyangSelectedRecipeID == "tomato-scrambled-eggs" {
+            shiyangOnboarded = false
+            shiyangPantryIngredientIDs.removeAll()
+            shiyangSelectedRecipeID = ""
+            shiyangCity = ""
+            shiyangMealContext = ""
+            shiyangStaplePreference = ""
+            shiyangGoal = ""
+            shiyangLowSalt = false
+            shiyangLikesSpicy = false
+        }
+    }
+
+    private var matchesLegacySampleReadings: Bool {
+        guard readings.count == 90,
+              readings.allSatisfy({ $0.remoteRecordID == nil && $0.remoteEventID == nil }) else {
+            return false
+        }
+        let pressure = readings.filter { $0.kind == .pressure }.sorted { $0.date < $1.date }
+        let glucose = readings.filter { $0.kind == .glucose }.sorted { $0.date < $1.date }
+        let weight = readings.filter { $0.kind == .weight }.sorted { $0.date < $1.date }
+        guard pressure.count == 30, glucose.count == 30, weight.count == 30 else { return false }
+
+        for day in 0..<30 {
+            let expectedPressure = Double([124, 128, 132, 126, 130, 122, 128][day % 7])
+            let expectedSecondary = Double([76, 78, 81, 77, 79][day % 5])
+            let expectedGlucose = 5.4 + Double(day % 5) * 0.1
+            let expectedWeight = 68.4 + Double(day % 4) * 0.1
+            guard pressure[day].value == expectedPressure,
+                  pressure[day].secondary == expectedSecondary,
+                  glucose[day].value == expectedGlucose,
+                  weight[day].value == expectedWeight else {
+                return false
+            }
+        }
+        return true
+    }
+
+    static func uiTestFixture() -> LocalState {
+        var state = LocalState()
+        state.name = "测试用户"
+        state.person = "测试用户（本人）"
+        state.heightCentimeters = 165
+        state.onboarded = true
+        state.demoSignedIn = true
+        state.plans = [
+            DailyPlan(title: "测血压", time: "08:00", icon: "heart.fill", detail: "记录血压和测量时间。", completed: true),
+            DailyPlan(title: "散步20分钟", time: "16:00", icon: "figure.walk", detail: "按自己的节奏完成。"),
+            DailyPlan(title: "晚间用药", time: "20:00", icon: "pills.fill", detail: "按处方核对药名、剂量和时间。")
+        ]
+        state.readings = sampleReadings
+        return state
+    }
     static var sampleReadings: [HealthReading] {
         (0..<30).flatMap { day -> [HealthReading] in
             let date = Calendar.current.date(byAdding: .day, value: day - 29, to: .now)!
@@ -378,8 +461,11 @@ final class AppStore {
             let bytes = try Data(contentsOf: self.fileURL)
             let defaults = try JSONSerialization.jsonObject(with: JSONEncoder().encode(LocalState())) as! [String: Any]
             guard let saved = try JSONSerialization.jsonObject(with: bytes) as? [String: Any] else { throw CocoaError(.fileReadCorruptFile) }
+            let savedVersion = saved["dataVersion"] as? Int ?? 1
             let merged = defaults.merging(saved) { _, saved in saved }
-            data = try JSONDecoder().decode(LocalState.self, from: JSONSerialization.data(withJSONObject: merged))
+            var loaded = try JSONDecoder().decode(LocalState.self, from: JSONSerialization.data(withJSONObject: merged))
+            loaded.migrateLegacyDemoStateIfNeeded(from: savedVersion)
+            data = loaded
         } catch {
             data = LocalState()
             if FileManager.default.fileExists(atPath: self.fileURL.path) { storageError = "本地记录未能读取，原文件仍保留。请先导出备份，避免覆盖。" }
@@ -389,8 +475,10 @@ final class AppStore {
             || ProcessInfo.processInfo.arguments.contains("--integration-testing")
             || ProcessInfo.processInfo.arguments.contains("--onboarding-testing")
             || ProcessInfo.processInfo.arguments.contains("--launch-testing") {
-            data = LocalState()
-            data.onboarded = !ProcessInfo.processInfo.arguments.contains("--onboarding-testing")
+            data = LocalState.uiTestFixture()
+            if ProcessInfo.processInfo.arguments.contains("--onboarding-testing") {
+                data = LocalState()
+            }
             if ProcessInfo.processInfo.arguments.contains("--large-text") { data.largeText = true }
         }
         #endif

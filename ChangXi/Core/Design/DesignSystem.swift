@@ -835,7 +835,7 @@ struct CXEmptyState: View {
 
 struct DemoLabel: View {
     var body: some View {
-        Label("体验模式 · 示例数据仅保存在本机", systemImage: "iphone")
+        Label("数据优先保存在本机", systemImage: "iphone")
             .font(CXTypography.micro)
             .foregroundStyle(CX.muted)
             .accessibilityIdentifier("demo-label")

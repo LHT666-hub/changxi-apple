@@ -52,6 +52,7 @@ struct MoonPoolView: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.scenePhase) private var scenePhase
 
     @State private var entered = Date.now
@@ -70,18 +71,16 @@ struct MoonPoolView: View {
                 ZStack(alignment: .bottom) {
                     celestialMotes(time: time)
                     waterSurface(time: time)
+
+                    if character {
+                        characterView(time: time)
+                    }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }
 
-            if character {
-                characterView
-            }
-
-            if state != .idle {
-                MoonStatusPill(state: state, reduceTransparency: reduceTransparency)
-                    .padding(.bottom, compact ? 2 : 8)
-            }
+            MoonStatusPill(state: state, reduceTransparency: reduceTransparency)
+                .padding(.bottom, compact ? 2 : 8)
         }
         .frame(height: stageHeight)
         .accessibilityElement(children: .ignore)
@@ -125,33 +124,26 @@ struct MoonPoolView: View {
                 width: width,
                 height: surfaceHeight
             )
-            context.fill(
-                Path(ellipseIn: pool),
+            var glow = context
+            glow.addFilter(.blur(radius: compact ? 7 : 11))
+            glow.fill(
+                Path(ellipseIn: pool.insetBy(dx: width * 0.03, dy: surfaceHeight * 0.08)),
                 with: .radialGradient(
                     Gradient(colors: [
-                        .white.opacity(reduceTransparency ? 0.62 : 0.86),
-                        CX.brandMoonlight.opacity(reduceTransparency ? 0.20 : 0.42),
-                        CX.actionPrimary.opacity(reduceTransparency ? 0.08 : 0.18),
+                        .white.opacity(reduceTransparency ? 0.08 : (colorScheme == .dark ? 0.16 : 0.24)),
+                        CX.brandMoonlight.opacity(reduceTransparency ? 0.06 : (colorScheme == .dark ? 0.24 : 0.20)),
+                        CX.actionPrimary.opacity(reduceTransparency ? 0.02 : 0.07),
                         .clear
                     ]),
-                    center: CGPoint(x: center.x, y: center.y - surfaceHeight * 0.12),
-                    startRadius: 2,
-                    endRadius: width * 0.52
+                    center: CGPoint(x: center.x, y: center.y - surfaceHeight * 0.10),
+                    startRadius: 1,
+                    endRadius: width * 0.49
                 )
-            )
-            context.stroke(
-                Path(ellipseIn: pool.insetBy(dx: 1, dy: 1)),
-                with: .linearGradient(
-                    Gradient(colors: [.clear, .white.opacity(0.72), CX.brandMoonlight.opacity(0.30), .clear]),
-                    startPoint: CGPoint(x: pool.minX, y: pool.midY),
-                    endPoint: CGPoint(x: pool.maxX, y: pool.midY)
-                ),
-                lineWidth: 1
             )
 
             // 不再铺一整块“玻璃圆盘”，只保留破碎反射和极弱水纹。
-            for row in 0..<9 {
-                let depth = Double(row) / 8
+            for row in 0..<18 {
+                let depth = Double(row) / 17
                 let y = center.y - surfaceHeight * 0.34 + depth * surfaceHeight * 0.68
                 let halfWidth = width * (0.12 + sin(depth * .pi) * 0.34)
                 let drift = paused ? 0 : time * (0.26 + depth * 0.10)
@@ -161,8 +153,8 @@ struct MoonPoolView: View {
                 for step in 0...52 {
                     let p = Double(step) / 52
                     let x = center.x - halfWidth + 2 * halfWidth * p
-                    let wave = sin(p * .pi * 4.2 + drift + Double(row) * 0.52) * (0.32 + depth * 0.74)
-                    let visible = sin(p * .pi * 9 + Double(row)) > -0.72
+                    let wave = sin(p * .pi * 4.2 + drift + Double(row) * 0.52) * (0.48 + depth * 0.92)
+                    let visible = sin(p * .pi * 11 + Double(row)) > -0.80
 
                     guard visible else {
                         hasPreviousPoint = false
@@ -182,18 +174,44 @@ struct MoonPoolView: View {
                     with: .linearGradient(
                         Gradient(colors: [
                             .clear,
-                            .white.opacity(row.isMultiple(of: 3) ? 0.34 : 0.12),
-                            state.accent.opacity(row.isMultiple(of: 4) ? 0.10 : 0.03),
+                            colorScheme == .dark
+                                ? .white.opacity(row.isMultiple(of: 3) ? 0.42 : 0.16)
+                                : CX.actionPrimary.opacity(row.isMultiple(of: 3) ? 0.22 : 0.08),
+                            colorScheme == .dark
+                                ? state.accent.opacity(row.isMultiple(of: 4) ? 0.12 : 0.035)
+                                : CX.brandMoonlight.opacity(row.isMultiple(of: 4) ? 0.28 : 0.10),
                             .clear
                         ]),
                         startPoint: CGPoint(x: center.x - halfWidth, y: y),
                         endPoint: CGPoint(x: center.x + halfWidth, y: y)
                     ),
-                    lineWidth: row.isMultiple(of: 3) ? 0.85 : 0.45
+                    lineWidth: row.isMultiple(of: 3) ? 0.9 : 0.5
                 )
             }
 
-            let waveCount = state == .quietAlert ? 1 : (state == .listening ? 4 : 3)
+            let highlight = CGRect(
+                x: pool.minX + pool.width * 0.12,
+                y: pool.minY + pool.height * 0.05,
+                width: pool.width * 0.76,
+                height: pool.height * 0.34
+            )
+            context.stroke(
+                Path(ellipseIn: highlight),
+                with: .linearGradient(
+                    Gradient(colors: [
+                        .clear,
+                        colorScheme == .dark
+                            ? .white.opacity(0.48)
+                            : CX.actionPrimary.opacity(0.18),
+                        .clear
+                    ]),
+                    startPoint: CGPoint(x: highlight.minX, y: highlight.midY),
+                    endPoint: CGPoint(x: highlight.maxX, y: highlight.midY)
+                ),
+                lineWidth: 0.9
+            )
+
+            let waveCount = state == .quietAlert ? 1 : (state == .listening ? 4 : 2)
             let baseSpeed = state == .listening ? 0.58 : state == .thinking ? 0.24 : 0.14
             let amplitudeBoost = state == .listening ? min(max(amplitude, 0), 1) * 0.22 : 0
 
@@ -210,7 +228,9 @@ struct MoonPoolView: View {
                     width: width * scale,
                     height: surfaceHeight * scale
                 )
-                let opacity = paused ? 0.12 : (1 - phase) * (state == .listening ? 0.42 : 0.24)
+                let opacity = paused
+                    ? 0.08
+                    : (1 - phase) * (state == .listening ? 0.34 : (colorScheme == .dark ? 0.13 : 0.09))
 
                 context.stroke(
                     Path(ellipseIn: rect),
@@ -243,6 +263,18 @@ struct MoonPoolView: View {
                     lineWidth: 1.8
                 )
             }
+
+            let glintTravel = paused ? 0.34 : normalizedSine(time * 0.45)
+            let glintX = pool.minX + pool.width * (0.22 + glintTravel * 0.56)
+            let glintRect = CGRect(
+                x: glintX - 2,
+                y: pool.minY + pool.height * 0.19,
+                width: 4,
+                height: 4
+            )
+            var glint = context
+            glint.addFilter(.shadow(color: .white.opacity(0.72), radius: 5))
+            glint.fill(Path(ellipseIn: glintRect), with: .color(.white.opacity(paused ? 0.30 : 0.62)))
         }
         .frame(maxWidth: 540)
         .frame(height: compact ? 94 : 136)
@@ -251,11 +283,19 @@ struct MoonPoolView: View {
         .allowsHitTesting(false)
     }
 
-    private var characterView: some View {
+    private func characterView(time: TimeInterval) -> some View {
         Image(decorative: "ChangXiCharacter")
             .resizable()
             .scaledToFit()
             .frame(height: compact ? 142 : 226)
+            .phaseAnimator(paused ? [CharacterRestPhase.still] : CharacterRestPhase.allCases) { content, phase in
+                content
+                    .scaleEffect(x: phase.scaleX, y: phase.scaleY, anchor: .bottom)
+                    .rotationEffect(.degrees(phase.rotation), anchor: .bottom)
+                    .offset(y: phase.offset)
+            } animation: { phase in
+                phase.animation
+            }
             .keyframeAnimator(
                 initialValue: CharacterResponse(),
                 trigger: reduceMotion ? MoonPoolState.idle : state
@@ -290,6 +330,55 @@ struct MoonPoolView: View {
 
     private func normalizedSine(_ value: Double) -> CGFloat {
         CGFloat((sin(value) + 1) / 2)
+    }
+}
+
+private enum CharacterRestPhase: CaseIterable {
+    case still, inhale, hover, exhale
+
+    var offset: CGFloat {
+        switch self {
+        case .still: 0
+        case .inhale: -1.5
+        case .hover: -3.5
+        case .exhale: -1
+        }
+    }
+
+    var scaleX: CGFloat {
+        switch self {
+        case .still: 1
+        case .inhale: 0.997
+        case .hover: 1.002
+        case .exhale: 1
+        }
+    }
+
+    var scaleY: CGFloat {
+        switch self {
+        case .still: 1
+        case .inhale: 1.006
+        case .hover: 1.011
+        case .exhale: 1.003
+        }
+    }
+
+    var rotation: Double {
+        switch self {
+        case .still: 0
+        case .inhale: -0.22
+        case .hover: 0.26
+        case .exhale: 0.08
+        }
+    }
+
+    var animation: Animation {
+        switch self {
+        case .still: .easeInOut(duration: 0.9)
+        case .inhale: .easeInOut(duration: 1.35)
+        case .hover: .easeInOut(duration: 1.65)
+        case .exhale: .easeInOut(duration: 1.2)
+        }
     }
 }
 

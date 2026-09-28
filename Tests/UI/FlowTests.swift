@@ -97,20 +97,14 @@ final class FlowTests: XCTestCase {
         capture("04-trends")
         app.segmentedControls.buttons["报告"].tap()
         capture("05-reports")
-        app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "9月5日体检报告")).firstMatch.tap()
-        capture("05b-report-detail")
+        XCTAssertTrue(app.staticTexts["还没有报告"].exists)
         app.buttons["服务"].firstMatch.tap()
         capture("06-services")
         app.buttons["我的"].firstMatch.tap()
         capture("07-profile")
         app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "常曦记忆")).firstMatch.tap()
         capture("08-memory")
-        let confirm = app.buttons["确认"].firstMatch
-        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
-        confirm.tap()
-        app.segmentedControls.buttons["已记住"].tap()
-        XCTAssertTrue(app.staticTexts["症状自述"].exists)
-        capture("09-memory-confirmed")
+        XCTAssertTrue(app.staticTexts["这里暂时没有记忆"].waitForExistence(timeout: 5))
     }
     func testLaunchExperienceTransitionsIntoHome() {
         let app = XCUIApplication()
@@ -134,29 +128,27 @@ final class FlowTests: XCTestCase {
         app.launchArguments = ["--onboarding-testing"]
         app.launch()
 
-        XCTAssertTrue(app.staticTexts["欢迎来到常曦"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["常曦"].waitForExistence(timeout: 10))
         capture("00-onboarding-welcome")
 
-        let next = app.buttons["认识常曦"]
-        XCTAssertTrue(next.waitForExistence(timeout: 5))
-        next.tap()
+        app.buttons["onboarding-guest"].tap()
+        let name = app.textFields["输入你的称呼"]
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        name.tap()
+        name.typeText("林女士")
+        app.buttons["onboarding-continue"].tap()
 
-        XCTAssertTrue(app.staticTexts["先从每天都会遇到的事开始"].waitForExistence(timeout: 5))
-        capture("00b-onboarding-daily")
+        app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "日常记录")).firstMatch.tap()
+        app.buttons["onboarding-continue"].tap()
+        app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "暂无")).firstMatch.tap()
+        app.buttons["onboarding-continue"].tap()
+        app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "否")).firstMatch.tap()
+        app.buttons["onboarding-continue"].tap()
+        app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "自己使用")).firstMatch.tap()
+        app.buttons["onboarding-continue"].tap()
+        app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "健康首页")).firstMatch.tap()
 
-        app.buttons["继续"].tap()
-        XCTAssertTrue(app.staticTexts["需要的时候，让照护有人接住"].waitForExistence(timeout: 5))
-        capture("00c-onboarding-care")
-
-        app.buttons["继续"].tap()
-        XCTAssertTrue(app.staticTexts["你的健康信息，由你决定"].waitForExistence(timeout: 5))
-        capture("00d-onboarding-privacy")
-
-        app.buttons["继续"].tap()
-        XCTAssertTrue(app.staticTexts["最后，告诉常曦该怎么陪你"].waitForExistence(timeout: 5))
-        capture("00e-onboarding-setup")
-
-        let consent = app.switches["我已阅读并了解体验说明"]
+        let consent = app.switches["我已阅读使用说明与隐私说明"]
         XCTAssertTrue(consent.waitForExistence(timeout: 5))
         consent.tap()
 
@@ -184,7 +176,7 @@ final class FlowTests: XCTestCase {
         capture("10-record-saved")
         app.buttons["服务"].firstMatch.tap()
         app.buttons["service-帮预约"].tap()
-        app.buttons["保存预约意向"].tap()
+        app.buttons["保存草稿"].tap()
         XCTAssertTrue(app.staticTexts["尚未提交至医疗机构"].exists)
         capture("11-booking-saved")
         let openBookings = app.buttons["open-bookings"]

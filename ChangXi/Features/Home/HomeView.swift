@@ -2,6 +2,7 @@ import SwiftUI
 
 struct HomeView: View {
     @Environment(AppStore.self) private var store
+    @Environment(AuthSession.self) private var auth
     @Environment(AssistantCoordinator.self) private var assistant
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
@@ -32,8 +33,10 @@ struct HomeView: View {
                     moonPool
                         .entrance(index: 1, appeared: appeared, reduceMotion: reduceMotion)
 
-                    talkButton
-                        .entrance(index: 2, appeared: appeared, reduceMotion: reduceMotion)
+                    if auth.isAuthenticated || (AppConfiguration.isUITesting && store.data.demoSignedIn) {
+                        talkButton
+                            .entrance(index: 2, appeared: appeared, reduceMotion: reduceMotion)
+                    }
 
                     ShiyangEntryCard()
                         .entrance(index: 3, appeared: appeared, reduceMotion: reduceMotion)
@@ -112,8 +115,14 @@ struct HomeView: View {
                     .font(CXTypography.title)
                     .symbolRenderingMode(.hierarchical)
 
-                Text("和常曦说说")
-                    .font(CXTypography.section)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("和常曦说说")
+                        .font(CXTypography.section)
+
+                    Text("语音或文字都可以")
+                        .font(CXTypography.supporting)
+                        .opacity(0.82)
+                }
 
                 Spacer()
 
@@ -134,10 +143,26 @@ private struct HomeHeader: View {
     var body: some View {
         HStack(alignment: .top, spacing: 16) {
             VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: CXSpacing.xs) {
+                    Image(systemName: "moonphase.waxing.crescent")
+                        .font(.title3.weight(.medium))
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(CX.actionPrimary)
+
+                    Text("常曦")
+                        .font(CXTypography.section)
+                        .foregroundStyle(CX.muted)
+                }
+
                 Text("\(greeting)，\(name)")
                     .font(CXTypography.display)
+                    .fontDesign(.serif)
                     .minimumScaleFactor(0.82)
                     .fixedSize(horizontal: false, vertical: true)
+
+                Text("今天也慢慢来。")
+                    .font(CXTypography.body)
+                    .foregroundStyle(CX.muted)
             }
 
             Spacer(minLength: 8)
@@ -336,10 +361,10 @@ private struct TodaySummaryCard: View {
                     PlanView()
                 } label: {
                     RowLabel(
-                        title: "今天的安排已完成",
-                        subtitle: "给自己留一点轻松的时间",
-                        icon: "checkmark.circle.fill",
-                        tint: CX.statusPositive
+                        title: store.data.plans.isEmpty ? "还没有计划" : "今天的安排已完成",
+                        subtitle: store.data.plans.isEmpty ? "添加今天要做的事" : "查看今日计划",
+                        icon: store.data.plans.isEmpty ? "calendar.badge.plus" : "checkmark.circle.fill",
+                        tint: store.data.plans.isEmpty ? CX.actionPrimary : CX.statusPositive
                     )
                 }
             }
@@ -357,18 +382,6 @@ private struct TodaySummaryCard: View {
                 )
             }
 
-            Divider().overlay(CX.separator.opacity(0.18))
-
-            NavigationLink {
-                DoctorMessageView()
-            } label: {
-                RowLabel(
-                    title: "蒋医生",
-                    subtitle: store.data.doctorMessageRead ? "查看上次回复" : "有一条新回复",
-                    icon: "stethoscope",
-                    tint: CX.statusPositive
-                )
-            }
         }
         .buttonStyle(.plain)
     }

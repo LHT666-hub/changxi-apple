@@ -2,13 +2,15 @@ import SwiftUI
 
 struct ServicesView: View {
     @Environment(AppStore.self) private var store
+    @Environment(AuthSession.self) private var auth
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var category = "医疗服务"
 
     var body: some View {
         Page(illustrated: true) {
-            Text("服务")
-                .font(CXTypography.display)
+            if !hasAccountAccess {
+                serviceGate
+            } else {
 
             VStack(alignment: .leading, spacing: CXSpacing.md) {
                 HStack(spacing: CXSpacing.md) {
@@ -20,9 +22,9 @@ struct ServicesView: View {
                         .background(CX.statusPositive.opacity(0.08), in: Circle())
 
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("蒋医生")
+                        Text("尚未绑定家庭医生")
                             .font(CXTypography.title)
-                        Text("全科医生")
+                        Text("绑定后可在这里预约和联系")
                             .font(CXTypography.supporting)
                             .foregroundStyle(CX.muted)
                     }
@@ -30,19 +32,6 @@ struct ServicesView: View {
                     Spacer()
                 }
 
-                HStack(spacing: CXSpacing.sm) {
-                    NavigationLink { DoctorDetailView() } label: {
-                        Label("查看医生", systemImage: "person.crop.circle")
-                            .frame(maxWidth: .infinity, minHeight: 48)
-                    }
-                    .buttonStyle(.bordered)
-
-                    NavigationLink { ConsultationView() } label: {
-                        Label("联系医生", systemImage: "bubble.left.and.bubble.right")
-                            .frame(maxWidth: .infinity, minHeight: 48)
-                    }
-                    .buttonStyle(PrimaryButton())
-                }
             }
             .padding(CXSpacing.lg)
             .cxContentSurface(cornerRadius: CXRadius.lg)
@@ -70,31 +59,12 @@ struct ServicesView: View {
                 }
             } else {
                 SectionEyebrow(title: category)
-                NavigationLink { ArticleView(isClass: category == "家医课堂") } label: {
-                    HStack(spacing: CXSpacing.md) {
-                        Image(systemName: category == "家医课堂" ? "book.closed" : "figure.walk")
-                            .font(.title3.weight(.medium))
-                            .foregroundStyle(CX.actionPrimary)
-                            .frame(width: 48, height: 48)
-                            .background(CX.actionPrimary.opacity(0.08), in: Circle())
-
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(category == "家医课堂" ? "让健康记录更有用" : "社区月光散步计划")
-                                .font(CXTypography.section)
-                            Text(category == "家医课堂" ? "3 分钟阅读 · 记录方法" : "周六 18:30 · 社区花园")
-                                .font(CXTypography.supporting)
-                                .foregroundStyle(CX.muted)
-                        }
-
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(CX.faint)
-                    }
-                    .padding(CXSpacing.md)
-                    .cxContentSurface(cornerRadius: CXRadius.md)
+                ContentUnavailableView {
+                    Label(
+                        category == "家医课堂" ? "暂无课程" : "暂无活动通知",
+                        systemImage: category == "家医课堂" ? "book.closed" : "bell"
+                    )
                 }
-                .buttonStyle(QuietPressButton())
             }
 
             SectionEyebrow(title: "我的服务")
@@ -147,9 +117,41 @@ struct ServicesView: View {
                 }
                 .buttonStyle(QuietPressButton())
             }
+            }
 
         }
         .navigationTitle("服务")
+    }
+
+    private var hasAccountAccess: Bool {
+        auth.isAuthenticated || (AppConfiguration.isUITesting && store.data.demoSignedIn)
+    }
+
+    private var serviceGate: some View {
+        VStack(alignment: .leading, spacing: CXSpacing.lg) {
+            Image(systemName: "person.crop.circle.badge.checkmark")
+                .font(.system(size: 40, weight: .light))
+                .foregroundStyle(CX.actionPrimary)
+                .frame(width: 72, height: 72)
+                .background(CX.actionPrimary.opacity(0.08), in: Circle())
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("登录后使用医疗服务")
+                    .font(CXTypography.title)
+                Text("预约、咨询和随访需要账户。")
+                    .font(CXTypography.supporting)
+                    .foregroundStyle(CX.muted)
+            }
+
+            NavigationLink {
+                DemoAuthView(initialMode: "登录")
+            } label: {
+                Text("登录或创建账户")
+            }
+            .buttonStyle(PrimaryButton())
+        }
+        .padding(CXSpacing.xl)
+        .cxContentSurface(cornerRadius: CXRadius.lg)
     }
 }
 
@@ -234,7 +236,7 @@ struct ServiceDetailView: View {
     var body: some View {
         Page(illustrated: true) {
             VStack(alignment: .leading, spacing: CXSpacing.xs) {
-                Text("服务意向")
+                Text("预约草稿")
                     .font(CXTypography.micro.weight(.semibold))
                     .foregroundStyle(service.color)
                     .tracking(0.6)
@@ -287,7 +289,7 @@ struct ServiceDetailView: View {
                         .strokeBorder(CX.separator.opacity(0.12), lineWidth: 0.5)
                 }
 
-            Button(saved ? "已保存本地记录" : "保存预约意向") {
+            Button(saved ? "草稿已保存" : "保存草稿") {
                 store.data.bookings.append(
                     ServiceBooking(service: service.title, person: store.data.person, date: date, note: note)
                 )
@@ -318,7 +320,7 @@ struct ServiceDetailView: View {
                 .background(CX.statusPositive.opacity(0.06), in: .rect(cornerRadius: CXRadius.md, style: .continuous))
             }
 
-            Text("当前为体验版，本页只保存本机服务意向。")
+            Text("草稿不会自动提交至医疗机构。")
                 .font(CXTypography.meta)
                 .foregroundStyle(CX.muted)
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -346,18 +348,14 @@ struct BookingsView: View {
                     .font(CXTypography.micro.weight(.semibold))
                     .foregroundStyle(CX.actionPrimary)
                     .tracking(0.6)
-                Text("看清哪些只是本机意向")
+                Text("服务记录")
                     .font(CXTypography.display)
-                Text("当前体验版不会把这些记录自动提交给医疗机构。")
-                    .font(CXTypography.body)
-                    .foregroundStyle(CX.muted)
-                    .lineSpacing(5)
             }
 
             if store.data.bookings.isEmpty {
                 CXEmptyState(
                     title: "还没有服务记录",
-                    message: "从服务页保存一次本机意向后，会按时间出现在这里。",
+                    message: "保存的预约草稿会出现在这里。",
                     icon: "calendar.badge.clock"
                 )
             } else {

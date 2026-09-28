@@ -2,54 +2,47 @@ import SwiftUI
 
 /// 登录 / 注册界面。
 ///
-/// - **联网模式**（`AppConfiguration.useRemoteAPI == true`）：对接玄同后端 `/api/auth`，
-///   登录 / 注册双 Tab，前端校验与后端约束逐字对齐，展示后端返回的错误文案；
-/// - **离线演示模式**：始终保留一个入口，当后端不可达或 UI 测试（`useRemoteAPI == false`）时，
-///   可走原来的本地演示登录（验证码 123456），不破坏既有体验与测试。
+/// 对接账户服务的登录 / 注册界面。游客入口由首次启动页单独提供，
+/// 这里不再伪造验证码或本地账户。
 struct DemoAuthView: View {
     @Environment(AppStore.self) private var store
     @Environment(AuthSession.self) private var auth
     @Environment(\.dismiss) private var dismiss
 
-    @State private var mode = "登录"
+    @State private var mode: String
     @State private var identifier = ""
     @State private var email = ""
     @State private var password = ""
     @State private var confirmPassword = ""
     @State private var agreed = false
     @State private var localError: String?
-    @State private var showOffline = false
-    @State private var offlineRequested = false
-    @State private var offlineCode = ""
+
+    init(initialMode: String = "登录") {
+        _mode = State(initialValue: initialMode == "注册" ? "注册" : "登录")
+    }
 
     private var isLogin: Bool { mode == "登录" }
 
     var body: some View {
         Page(illustrated: true) {
             VStack(alignment: .leading, spacing: CXSpacing.xs) {
-                Text("账户")
-                    .font(CXTypography.micro.weight(.semibold))
-                    .foregroundStyle(CX.actionPrimary)
-                    .tracking(0.6)
-
-                Text(isLogin ? "继续和常曦一起使用玄同" : "创建一个玄同账户")
+                Text(isLogin ? "登录常曦" : "创建账户")
                     .font(CXTypography.display)
 
-                Text(
-                    AppConfiguration.useRemoteAPI && AppConfiguration.supportsExtendedAPI
-                        ? "联网账户用于连接玄同服务；如果只是体验界面，也可以使用下方离线演示。"
-                        : "当前版本以离线演示为主，不需要真实账户也可以继续体验。"
-                )
+                Text(isLogin ? "使用用户名或邮箱登录。" : "创建账户后即可保存并同步资料。")
                 .font(CXTypography.body)
                 .foregroundStyle(CX.muted)
-                .lineSpacing(5)
             }
 
             if AppConfiguration.useRemoteAPI && AppConfiguration.supportsExtendedAPI {
                 remoteSection
+            } else {
+                ContentUnavailableView(
+                    "账户服务暂不可用",
+                    systemImage: "wifi.slash",
+                    description: Text("请稍后重试，或返回选择游客使用。")
+                )
             }
-
-            offlineSection
         }
         .navigationTitle(isLogin ? "登录" : "注册")
         .navigationBarTitleDisplayMode(.inline)
@@ -95,11 +88,8 @@ struct DemoAuthView: View {
 
                 Toggle(isOn: $agreed) {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("我已了解体验与隐私说明")
+                        Text("我同意使用说明与隐私政策")
                             .font(CXTypography.section)
-                        Text("登录或注册前确认当前版本的数据使用边界")
-                            .font(CXTypography.meta)
-                            .foregroundStyle(CX.muted)
                     }
                 }
 
@@ -139,81 +129,6 @@ struct DemoAuthView: View {
             .opacity(agreed && !auth.isBusy ? 1 : 0.5)
             .accessibilityIdentifier("auth-submit")
         }
-    }
-
-    private var offlineSection: some View {
-        VStack(alignment: .leading, spacing: CXSpacing.md) {
-            Button {
-                showOffline.toggle()
-            } label: {
-                HStack(spacing: CXSpacing.md) {
-                    Image(systemName: "moon.zzz.fill")
-                        .foregroundStyle(CX.actionPrimary)
-                        .frame(width: 42, height: 42)
-                        .background(CX.actionPrimary.opacity(0.08), in: Circle())
-
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("离线演示")
-                            .font(CXTypography.section)
-                        Text("无需真实账户，只在本机体验")
-                            .font(CXTypography.meta)
-                            .foregroundStyle(CX.muted)
-                    }
-
-                    Spacer()
-                    Image(systemName: showOffline ? "chevron.up" : "chevron.down")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(CX.faint)
-                }
-            }
-            .buttonStyle(.plain)
-            .frame(minHeight: 52)
-            .accessibilityIdentifier("offline-demo-toggle")
-
-            if showOffline || !AppConfiguration.useRemoteAPI || !AppConfiguration.supportsExtendedAPI {
-                Divider().overlay(CX.separator.opacity(0.14))
-
-                Text("验证码固定为 123456，仅用于本机演示。")
-                    .font(CXTypography.meta)
-                    .foregroundStyle(CX.muted)
-
-                Button(offlineRequested ? "重新显示演示验证码" : "显示演示验证码") {
-                    offlineRequested = true
-                }
-                .font(CXTypography.supporting.weight(.semibold))
-                .frame(minHeight: 44)
-
-                if offlineRequested {
-                    VStack(alignment: .leading, spacing: CXSpacing.sm) {
-                        Text("演示验证码 123456")
-                            .font(CXTypography.section)
-                            .monospacedDigit()
-
-                        TextField("输入 6 位演示验证码", text: $offlineCode)
-                            .keyboardType(.numberPad)
-                            .textContentType(.oneTimeCode)
-                            .padding(.horizontal, CXSpacing.md)
-                            .frame(minHeight: 52)
-                            .background(CX.raisedSurface, in: .rect(cornerRadius: CXRadius.sm, style: .continuous))
-                    }
-                }
-
-                Button("登录演示账户") {
-                    guard offlineCode == "123456" else {
-                        localError = "验证码不正确，请输入页面显示的 6 位演示验证码。"
-                        return
-                    }
-                    store.data.demoSignedIn = true
-                    dismiss()
-                }
-                .buttonStyle(PrimaryButton())
-                .disabled(!offlineRequested)
-                .opacity(offlineRequested ? 1 : 0.5)
-                .accessibilityIdentifier("offline-demo-submit")
-            }
-        }
-        .padding(CXSpacing.lg)
-        .cxContentSurface(cornerRadius: CXRadius.lg)
     }
 
 private struct AuthField<Content: View>: View {

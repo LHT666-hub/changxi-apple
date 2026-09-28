@@ -73,6 +73,7 @@
 		EB6A9FCA3DDE3602712CBC09 /* ReportImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 232F1510C6D03D434451F7BE /* ReportImportView.swift */; };
 		ED0BDCC9CD154E2376B5D485 /* ReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D07478862A3BDF32AEBCDE7A /* ReportView.swift */; };
 		FAC19C63E588C688E13F8C40 /* XuantongConversationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7D2AADB24D75556F8902513 /* XuantongConversationServiceTests.swift */; };
+		1638F3C0E8F65DDC88C9D846 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B41BA19BBE3C01F19EDD9C1; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -253,6 +254,7 @@
 		F0F330F6A0B8CF497797A99A /* AppConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfiguration.swift; sourceTree = "<group>"; };
 		F223D55D3B8A1C7783A88B04 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
 		FD26349BAD8A4AFB317A9573 /* PatientServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatientServiceTests.swift; sourceTree = "<group>"; };
+		3B41BA19BBE3C01F19EDD9C1 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChangXi/App/WelcomeView.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -1044,6 +1046,7 @@
 				EB6A9FCA3DDE3602712CBC09 /* ReportImportView.swift in Sources */,
 				ED0BDCC9CD154E2376B5D485 /* ReportView.swift in Sources */,
 				7563DF2103AA4196C6424188 /* RootView.swift in Sources */,
+				1638F3C0E8F65DDC88C9D846 /* WelcomeView.swift in Sources */,
 				A6E0B039F2293B6B00AE53B6 /* SSEClient.swift in Sources */,
 				2A00DDE5A5E12CEFC5E7B549 /* ServicesView.swift in Sources */,
 				9F88B57E66BACFD002FF53FC /* SpeechController.swift in Sources */,

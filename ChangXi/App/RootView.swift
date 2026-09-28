@@ -37,7 +37,8 @@ struct RootView: View {
                         }
                     }
 
-                    if assistant.registeredContext == nil && !isKeyboardVisible {
+                    if assistant.registeredContext == nil && !isKeyboardVisible
+                        && (auth.isAuthenticated || (AppConfiguration.isUITesting && store.data.demoSignedIn)) {
                         Button {
                             assistant.activateGeneral()
                             showGeneralChat = true
@@ -575,7 +576,8 @@ private struct FrostedTabBarSurface: ViewModifier {
     }
 }
 
-struct WelcomeView: View {
+#if false
+private struct LegacyWelcomeView: View {
     @Environment(AppStore.self) private var store
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -1027,4 +1029,4 @@ private struct OnboardingConnectionNode: View {
         .frame(width: 74)
     }
 }
-
+#endif

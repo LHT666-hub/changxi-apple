@@ -3,6 +3,7 @@ import UserNotifications
 
 struct ProfileView: View {
     @Environment(AppStore.self) private var store
+    @Environment(AuthSession.self) private var auth
 
     var body: some View {
         Page(illustrated: true) {
@@ -16,7 +17,7 @@ struct ProfileView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(store.data.name)
                             .font(CXTypography.title)
-                        Text("家庭医生：蒋医生")
+                        Text(auth.isAuthenticated ? "账户已登录" : "游客模式")
                             .font(CXTypography.supporting)
                             .foregroundStyle(CX.muted)
                     }
@@ -520,6 +521,7 @@ struct MemoryEditView: View {
 
 struct AccountView: View {
     @Environment(AppStore.self) private var store
+    @Environment(AuthSession.self) private var auth
     @State private var name = ""
     @State private var height = ""
     @State private var saved = false
@@ -532,17 +534,13 @@ struct AccountView: View {
                     .font(CXTypography.micro.weight(.semibold))
                     .foregroundStyle(CX.actionPrimary)
                     .tracking(0.6)
-                Text("让常曦更准确地认识你")
+                Text("个人资料")
                     .font(CXTypography.display)
-                Text("只保留真正会影响体验的信息，其余内容以后需要时再补。")
-                    .font(CXTypography.body)
-                    .foregroundStyle(CX.muted)
-                    .lineSpacing(5)
             }
 
             SectionEyebrow(title: "基本信息")
             VStack(alignment: .leading, spacing: CXSpacing.md) {
-                LabeledField(title: "常用称呼", hint: "例如：张阿姨") {
+                LabeledField(title: "常用称呼", hint: "显示在首页") {
                     TextField("称呼", text: $name)
                         .textContentType(.nickname)
                 }
@@ -577,18 +575,18 @@ struct AccountView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
             }
 
-            SectionEyebrow(title: "体验账户")
+            SectionEyebrow(title: "账户")
             VStack(alignment: .leading, spacing: CXSpacing.md) {
                 HStack(spacing: CXSpacing.md) {
-                    Image(systemName: store.data.demoSignedIn ? "person.crop.circle.badge.checkmark" : "person.crop.circle")
+                    Image(systemName: auth.isAuthenticated ? "person.crop.circle.badge.checkmark" : "person.crop.circle")
                         .foregroundStyle(CX.actionPrimary)
                         .frame(width: 42, height: 42)
                         .background(CX.actionPrimary.opacity(0.08), in: Circle())
 
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(store.data.demoSignedIn ? "演示账户已登录" : "访客体验")
+                        Text(auth.isAuthenticated ? (auth.currentUser?.username ?? "已登录") : "游客模式")
                             .font(CXTypography.section)
-                        Text("当前版本不依赖真实账户也可以完整体验。")
+                        Text(auth.isAuthenticated ? (auth.currentUser?.email ?? "") : "医疗服务与云端同步不可用")
                             .font(CXTypography.supporting)
                             .foregroundStyle(CX.muted)
                     }
@@ -596,13 +594,15 @@ struct AccountView: View {
                     Spacer()
                 }
 
-                if store.data.demoSignedIn {
-                    Button("退出演示账户") {
+                if auth.isAuthenticated {
+                    Button("退出登录") {
+                        auth.logout()
                         store.data.demoSignedIn = false
+                        store.data.isGuestMode = true
                     }
                     .font(CXTypography.supporting.weight(.semibold))
                 } else {
-                    NavigationLink("登录 / 注册体验") { DemoAuthView() }
+                    NavigationLink("登录或创建账户") { DemoAuthView() }
                         .font(CXTypography.supporting.weight(.semibold))
                 }
             }
@@ -613,7 +613,9 @@ struct AccountView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             name = store.data.name
-            height = store.data.heightCentimeters.formatted(.number.precision(.fractionLength(0...1)))
+            height = store.data.heightCentimeters > 0
+                ? store.data.heightCentimeters.formatted(.number.precision(.fractionLength(0...1)))
+                : ""
         }
         .onChange(of: name) { saved = false; validationMessage = nil }
         .onChange(of: height) { saved = false; validationMessage = nil }
@@ -692,7 +694,6 @@ struct FamilyView: View {
             VStack(alignment: .leading, spacing: CXSpacing.md) {
                 Picker("为谁安排服务", selection: $store.data.person) {
                     Text("\(store.data.name)（本人）").tag("\(store.data.name)（本人）")
-                    Text("家人（示例照护对象）").tag("家人（示例照护对象）")
                 }
                 .pickerStyle(.segmented)
 
@@ -870,7 +871,7 @@ struct DevicesView: View {
 
             if checked {
                 VStack(alignment: .leading, spacing: CXSpacing.md) {
-                    Label("当前体验版暂无可配对设备", systemImage: "checkmark.circle")
+                    Label("暂未发现可配对设备", systemImage: "checkmark.circle")
                         .font(CXTypography.section)
                     NavigationLink("继续手动记录") { HealthArchiveView() }
                         .font(CXTypography.supporting.weight(.semibold))
@@ -963,7 +964,7 @@ struct PrivacyView: View {
 
                 Divider().overlay(CX.separator.opacity(0.14))
 
-                Button("清除本地数据并重新体验", role: .destructive) {
+                Button("清除本地数据", role: .destructive) {
                     reset = true
                 }
                 .font(CXTypography.supporting.weight(.semibold))
@@ -974,11 +975,11 @@ struct PrivacyView: View {
         .navigationTitle("隐私与授权")
         .navigationBarTitleDisplayMode(.inline)
         .confirmationDialog(
-            "清除本机保存的常曦体验数据？",
+            "清除本机保存的常曦数据？",
             isPresented: $reset,
             titleVisibility: .visible
         ) {
-            Button("清除并重新体验", role: .destructive) {
+            Button("清除数据", role: .destructive) {
                 store.resetDemo()
             }
         }

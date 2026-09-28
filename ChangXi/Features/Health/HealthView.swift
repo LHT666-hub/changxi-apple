@@ -27,12 +27,14 @@ struct HealthView: View {
         }
         .navigationTitle("健康")
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink { MessagesView() } label: {
-                    Image(systemName: "envelope")
-                        .frame(width: 44, height: 44)
+            if auth.isAuthenticated {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink { MessagesView() } label: {
+                        Image(systemName: "envelope")
+                            .frame(width: 44, height: 44)
+                    }
+                    .accessibilityLabel("消息中心")
                 }
-                .accessibilityLabel("消息中心")
             }
         }
         .task { await syncOnAppear() }
@@ -72,10 +74,10 @@ struct HealthView: View {
                     Spacer()
 
                     VStack(alignment: .trailing, spacing: 5) {
-                        Text("2 项")
+                        Text(store.data.readings.isEmpty ? "待记录" : "\(recordedMetricCount) 项")
                             .font(CXTypography.section)
-                            .foregroundStyle(CX.statusWarning)
-                        Text("值得关注")
+                            .foregroundStyle(CX.actionPrimary)
+                        Text(store.data.readings.isEmpty ? "暂无数据" : "已记录")
                             .font(CXTypography.micro)
                             .foregroundStyle(CX.muted)
                     }
@@ -169,6 +171,10 @@ struct HealthView: View {
             .padding(CXSpacing.lg)
             .cxContentSurface(cornerRadius: CXRadius.lg)
         }
+    }
+
+    private var recordedMetricCount: Int {
+        Set(store.data.readings.map(\.kind)).count
     }
 
     private var planContent: some View {
