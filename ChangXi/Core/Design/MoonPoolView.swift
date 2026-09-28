@@ -124,62 +124,65 @@ struct MoonPoolView: View {
                 width: width,
                 height: surfaceHeight
             )
-            var glow = context
-            glow.addFilter(.blur(radius: compact ? 7 : 11))
-            glow.fill(
-                Path(ellipseIn: pool.insetBy(dx: width * 0.03, dy: surfaceHeight * 0.08)),
-                with: .radialGradient(
-                    Gradient(colors: [
-                        .white.opacity(reduceTransparency ? 0.08 : (colorScheme == .dark ? 0.16 : 0.24)),
-                        CX.brandMoonlight.opacity(reduceTransparency ? 0.06 : (colorScheme == .dark ? 0.24 : 0.20)),
-                        CX.actionPrimary.opacity(reduceTransparency ? 0.02 : 0.07),
-                        .clear
-                    ]),
-                    center: CGPoint(x: center.x, y: center.y - surfaceHeight * 0.10),
-                    startRadius: 1,
-                    endRadius: width * 0.49
+
+            // Restored from the Sep 10 continuous MoonPool implementation.
+            // The blurred body breathes very slightly so the water never reads
+            // as a frozen glass ellipse.
+            let breathingScale = paused ? 1 : 1 + sin(time * 0.48) * 0.018
+            let breathingPool = CGRect(
+                x: center.x - width * breathingScale / 2,
+                y: center.y - surfaceHeight * breathingScale / 2,
+                width: width * breathingScale,
+                height: surfaceHeight * breathingScale
+            )
+            var base = context
+            base.addFilter(.blur(radius: compact ? 4 : 6))
+            base.fill(
+                Path(ellipseIn: breathingPool),
+                with: .linearGradient(
+                    Gradient(colors: colorScheme == .dark
+                        ? [
+                            Color(.displayP3, red: 0.10, green: 0.32, blue: 0.45).opacity(0.34),
+                            Color(.displayP3, red: 0.18, green: 0.48, blue: 0.62).opacity(0.42),
+                            CX.brandMoonlight.opacity(0.20),
+                            .clear
+                        ]
+                        : [
+                            Color(.displayP3, red: 0.22, green: 0.55, blue: 0.70).opacity(0.25),
+                            Color(.displayP3, red: 0.38, green: 0.72, blue: 0.82).opacity(0.42),
+                            CX.brandMoonlight.opacity(0.32),
+                            .clear
+                        ]),
+                    startPoint: CGPoint(x: center.x, y: pool.minY),
+                    endPoint: CGPoint(x: center.x, y: pool.maxY)
                 )
             )
 
-            // 不再铺一整块“玻璃圆盘”，只保留破碎反射和极弱水纹。
+            // Eighteen independently phased lines make the surface visibly flow.
+            var surface = context
+            surface.clip(to: Path(ellipseIn: pool))
             for row in 0..<18 {
-                let depth = Double(row) / 17
-                let y = center.y - surfaceHeight * 0.34 + depth * surfaceHeight * 0.68
-                let halfWidth = width * (0.12 + sin(depth * .pi) * 0.34)
-                let drift = paused ? 0 : time * (0.26 + depth * 0.10)
-
+                let depth = Double(row) / 18
+                let y = pool.minY + pool.height * (0.12 + depth * 0.78)
+                let halfWidth = width * (0.12 + sin(depth * .pi) * 0.30)
                 var line = Path()
-                var hasPreviousPoint = false
-                for step in 0...52 {
-                    let p = Double(step) / 52
-                    let x = center.x - halfWidth + 2 * halfWidth * p
-                    let wave = sin(p * .pi * 4.2 + drift + Double(row) * 0.52) * (0.48 + depth * 0.92)
-                    let visible = sin(p * .pi * 11 + Double(row)) > -0.80
-
-                    guard visible else {
-                        hasPreviousPoint = false
-                        continue
-                    }
-
-                    if hasPreviousPoint {
-                        line.addLine(to: CGPoint(x: x, y: y + wave))
+                for step in 0...44 {
+                    let x = center.x - halfWidth + 2 * halfWidth * Double(step) / 44
+                    let waveY = y + sin(Double(step) * 0.31 + time * 0.60 + Double(row)) * (0.5 + depth)
+                    if step == 0 {
+                        line.move(to: CGPoint(x: x, y: waveY))
                     } else {
-                        line.move(to: CGPoint(x: x, y: y + wave))
-                        hasPreviousPoint = true
+                        line.addLine(to: CGPoint(x: x, y: waveY))
                     }
                 }
-
-                context.stroke(
+                surface.stroke(
                     line,
                     with: .linearGradient(
                         Gradient(colors: [
                             .clear,
                             colorScheme == .dark
-                                ? .white.opacity(row.isMultiple(of: 3) ? 0.42 : 0.16)
-                                : CX.actionPrimary.opacity(row.isMultiple(of: 3) ? 0.22 : 0.08),
-                            colorScheme == .dark
-                                ? state.accent.opacity(row.isMultiple(of: 4) ? 0.12 : 0.035)
-                                : CX.brandMoonlight.opacity(row.isMultiple(of: 4) ? 0.28 : 0.10),
+                                ? .white.opacity(row.isMultiple(of: 3) ? 0.55 : 0.20)
+                                : CX.actionPrimary.opacity(row.isMultiple(of: 3) ? 0.42 : 0.16),
                             .clear
                         ]),
                         startPoint: CGPoint(x: center.x - halfWidth, y: y),
@@ -200,28 +203,26 @@ struct MoonPoolView: View {
                 with: .linearGradient(
                     Gradient(colors: [
                         .clear,
-                        colorScheme == .dark
-                            ? .white.opacity(0.48)
-                            : CX.actionPrimary.opacity(0.18),
+                        colorScheme == .dark ? .white.opacity(0.64) : CX.actionPrimary.opacity(0.42),
                         .clear
                     ]),
                     startPoint: CGPoint(x: highlight.minX, y: highlight.midY),
                     endPoint: CGPoint(x: highlight.maxX, y: highlight.midY)
                 ),
-                lineWidth: 0.9
+                lineWidth: 1.1
             )
 
-            let waveCount = state == .quietAlert ? 1 : (state == .listening ? 4 : 2)
-            let baseSpeed = state == .listening ? 0.58 : state == .thinking ? 0.24 : 0.14
-            let amplitudeBoost = state == .listening ? min(max(amplitude, 0), 1) * 0.22 : 0
-
+            // Five continuously expanding rings are the original visible pulse.
+            let speed = state == .listening ? 0.42 : state == .thinking ? 0.20 : 0.11
+            let waveCount = state == .quietAlert ? 2 : 5
             for index in 0..<waveCount {
-                let phase = paused
-                    ? Double(index) / Double(max(waveCount, 1))
-                    : (Double(index) / Double(max(waveCount, 1)) + time * baseSpeed)
-                        .truncatingRemainder(dividingBy: 1)
+                var phase = paused
+                    ? Double(index) / Double(waveCount)
+                    : (Double(index) / Double(waveCount) + time * speed).truncatingRemainder(dividingBy: 1)
+                if state == .thinking { phase = 1 - phase }
 
-                let scale = 0.16 + phase * (0.70 + amplitudeBoost)
+                let voiceScale = state == .listening ? 1 + min(max(amplitude, 0), 1) * 0.20 : 1
+                let scale = (0.18 + phase * 0.78) * voiceScale
                 let rect = CGRect(
                     x: center.x - width * scale / 2,
                     y: center.y - surfaceHeight * scale / 2,
@@ -229,52 +230,47 @@ struct MoonPoolView: View {
                     height: surfaceHeight * scale
                 )
                 let opacity = paused
-                    ? 0.08
-                    : (1 - phase) * (state == .listening ? 0.34 : (colorScheme == .dark ? 0.13 : 0.09))
+                    ? 0.22
+                    : (1 - phase) * (state == .listening ? 0.78 : 0.48)
 
-                context.stroke(
+                var ripple = context
+                ripple.addFilter(.shadow(color: .white.opacity(opacity * 0.70), radius: 5))
+                ripple.stroke(
                     Path(ellipseIn: rect),
                     with: .linearGradient(
                         Gradient(colors: [
-                            .clear,
-                            .white.opacity(opacity),
-                            state.accent.opacity(opacity * 0.48),
-                            .clear
+                            state.accent.opacity(opacity * 0.32),
+                            colorScheme == .dark
+                                ? .white.opacity(opacity)
+                                : CX.actionPrimary.opacity(opacity * 0.88),
+                            state.accent.opacity(opacity * 0.18)
                         ]),
                         startPoint: CGPoint(x: rect.minX, y: rect.midY),
                         endPoint: CGPoint(x: rect.maxX, y: rect.midY)
                     ),
-                    lineWidth: state == .listening ? 0.9 + amplitude * 0.8 : 0.7
-                )
-            }
-
-            if state == .success {
-                let progress = min(time / 1.4, 1)
-                let scale = 0.18 + progress * 0.72
-                let ring = CGRect(
-                    x: center.x - width * scale / 2,
-                    y: center.y - surfaceHeight * scale / 2,
-                    width: width * scale,
-                    height: surfaceHeight * scale
-                )
-                context.stroke(
-                    Path(ellipseIn: ring),
-                    with: .color(CX.teal.opacity((1 - progress) * 0.70)),
-                    lineWidth: 1.8
+                    lineWidth: state == .listening ? 1.2 + amplitude * 1.6 : 1
                 )
             }
 
             let glintTravel = paused ? 0.34 : normalizedSine(time * 0.45)
             let glintX = pool.minX + pool.width * (0.22 + glintTravel * 0.56)
-            let glintRect = CGRect(
-                x: glintX - 2,
-                y: pool.minY + pool.height * 0.19,
-                width: 4,
-                height: 4
-            )
+            let glintRect = CGRect(x: glintX - 2, y: pool.minY + pool.height * 0.19, width: 4, height: 4)
             var glint = context
-            glint.addFilter(.shadow(color: .white.opacity(0.72), radius: 5))
-            glint.fill(Path(ellipseIn: glintRect), with: .color(.white.opacity(paused ? 0.30 : 0.62)))
+            glint.addFilter(.shadow(color: .white.opacity(0.85), radius: 6))
+            glint.fill(Path(ellipseIn: glintRect), with: .color(.white.opacity(paused ? 0.38 : 0.74)))
+
+            if state == .success {
+                let progress = min(time / 1.6, 1)
+                let ring = pool.insetBy(
+                    dx: (1 - progress) * width / 2,
+                    dy: (1 - progress) * surfaceHeight / 2
+                )
+                context.stroke(
+                    Path(ellipseIn: ring),
+                    with: .color(CX.teal.opacity(1 - progress)),
+                    lineWidth: 2.5
+                )
+            }
         }
         .frame(maxWidth: 540)
         .frame(height: compact ? 94 : 136)
